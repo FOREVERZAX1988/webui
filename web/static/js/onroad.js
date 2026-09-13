@@ -1,7 +1,7 @@
 import { apiGet, apiPut } from "./api.js";
 import { tr } from "./i18n.js";
 import { updateSpHud } from "./hud_sp.js";
-import { updateCarrotNav, updateAmapBars } from "./hud_carrot_nav.js";
+import { updateCarrotNav, updateAmapBars, updateCarrotCrossroad } from "./hud_carrot_nav.js";
 import { updateDevUi } from "./hud_dev.js";
 import { updateCircularAlert } from "./hud_circular.js";
 import { updateConfidenceBall } from "./hud_confidence.js";
@@ -212,6 +212,7 @@ export function updateOnroadHud(st) {
   lastOnroadState = st;
   updateCarrotNav(st);
   updateAmapBars(st);
+  updateCarrotCrossroad(st);
   updateRoadCameraForState(st);
   updateCameraSwitcherButtons();
 

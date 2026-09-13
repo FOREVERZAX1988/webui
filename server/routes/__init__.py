@@ -51,6 +51,7 @@ from webui.server.bridge.onboarding_api import accept_sunnylink_consent, accept_
 from webui.server.bridge.i18n_api import snapshot_i18n
 from webui.server.bridge.webui_update_api import apply_webui_update, dismiss_webui_update, snapshot_webui_update
 from webui.server.bridge.developer_api import developer_error_log
+from webui.server.bridge.carrot_navi_api import snapshot_carrot_crossroad, snapshot_carrot_navi_debug
 from webui.server.bridge.osm_api import osm_delete_maps
 from webui.server.bridge.ws_handler import ws_opui_handler
 
@@ -517,6 +518,14 @@ async def api_agnos(_request: web.Request) -> web.Response:
   return json_response(await asyncio.to_thread(agnos_snapshot))
 
 
+async def api_carrot_crossroad(_request: web.Request) -> web.Response:
+  return json_response(await asyncio.to_thread(snapshot_carrot_crossroad))
+
+
+async def api_carrot_navi_debug(_request: web.Request) -> web.Response:
+  return json_response(await asyncio.to_thread(snapshot_carrot_navi_debug))
+
+
 async def api_agnos_install(_request: web.Request) -> web.Response:
   from webui.server.bridge.agnos_api import start_agnos_install
   return json_response(await asyncio.to_thread(start_agnos_install))
@@ -611,6 +620,8 @@ def register_routes(app: web.Application) -> None:
   app.router.add_post("/api/opui/webui-update/dismiss", api_webui_update_dismiss)
   app.router.add_post("/api/opui/webui-update/apply", api_webui_update_apply)
   app.router.add_get("/api/opui/agnos", api_agnos)
+  app.router.add_get("/api/opui/carrot/crossroad", api_carrot_crossroad)
+  app.router.add_get("/api/opui/carrot/navi_debug", api_carrot_navi_debug)
   app.router.add_post("/api/opui/agnos/install", api_agnos_install)
   app.router.add_post("/api/opui/agnos/reboot", api_agnos_reboot)
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)

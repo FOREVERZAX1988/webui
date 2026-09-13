@@ -15,6 +15,7 @@
  */
 
 import { tr } from "./i18n.js";
+import { apiGet } from "./api.js";
 
 const ASSET_BASE = "/api/opui/assets/sunnypilot/selfdrive/assets/images";
 const TURN_ICONS = {
@@ -47,6 +48,9 @@ const TRAFFIC = {
 
 let lastNavSig = "";
 let styleInjected = false;
+let crossroadTimer = null;
+let lastCrossroadSig = "";
+let pendingCrossroadFetch = null;
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (ch) => ({
@@ -125,12 +129,40 @@ function injectStyle() {
 .opui-amapbar--r { right: 12px; }
 .opui-amapbar.is-blocked { background: #ff6633; }
 
+/* complex crossroad overlay: small picture-in-picture above the nav card */
+.opui-carrot-crossroad {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 12px;
+  width: 220px; max-width: calc(100vw - 40px);
+  background: rgba(10, 16, 24, 0.72);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden; z-index: 6;
+  transition: opacity 0.18s linear;
+}
+.opui-carrot-crossroad img {
+  display: block; width: 100%; height: auto; object-fit: contain;
+  background: rgba(0, 0, 0, 0.25);
+}
+.opui-carrot-crossroad .opui-carrot-crossroad-meta {
+  padding: 7px 10px; font-size: 16px; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: center;
+}
+.opui-carrot-crossroad .opui-carrot-crossroad-progress {
+  position: absolute; left: 0; bottom: 0; height: 3px;
+  background: rgba(22, 200, 122, 0.85); transition: width 0.2s linear;
+}
+
 /* road-lite mode: the synthesized canvas already draws TBT / traffic light /
    curve advisory — hide the DOM nav card and edge bars for a clean scene.
    (road_lite.js toggles road-lite-on on both #camera-wrap and #hud; #hud is
    the parent of the nav card, the wrap is only its sibling.) */
 #hud.road-lite-on #hud-carrot-nav,
-#hud.road-lite-on .opui-amapbar { display: none !important; }
+#hud.road-lite-on .opui-amapbar,
+#hud.road-lite-on .opui-carrot-crossroad { display: none !important; }
 `;
   document.head.appendChild(style);
 }
@@ -266,4 +298,87 @@ export function updateAmapBars(st) {
       el.classList.toggle("is-blocked", !!blocked);
     }
   }
+}
+
+const CROSSROAD_POLL_MS = 2000;
+const CROSSROAD_SHOW_MAX_DIST_M = 600;
+const CROSSROAD_FADE_DIST_M = 50;
+
+function crossroadSig(cr, img) {
+  return JSON.stringify([cr?.ts, cr?.distanceM, img?.imageHash, img?.show]);
+}
+
+function buildCrossroadImageSrc(image) {
+  if (!image?.show) return null;
+  const b64 = image.imageBase64 || "";
+  if (!b64) return null;
+  const mime = image.imageMime || "image/png";
+  return `data:${mime};base64,${b64}`;
+}
+
+function renderCrossroad(cr, image) {
+  const nav = document.getElementById("hud-carrot-nav");
+  if (!nav) return;
+  let wrap = document.getElementById("hud-carrot-crossroad");
+  const src = buildCrossroadImageSrc(image);
+  const distM = cr?.distanceM ?? 0;
+  const show = !!src && distM > 0 && distM <= CROSSROAD_SHOW_MAX_DIST_M;
+  if (!show) {
+    if (wrap) wrap.hidden = true;
+    return;
+  }
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "hud-carrot-crossroad";
+    wrap.className = "opui-carrot-crossroad";
+    nav.parentNode.insertBefore(wrap, nav);
+  }
+  wrap.hidden = false;
+  const ratio = Math.max(0, Math.min(1, image?.remainRatio ?? cr?.remainRatio ?? 0));
+  const metaText = distM > 1000
+    ? `${(distM / 1000).toFixed(1)} km`
+    : `${Math.round(distM)} m`;
+  const sig = crossroadSig(cr, image);
+  if (sig === lastCrossroadSig) return;
+  lastCrossroadSig = sig;
+  wrap.innerHTML = `
+    <img src="${src}" alt="" />
+    <div class="opui-carrot-crossroad-meta">${esc(tr("Junction ahead"))} · ${esc(metaText)}</div>
+    <div class="opui-carrot-crossroad-progress" style="width:${Math.round(ratio * 100)}%"></div>`;
+}
+
+async function fetchCrossroad() {
+  if (pendingCrossroadFetch) return;
+  pendingCrossroadFetch = apiGet("/api/opui/carrot/crossroad").finally(() => {
+    pendingCrossroadFetch = null;
+  });
+  const data = await pendingCrossroadFetch;
+  if (!data?.ok) return;
+  renderCrossroad(data.crossroad, data.image);
+}
+
+function ensureCrossroadPolling() {
+  if (crossroadTimer) return;
+  fetchCrossroad();
+  crossroadTimer = setInterval(fetchCrossroad, CROSSROAD_POLL_MS);
+}
+
+function stopCrossroadPolling() {
+  if (crossroadTimer) {
+    clearInterval(crossroadTimer);
+    crossroadTimer = null;
+  }
+  lastCrossroadSig = "";
+  const wrap = document.getElementById("hud-carrot-crossroad");
+  if (wrap) wrap.hidden = true;
+}
+
+export function updateCarrotCrossroad(st) {
+  injectStyle();
+  const navActive = !!st?.sp_hud?.carrot_nav?.active;
+  if (!st?.started || !navActive) {
+    stopCrossroadPolling();
+    return;
+  }
+  ensureCrossroadPolling();
 }

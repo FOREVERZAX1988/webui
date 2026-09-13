@@ -101,6 +101,8 @@ SIM: dict[str, Any] = {
   "car_speed_limit": 120,
   "map_speed_limit": 120,
   "speed_limit_source": "map",
+  "carrot_crossroad_demo": True,
+  "carrot_navi_debug_demo": True,
 }
 
 
@@ -547,6 +549,47 @@ def mock_wifi_networks() -> list[dict[str, Any]]:
   ]
 
 
+def _seed_carrot_navi_params() -> None:
+  """Pre-populate CarrotNaviCrossroad / CarrotNaviImage / CarrotNaviDebug for PC dev preview."""
+  if not SIM.get("carrot_crossroad_demo"):
+    return
+  import base64
+  # 1x1 transparent PNG placeholder so the UI can render an <img> without a real source.
+  tiny_png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+  b64 = base64.b64encode(tiny_png).decode("ascii")
+  MockParams._store.update({
+    "CarrotNaviCrossroad": json.dumps({
+      "distanceM": 320,
+      "imageCode": 42,
+      "imageUrl": "https://example.com/crossroad.png",
+      "totalMeters": 1200.5,
+      "remainRatio": 0.72,
+      "ts": 1726000000,
+    }),
+    "CarrotNaviImage": json.dumps({
+      "show": True,
+      "imageBase64": b64,
+      "imageMime": "image/png",
+      "imageEncoding": "base64",
+      "imageWidth": 1,
+      "imageHeight": 1,
+      "imageHash": "mockhash0001",
+      "imageUrl": "https://example.com/crossroad.png",
+      "imageTooLarge": False,
+      "totalMeters": 1200.5,
+      "remainRatio": 0.72,
+      "ts": 1726000000,
+      "receivedMono": 1726000.0,
+    }),
+    "CarrotNaviDebug": json.dumps({
+      "receivedAt": "2026-09-12T15:10:00",
+      "eventTimeMs": 1234567890,
+      "type": "complexCrossroad",
+      "summary": {"type": "complexCrossroad", "keys": ["crossroad", "imageBase64"]},
+    }),
+  })
+
+
 def install_openpilot_mocks(root: str) -> None:
   """Call once before importing webui.server.*"""
   import logging
@@ -591,3 +634,4 @@ def install_openpilot_mocks(root: str) -> None:
 
   os.environ["WEBUI_DEV_PC"] = "1"
   os.environ.setdefault("OPENPILOT_ROOT", root)
+  _seed_carrot_navi_params()

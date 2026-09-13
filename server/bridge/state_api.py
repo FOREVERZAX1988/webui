@@ -308,29 +308,29 @@ def _egpu_state(ds, started: bool, sm=None) -> dict[str, Any] | None:
     return None
 
 
-def _amap_line_types(sm: Any) -> tuple[int, int]:
+def _carrot_lane_blocked(sm: Any) -> tuple[bool, bool]:
   """Carrot 7714 lane-blocked flags for the lines bracketing the ego lane.
 
-  ``carrot_navi_fusion.merge_carrot_navi_lanes`` derives
+  ``carrot_man._apply_carrot_navi_sp`` derives
   ``carStateSP.carrotLeftLineBlocked / carrotRightLineBlocked`` from
   ``carrotNaviSP.laneCurrent.available`` and sets ``carrotLaneValid`` True only
   while the Carrot 7714 v2 sender is feeding lane data.  When no v2 source is
   present the merge is a strict no-op and the flag stays False, so gating on it
   is enough — no extra Params read is needed here.  Returns (left, right) where
   True means the adjacent lane is blocked and a lane change toward that side
-  should not be initiated from nav data alone; 0 (False) means unknown/clear.
+  should not be initiated from nav data alone.
   """
   try:
     if not sm.valid.get("carStateSP"):
-      return 0, 0
+      return False, False
     cssp = sm["carStateSP"]
-    if not bool(getattr(cssp, "amapLineValid", False)):
-      return 0, 0
-    left = int(getattr(cssp, "amapLeftLineType", 0) or 0)
-    right = int(getattr(cssp, "amapRightLineType", 0) or 0)
+    if not bool(getattr(cssp, "carrotLaneValid", False)):
+      return False, False
+    left = bool(getattr(cssp, "carrotLeftLineBlocked", False))
+    right = bool(getattr(cssp, "carrotRightLineBlocked", False))
     return left, right
   except Exception:
-    return 0, 0
+    return False, False
 
 
 def _road_model(sm: Any) -> dict[str, Any] | None:
@@ -383,12 +383,15 @@ def _road_model(sm: Any) -> dict[str, Any] | None:
     #   0 unknown · 1 solid white · 2 dashed white · 3 solid yellow
     #   4 double yellow · 5 botts dots · 6 road edge
     # Order matches model.laneLines: [outer left, inner left, inner right, outer right].
-    amap_l, amap_r = _amap_line_types(sm)
-    # Heuristic fallback: when a road edge is missing, the outermost lane line is
-    # standing in for the shoulder line, which is painted solid.
+    carrot_l_blocked, carrot_r_blocked = _carrot_lane_blocked(sm)
+    # Carrot 7714 v2 only exposes boolean "blocked" lane flags.  Treat blocked
+    # as a solid white line and unblocked as dashed white for the road-lite
+    # renderer; the outer edges fall back to road edge when missing.
+    carrot_l_kind = 1 if carrot_l_blocked else 2
+    carrot_r_kind = 1 if carrot_r_blocked else 2
     outer_l = 6 if (edges[0] is None and lines[0] is not None) else 0
     outer_r = 6 if (edges[1] is None and lines[3] is not None) else 0
-    line_kinds = [outer_l, amap_l, amap_r, outer_r]
+    line_kinds = [outer_l, carrot_l_kind, carrot_r_kind, outer_r]
     solid_kinds = (1, 3, 4, 6)
     line_types = [1 if kind in solid_kinds else 0 for kind in line_kinds]
 
@@ -693,13 +696,13 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if sp_hud["speed_limit_ahead_valid"]:
         sp_hud["speed_limit_ahead"] = round(float(getattr(lmd, "speedLimitAhead", 0) or 0) * conv)
         sp_hud["speed_limit_ahead_dist"] = float(getattr(lmd, "speedLimitAheadDistance", 0) or 0)
-    # Amap lane-line edge bars (mirrors GUI AmapLaneIndicators; gated by AmapEnabled).
+    # Carrot 7714 v2 lane-line edge bars (mirrors GUI AmapLaneIndicators).
     if amap_enabled and sm.valid.get("carStateSP"):
       cssp = sm["carStateSP"]
       sp_hud["amap_lines"] = {
-        "valid": bool(getattr(cssp, "amapLineValid", False)),
-        "left_blocked": bool(getattr(cssp, "amapLeftLineBlocked", False)),
-        "right_blocked": bool(getattr(cssp, "amapRightLineBlocked", False)),
+        "valid": bool(getattr(cssp, "carrotLaneValid", False)),
+        "left_blocked": bool(getattr(cssp, "carrotLeftLineBlocked", False)),
+        "right_blocked": bool(getattr(cssp, "carrotRightLineBlocked", False)),
       }
     # Carrot navigation HUD panel (mirrors GUI CarrotNavigationPanel reading carrotManSP).
     if sm.valid.get("carrotManSP"):

@@ -1687,6 +1687,7 @@ function renderWidget(w, panelData) {
     if (w.custom === "navigation_provider") return renderNavigationProviderRow(w);
     if (w.custom === "longitudinal_source") return renderLongitudinalSourceRow(w);
     if (w.custom === "traffic_light_fusion") return renderTrafficLightFusionRow(w);
+    if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
     if (w.custom === "device_calibration") return null;
     return null;
   }
@@ -2552,6 +2553,46 @@ function renderLongitudinalSourceRow(w) {
   const off = opuiWs.on("state", update);
   row._cleanup = off;
   update();
+  if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
+  return row;
+}
+
+/* Carrot navi debug viewer: opens a modal showing the last handled navi event
+   summary written by CarrotManager to the CarrotNaviDebug Param. */
+function renderCarrotNaviDebugRow(w) {
+  const row = document.createElement("div");
+  row.className = "opui-sp-row";
+  row.dataset.custom = "carrot_navi_debug";
+  row.innerHTML = `
+    <div class="opui-sp-row-text">
+      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
+    </div>
+    <button type="button" class="opui-btn opui-btn--action" id="carrot-navi-debug-btn">${escapeHtml(t("VIEW"))}</button>`;
+  row.querySelector("#carrot-navi-debug-btn")?.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const data = await apiGet("/api/opui/carrot/navi_debug");
+    if (!data?.ok) {
+      toast(data?.error || t("Failed"));
+      return;
+    }
+    if (!data.has_debug || !data.debug) {
+      await showHtml({ title: t("Carrot Navi Debug"), html: `<p class="opui-muted">${t("No navi debug data available yet.")}</p>` });
+      return;
+    }
+    const d = data.debug;
+    const summary = d.summary && typeof d.summary === "object"
+      ? `<pre style="white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;font-size:13px">${escapeHtml(JSON.stringify(d.summary, null, 2))}</pre>`
+      : `<p class="opui-muted">${t("No summary")}</p>`;
+    const html = `
+      <div style="display:grid;gap:8px;margin-bottom:12px">
+        <div><b>${t("Received")}:</b> ${escapeHtml(d.receivedAt || "--")}</div>
+        <div><b>${t("Event Time")}:</b> ${d.eventTimeMs || "--"}</div>
+        <div><b>${t("Type")}:</b> ${escapeHtml(d.type || "--")}</div>
+      </div>
+      <div><b>${t("Summary")}</b></div>
+      ${summary}`;
+    await showHtml({ title: t("Carrot Navi Debug"), html });
+  });
   if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
   return row;
 }
