@@ -7,6 +7,7 @@ Installed by webui/dev/run_pc.py before any webui server imports.
 from __future__ import annotations
 
 import enum
+import json
 import os
 import types
 from typing import Any

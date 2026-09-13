@@ -305,7 +305,7 @@ const CROSSROAD_SHOW_MAX_DIST_M = 600;
 const CROSSROAD_FADE_DIST_M = 50;
 
 function crossroadSig(cr, img) {
-  return JSON.stringify([cr?.ts, cr?.distanceM, img?.imageHash, img?.show]);
+  return JSON.stringify([cr?.ts, cr?.distanceM, img?.imageHash, img?.show, img?.source]);
 }
 
 function buildCrossroadImageSrc(image) {
@@ -316,11 +316,23 @@ function buildCrossroadImageSrc(image) {
   return `data:${mime};base64,${b64}`;
 }
 
-function renderCrossroad(cr, image) {
+function selectCrossroadImage(frame, image) {
+  // Prefer a recent carrotNaviMediaSP frame; fall back to the CarrotNaviImage Param.
+  if (frame?.show && frame.imageBase64) {
+    return { img: frame, source: frame.source || "carrotNaviMediaSP" };
+  }
+  if (image?.show && image.imageBase64) {
+    return { img: image, source: image.source || "CarrotNaviImage" };
+  }
+  return { img: null, source: null };
+}
+
+function renderCrossroad(cr, image, frame) {
   const nav = document.getElementById("hud-carrot-nav");
   if (!nav) return;
   let wrap = document.getElementById("hud-carrot-crossroad");
-  const src = buildCrossroadImageSrc(image);
+  const { img, source } = selectCrossroadImage(frame, image);
+  const src = buildCrossroadImageSrc(img);
   const distM = cr?.distanceM ?? 0;
   const show = !!src && distM > 0 && distM <= CROSSROAD_SHOW_MAX_DIST_M;
   if (!show) {
@@ -334,15 +346,15 @@ function renderCrossroad(cr, image) {
     nav.parentNode.insertBefore(wrap, nav);
   }
   wrap.hidden = false;
-  const ratio = Math.max(0, Math.min(1, image?.remainRatio ?? cr?.remainRatio ?? 0));
+  const ratio = Math.max(0, Math.min(1, img?.remainRatio ?? cr?.remainRatio ?? 0));
   const metaText = distM > 1000
     ? `${(distM / 1000).toFixed(1)} km`
     : `${Math.round(distM)} m`;
-  const sig = crossroadSig(cr, image);
+  const sig = crossroadSig(cr, img);
   if (sig === lastCrossroadSig) return;
   lastCrossroadSig = sig;
   wrap.innerHTML = `
-    <img src="${src}" alt="" />
+    <img src="${src}" alt="" data-source="${esc(source)}" />
     <div class="opui-carrot-crossroad-meta">${esc(tr("Junction ahead"))} · ${esc(metaText)}</div>
     <div class="opui-carrot-crossroad-progress" style="width:${Math.round(ratio * 100)}%"></div>`;
 }
@@ -354,7 +366,7 @@ async function fetchCrossroad() {
   });
   const data = await pendingCrossroadFetch;
   if (!data?.ok) return;
-  renderCrossroad(data.crossroad, data.image);
+  renderCrossroad(data.crossroad, data.image, data.frame);
 }
 
 function ensureCrossroadPolling() {
