@@ -51,6 +51,9 @@ let styleInjected = false;
 let crossroadTimer = null;
 let lastCrossroadSig = "";
 let pendingCrossroadFetch = null;
+let mediaTimer = null;
+let lastMediaSig = "";
+let pendingMediaFetch = null;
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (ch) => ({
@@ -156,13 +159,43 @@ function injectStyle() {
   background: rgba(22, 200, 122, 0.85); transition: width 0.2s linear;
 }
 
+/* carrot media overlays (tbt / lane / traffic_signal / center) */
+.opui-carrot-media {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 12px;
+  display: flex; flex-direction: row; gap: 10px; align-items: flex-end;
+  justify-content: center; z-index: 6; pointer-events: none;
+  max-width: calc(100vw - 40px);
+}
+.opui-carrot-media-frame {
+  position: relative;
+  background: rgba(10, 16, 24, 0.72);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden; pointer-events: auto;
+  min-width: 64px; max-width: 180px;
+  transition: opacity 0.18s linear;
+}
+.opui-carrot-media-frame img {
+  display: block; width: 100%; height: auto; object-fit: contain;
+  background: rgba(0, 0, 0, 0.25);
+}
+.opui-carrot-media-frame .opui-carrot-media-label {
+  padding: 5px 8px; font-size: 14px; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
 /* road-lite mode: the synthesized canvas already draws TBT / traffic light /
    curve advisory — hide the DOM nav card and edge bars for a clean scene.
    (road_lite.js toggles road-lite-on on both #camera-wrap and #hud; #hud is
    the parent of the nav card, the wrap is only its sibling.) */
 #hud.road-lite-on #hud-carrot-nav,
 #hud.road-lite-on .opui-amapbar,
-#hud.road-lite-on .opui-carrot-crossroad { display: none !important; }
+#hud.road-lite-on .opui-carrot-crossroad,
+#hud.road-lite-on .opui-carrot-media { display: none !important; }
 `;
   document.head.appendChild(style);
 }
@@ -304,6 +337,15 @@ const CROSSROAD_POLL_MS = 2000;
 const CROSSROAD_SHOW_MAX_DIST_M = 600;
 const CROSSROAD_FADE_DIST_M = 50;
 
+const MEDIA_POLL_MS = 2000;
+const MEDIA_KINDS = ["tbt", "lane", "traffic_signal", "center"];
+const MEDIA_KIND_LABELS = {
+  tbt: () => tr("Turn preview"),
+  lane: () => tr("Lane guidance"),
+  traffic_signal: () => tr("Signal"),
+  center: () => tr("Junction"),
+};
+
 function crossroadSig(cr, img) {
   return JSON.stringify([cr?.ts, cr?.distanceM, img?.imageHash, img?.show, img?.source]);
 }
@@ -393,4 +435,94 @@ export function updateCarrotCrossroad(st) {
     return;
   }
   ensureCrossroadPolling();
+}
+
+function buildMediaImageSrc(frame) {
+  if (!frame?.show) return null;
+  const b64 = frame.imageBase64 || "";
+  if (!b64) return null;
+  const mime = frame.imageMime || "image/png";
+  return `data:${mime};base64,${b64}`;
+}
+
+function mediaSig(data) {
+  if (!data?.ok || !data.frames) return "";
+  const parts = [];
+  for (const name of Object.keys(data.frames).sort()) {
+    const f = data.frames[name];
+    parts.push(`${name}:${f.imageHash || ""}:${f.ts || 0}`);
+  }
+  return parts.join("|");
+}
+
+function renderMediaFrames(data) {
+  const nav = document.getElementById("hud-carrot-nav");
+  if (!nav) return;
+  let wrap = document.getElementById("hud-carrot-media");
+  if (!data?.ok || !data.byKind || Object.keys(data.byKind).length === 0) {
+    if (wrap) wrap.hidden = true;
+    return;
+  }
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "hud-carrot-media";
+    wrap.className = "opui-carrot-media";
+    nav.parentNode.insertBefore(wrap, nav);
+  }
+  wrap.hidden = false;
+
+  const sig = mediaSig(data);
+  if (sig === lastMediaSig) return;
+  lastMediaSig = sig;
+
+  const htmlParts = [];
+  for (const kind of MEDIA_KINDS) {
+    const names = data.byKind[kind];
+    if (!names || names.length === 0) continue;
+    const frame = data.frames[names[0]];
+    const src = buildMediaImageSrc(frame);
+    if (!src) continue;
+    const label = (MEDIA_KIND_LABELS[kind] || (() => kind))();
+    htmlParts.push(`
+      <div class="opui-carrot-media-frame" data-kind="${esc(kind)}">
+        <img src="${src}" alt="" data-name="${esc(frame.name || names[0])}" />
+        <div class="opui-carrot-media-label">${esc(label)}</div>
+      </div>`);
+  }
+  wrap.innerHTML = htmlParts.join("");
+}
+
+async function fetchMedia() {
+  if (pendingMediaFetch) return;
+  pendingMediaFetch = apiGet("/api/opui/carrot/media").finally(() => {
+    pendingMediaFetch = null;
+  });
+  const data = await pendingMediaFetch;
+  renderMediaFrames(data);
+}
+
+function ensureMediaPolling() {
+  if (mediaTimer) return;
+  fetchMedia();
+  mediaTimer = setInterval(fetchMedia, MEDIA_POLL_MS);
+}
+
+function stopMediaPolling() {
+  if (mediaTimer) {
+    clearInterval(mediaTimer);
+    mediaTimer = null;
+  }
+  lastMediaSig = "";
+  const wrap = document.getElementById("hud-carrot-media");
+  if (wrap) wrap.hidden = true;
+}
+
+export function updateCarrotMedia(st) {
+  injectStyle();
+  const navActive = !!st?.sp_hud?.carrot_nav?.active;
+  if (!st?.started || !navActive) {
+    stopMediaPolling();
+    return;
+  }
+  ensureMediaPolling();
 }

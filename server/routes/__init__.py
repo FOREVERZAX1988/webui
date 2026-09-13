@@ -526,6 +526,11 @@ async def api_carrot_navi_debug(_request: web.Request) -> web.Response:
   return json_response(await asyncio.to_thread(snapshot_carrot_navi_debug))
 
 
+async def api_carrot_media(_request: web.Request) -> web.Response:
+  from webui.server.bridge.carrot_navi_api import snapshot_carrot_media
+  return json_response(await asyncio.to_thread(snapshot_carrot_media))
+
+
 async def api_agnos_install(_request: web.Request) -> web.Response:
   from webui.server.bridge.agnos_api import start_agnos_install
   return json_response(await asyncio.to_thread(start_agnos_install))
@@ -622,6 +627,7 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/agnos", api_agnos)
   app.router.add_get("/api/opui/carrot/crossroad", api_carrot_crossroad)
   app.router.add_get("/api/opui/carrot/navi_debug", api_carrot_navi_debug)
+  app.router.add_get("/api/opui/carrot/media", api_carrot_media)
   app.router.add_post("/api/opui/agnos/install", api_agnos_install)
   app.router.add_post("/api/opui/agnos/reboot", api_agnos_reboot)
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)

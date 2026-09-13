@@ -551,7 +551,7 @@ def mock_wifi_networks() -> list[dict[str, Any]]:
 
 
 def _seed_carrot_navi_params() -> None:
-  """Pre-populate CarrotNaviCrossroad / CarrotNaviImage / CarrotNaviDebug for PC dev preview."""
+  """Pre-populate CarrotNaviCrossroad / CarrotNaviImage / CarrotNaviDebug / CarrotNaviMediaMock for PC dev preview."""
   if not SIM.get("carrot_crossroad_demo"):
     return
   import base64
@@ -587,6 +587,32 @@ def _seed_carrot_navi_params() -> None:
       "eventTimeMs": 1234567890,
       "type": "complexCrossroad",
       "summary": {"type": "complexCrossroad", "keys": ["crossroad", "imageBase64"]},
+    }),
+    "CarrotNaviMediaMock": json.dumps({
+      "tbt_current_full": {
+        "show": True,
+        "imageBase64": b64,
+        "imageWidth": 1,
+        "imageHeight": 1,
+      },
+      "lane_top": {
+        "show": True,
+        "imageBase64": b64,
+        "imageWidth": 1,
+        "imageHeight": 1,
+      },
+      "traffic_signal": {
+        "show": True,
+        "imageBase64": b64,
+        "imageWidth": 1,
+        "imageHeight": 1,
+      },
+      "center_tbt_icon": {
+        "show": True,
+        "imageBase64": b64,
+        "imageWidth": 1,
+        "imageHeight": 1,
+      },
     }),
   })
 

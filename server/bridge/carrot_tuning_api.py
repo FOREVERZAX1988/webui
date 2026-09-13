@@ -86,6 +86,18 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "AutoNaviSpeedSafetyFactor": ("int", 100),
   "SoundVolumeAdjust": ("int", 100),
   "SoundVolumeAdjustEngage": ("int", 100),
+  # Vehicle CAN / cluster / planner control surface (P3 exposure).
+  # Kinds and defaults mirror common/params_keys.h and
+  # sunnypilot/carrot/config.py::_DEFAULT_NAV_PARAMS so the webui can
+  # read/adjust/reset them through the same carrot tuning API.
+  "VehicleNaviCanControl": ("int", 0),
+  "VehicleNaviSchoolZoneControl": ("bool", 0),
+  "VehicleSpeedCameraControlMode": ("int", 1),
+  "LatSuspendAngleDeg": ("int", 300),
+  "ClusterNaviMapTheme": ("int", 1),
+  "ClusterNaviMapType": ("int", 0),
+  "ClusterNaviMapFps": ("int", 1),
+  "CarrotNaviHudMapProfile": ("bool", 0),
   # Diagnostic sink (not exposed in the panel)
   "CarrotException": ("str", ""),
 }
