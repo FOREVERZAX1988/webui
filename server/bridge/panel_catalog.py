@@ -427,20 +427,20 @@ PANELS: list[dict[str, Any]] = [
 SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning": {
     "id": "navigation__carrot_tuning",
-    "title": "Carrot 调参",
+    "title": "Carrot Tuning",
     "parent": "navigation",
     "widgets": [
-      {"type": "tabs", "tabs": ["开始", "巡航", "导航", "速度", "调节", "显示", "轨迹", "车辆", "开发者"], "default": "开始"},
-      {"type": "tab", "tab": "开始", "widgets": [
+      {"type": "tabs", "tabs": ["Start", "Cruise", "Navigation", "Speed", "Tuning", "Display", "Path", "Vehicle", "Developer"], "default": "Start"},
+      {"type": "tab", "tab": "Start", "widgets": [
         {
           "type": "section",
-          "label": "自动起步 / 巡航"
+          "label": "Auto Start / Cruise"
         },
         {
           "type": "int",
           "param": "AutoEngage",
-          "label": "自动开启辅助驾驶",
-          "desc": "自动开启辅助驾驶 参数。",
+          "label": "Auto Engage",
+          "desc": "Adjust the Auto Engage setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -448,8 +448,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoCruiseControl",
-          "label": "自动设定巡航速度",
-          "desc": "自动设定巡航速度 参数。",
+          "label": "Auto Cruise Speed",
+          "desc": "Adjust the Auto Cruise Control setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -457,8 +457,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseOnDist",
-          "label": "达到设定距离自动开启",
-          "desc": "达到设定距离自动开启 参数。",
+          "label": "Cruise On Distance",
+          "desc": "Adjust the Cruise On Dist setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -466,8 +466,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseEcoControl",
-          "label": "经济巡航控制",
-          "desc": "经济巡航控制 参数。",
+          "label": "Eco Cruise Control",
+          "desc": "Adjust the Cruise Eco Control setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -477,13 +477,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "按钮行为"
+          "label": "Button Behavior"
         },
         {
           "type": "int",
           "param": "CruiseButtonMode",
-          "label": "巡航按钮模式",
-          "desc": "巡航按钮模式 参数。",
+          "label": "Cruise Button Mode",
+          "desc": "Adjust the Cruise Button Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -491,8 +491,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CancelButtonMode",
-          "label": "取消按钮模式",
-          "desc": "取消按钮模式 参数。",
+          "label": "Cancel Button Mode",
+          "desc": "Adjust the Cancel Button Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -500,8 +500,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SoftHoldOnCancel",
-          "label": "取消后自动驻车",
-          "desc": "取消后自动驻车 参数。",
+          "label": "Soft Hold on Cancel",
+          "desc": "Adjust the Soft Hold On Cancel setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -509,8 +509,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseButtonLongDelay",
-          "label": "巡航按钮长按延迟",
-          "desc": "巡航按钮长按延迟 参数。",
+          "label": "Cruise Button Long Press Delay",
+          "desc": "Adjust the Cruise Button Long Delay setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -520,13 +520,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "速度预设"
+          "label": "Speed Presets"
         },
         {
           "type": "int",
           "param": "CruiseSpeed1",
-          "label": "巡航预设速度 1",
-          "desc": "巡航预设速度 1 参数。",
+          "label": "Cruise Preset Speed 1",
+          "desc": "Adjust the Cruise Speed1 setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -534,8 +534,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseSpeed2",
-          "label": "巡航预设速度 2",
-          "desc": "巡航预设速度 2 参数。",
+          "label": "Cruise Preset Speed 2",
+          "desc": "Adjust the Cruise Speed2 setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -543,8 +543,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseSpeed3",
-          "label": "巡航预设速度 3",
-          "desc": "巡航预设速度 3 参数。",
+          "label": "Cruise Preset Speed 3",
+          "desc": "Adjust the Cruise Speed3 setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -552,8 +552,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseSpeed4",
-          "label": "巡航预设速度 4",
-          "desc": "巡航预设速度 4 参数。",
+          "label": "Cruise Preset Speed 4",
+          "desc": "Adjust the Cruise Speed4 setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -561,8 +561,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseSpeed5",
-          "label": "巡航预设速度 5",
-          "desc": "巡航预设速度 5 参数。",
+          "label": "Cruise Preset Speed 5",
+          "desc": "Adjust the Cruise Speed5 setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -570,8 +570,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseSpeedUnit",
-          "label": "巡航预设速度单位",
-          "desc": "巡航预设速度单位 参数。",
+          "label": "Cruise Preset Speed Unit",
+          "desc": "Adjust the Cruise Speed Unit setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -579,8 +579,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CruiseSpeedUnitBasic",
-          "label": "基础巡航预设速度单位",
-          "desc": "基础巡航预设速度单位 参数。",
+          "label": "Basic Cruise Preset Speed Unit",
+          "desc": "Adjust the Cruise Speed Unit Basic setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -590,13 +590,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "方向盘按钮"
+          "label": "Steering Wheel Buttons"
         },
         {
           "type": "int",
           "param": "LfaButtonMode",
-          "label": "车道保持按钮模式",
-          "desc": "车道保持按钮模式 参数。",
+          "label": "LFA Button Mode",
+          "desc": "Adjust the Lfa Button Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -604,8 +604,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "PaddleMode",
-          "label": "换挡拨片模式",
-          "desc": "换挡拨片模式 参数。",
+          "label": "Paddle Mode",
+          "desc": "Adjust the Paddle Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -615,13 +615,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "自动油门"
+          "label": "Auto Gas"
         },
         {
           "type": "int",
           "param": "AutoGasCancelSpeed",
-          "label": "自动油门取消速度",
-          "desc": "自动油门取消速度 参数。",
+          "label": "Auto Gas Cancel Speed",
+          "desc": "Adjust the Auto Gas Cancel Speed setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -629,8 +629,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoGasSyncSpeed",
-          "label": "自动油门同步速度",
-          "desc": "自动油门同步速度 参数。",
+          "label": "Auto Gas Sync Speed",
+          "desc": "Adjust the Auto Gas Sync Speed setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -638,66 +638,66 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoGasTokSpeed",
-          "label": "自动油门接管速度",
-          "desc": "自动油门接管速度 参数。",
+          "label": "Auto Gas Takeover Speed",
+          "desc": "Adjust the Auto Gas Tok Speed setting.",
           "min": 0,
           "max": 200,
           "step": 5
         },
       ]},
-      {"type": "tab", "tab": "巡航", "widgets": [
+      {"type": "tab", "tab": "Cruise", "widgets": [
         {
           "type": "section",
-          "label": "跟车距离"
+          "label": "Following Distance"
         },
         {
           "type": "text",
           "param": "TFollowGap1",
-          "label": "跟车时距 1",
-          "desc": "跟车时距 1 参数。"
+          "label": "Follow Time Gap 1",
+          "desc": "Adjust the T Follow Gap1 setting."
         },
         {
           "type": "text",
           "param": "TFollowGap2",
-          "label": "跟车时距 2",
-          "desc": "跟车时距 2 参数。"
+          "label": "Follow Time Gap 2",
+          "desc": "Adjust the T Follow Gap2 setting."
         },
         {
           "type": "text",
           "param": "TFollowGap3",
-          "label": "跟车时距 3",
-          "desc": "跟车时距 3 参数。"
+          "label": "Follow Time Gap 3",
+          "desc": "Adjust the T Follow Gap3 setting."
         },
         {
           "type": "text",
           "param": "TFollowGap4",
-          "label": "跟车时距 4",
-          "desc": "跟车时距 4 参数。"
+          "label": "Follow Time Gap 4",
+          "desc": "Adjust the T Follow Gap4 setting."
         },
         {
           "type": "text",
           "param": "DynamicTFollow",
-          "label": "动态跟车时距",
-          "desc": "动态跟车时距 参数。"
+          "label": "Dynamic Follow Time",
+          "desc": "Adjust the Dynamic T Follow setting."
         },
         {
           "type": "text",
           "param": "DynamicTFollowLC",
-          "label": "变道时动态跟车时距",
-          "desc": "变道时动态跟车时距 参数。"
+          "label": "Dynamic Follow Time on Lane Change",
+          "desc": "Adjust the Dynamic T Follow L C setting."
         },
         {
           "type": "separator"
         },
         {
           "type": "section",
-          "label": "纵向增益"
+          "label": "Longitudinal Gains"
         },
         {
           "type": "int",
           "param": "LeadAccelResponse",
-          "label": "前车加速响应",
-          "desc": "前车加速响应 参数。",
+          "label": "Lead Acceleration Response",
+          "desc": "Adjust the Lead Accel Response setting.",
           "min": -100,
           "max": 100,
           "step": 5
@@ -705,8 +705,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LongActuatorDelay",
-          "label": "纵向执行器延迟补偿",
-          "desc": "纵向执行器延迟补偿 参数。",
+          "label": "Longitudinal Actuator Delay",
+          "desc": "Adjust the Long Actuator Delay setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -714,8 +714,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LongTuningKf",
-          "label": "纵向前馈系数",
-          "desc": "纵向前馈系数 参数。",
+          "label": "Longitudinal Feedforward",
+          "desc": "Adjust the Long Tuning Kf setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -723,8 +723,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LongTuningKiV",
-          "label": "纵向积分速度系数",
-          "desc": "纵向积分速度系数 参数。",
+          "label": "Longitudinal Integral Velocity",
+          "desc": "Adjust the Long Tuning Ki V setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -732,8 +732,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LongTuningKpV",
-          "label": "纵向比例速度系数",
-          "desc": "纵向比例速度系数 参数。",
+          "label": "Longitudinal Proportional Velocity",
+          "desc": "Adjust the Long Tuning Kp V setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -741,8 +741,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "StoppingAccel",
-          "label": "停车加速度",
-          "desc": "停车加速度 参数。",
+          "label": "Stopping Acceleration",
+          "desc": "Adjust the Stopping Accel setting.",
           "min": -200,
           "max": 0,
           "step": 5
@@ -750,8 +750,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "TFollowDecelBoost",
-          "label": "跟车减速增强",
-          "desc": "跟车减速增强 参数。",
+          "label": "Follow Deceleration Boost",
+          "desc": "Adjust the T Follow Decel Boost setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -761,62 +761,62 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "加速度限制"
+          "label": "Acceleration Limits"
         },
         {
           "type": "text",
           "param": "CruiseMaxVals0",
-          "label": "巡航最大加速度 0",
-          "desc": "巡航最大加速度 0 参数。"
+          "label": "Cruise Max Acceleration 0",
+          "desc": "Adjust the Cruise Max Vals0 setting."
         },
         {
           "type": "text",
           "param": "CruiseMaxVals1",
-          "label": "巡航最大加速度 1",
-          "desc": "巡航最大加速度 1 参数。"
+          "label": "Cruise Max Acceleration 1",
+          "desc": "Adjust the Cruise Max Vals1 setting."
         },
         {
           "type": "text",
           "param": "CruiseMaxVals2",
-          "label": "巡航最大加速度 2",
-          "desc": "巡航最大加速度 2 参数。"
+          "label": "Cruise Max Acceleration 2",
+          "desc": "Adjust the Cruise Max Vals2 setting."
         },
         {
           "type": "text",
           "param": "CruiseMaxVals3",
-          "label": "巡航最大加速度 3",
-          "desc": "巡航最大加速度 3 参数。"
+          "label": "Cruise Max Acceleration 3",
+          "desc": "Adjust the Cruise Max Vals3 setting."
         },
         {
           "type": "text",
           "param": "CruiseMaxVals4",
-          "label": "巡航最大加速度 4",
-          "desc": "巡航最大加速度 4 参数。"
+          "label": "Cruise Max Acceleration 4",
+          "desc": "Adjust the Cruise Max Vals4 setting."
         },
         {
           "type": "text",
           "param": "CruiseMaxVals5",
-          "label": "巡航最大加速度 5",
-          "desc": "巡航最大加速度 5 参数。"
+          "label": "Cruise Max Acceleration 5",
+          "desc": "Adjust the Cruise Max Vals5 setting."
         },
         {
           "type": "text",
           "param": "CruiseMaxVals6",
-          "label": "巡航最大加速度 6",
-          "desc": "巡航最大加速度 6 参数。"
+          "label": "Cruise Max Acceleration 6",
+          "desc": "Adjust the Cruise Max Vals6 setting."
         },
         {
           "type": "separator"
         },
         {
           "type": "section",
-          "label": "巡航行为"
+          "label": "Cruise Behavior"
         },
         {
           "type": "int",
           "param": "CarrotCruiseDecel",
-          "label": "Carrot 巡航减速强度",
-          "desc": "Carrot 巡航减速强度 参数。",
+          "label": "Carrot Cruise Decel",
+          "desc": "Adjust the Carrot Cruise Decel setting.",
           "min": -100,
           "max": 0,
           "step": 1
@@ -824,8 +824,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CarrotCruiseAtcDecel",
-          "label": "Carrot 巡航 ATC 减速强度",
-          "desc": "Carrot 巡航 ATC 减速强度 参数。",
+          "label": "Carrot Cruise ATC Decel",
+          "desc": "Adjust the Carrot Cruise Atc Decel setting.",
           "min": -100,
           "max": 0,
           "step": 1
@@ -833,8 +833,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "VEgoStopping",
-          "label": "停车判定车速",
-          "desc": "停车判定车速 参数。",
+          "label": "Stop Speed Threshold",
+          "desc": "Adjust the V Ego Stopping setting.",
           "min": 0,
           "max": 500,
           "step": 5
@@ -842,23 +842,23 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ApplyModelSpeed",
-          "label": "模型速度补偿",
-          "desc": "模型速度补偿 参数。",
+          "label": "Model Speed Compensation",
+          "desc": "Adjust the Apply Model Speed setting.",
           "min": 0,
           "max": 2,
           "step": 1
         },
       ]},
-      {"type": "tab", "tab": "导航", "widgets": [
+      {"type": "tab", "tab": "Navigation", "widgets": [
         {
           "type": "section",
-          "label": "导航限速控制"
+          "label": "Navigation Speed Control"
         },
         {
           "type": "int",
           "param": "AutoNaviSpeedCtrlMode",
-          "label": "导航限速控制模式",
-          "desc": "导航限速控制模式 参数。",
+          "label": "Navigation Speed Ctrl Mode",
+          "desc": "Adjust the Auto Navi Speed Ctrl Mode setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -866,8 +866,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviSpeedDecelRate",
-          "label": "导航限速减速率",
-          "desc": "导航限速减速率 参数。",
+          "label": "Navigation Speed Decel Rate",
+          "desc": "Adjust the Auto Navi Speed Decel Rate setting.",
           "min": 0,
           "max": 500,
           "step": 10
@@ -875,8 +875,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviSpeedSafetyFactor",
-          "label": "导航限速安全余量",
-          "desc": "导航限速安全余量 参数。",
+          "label": "Navigation Speed Safety Factor",
+          "desc": "Adjust the Auto Navi Speed Safety Factor setting.",
           "min": 50,
           "max": 150,
           "step": 5
@@ -884,8 +884,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviSpeedCtrlEnd",
-          "label": "导航限速控制结束距离",
-          "desc": "导航限速控制结束距离 参数。",
+          "label": "Navigation Speed Ctrl End Distance",
+          "desc": "Adjust the Auto Navi Speed Ctrl End setting.",
           "min": 0,
           "max": 30,
           "step": 1
@@ -895,13 +895,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "停车 / 测速相机"
+          "label": "Stop / Speed Camera"
         },
         {
           "type": "int",
           "param": "StopDistanceCarrot",
-          "label": "停车目标距离",
-          "desc": "停车目标距离 参数。",
+          "label": "Stop Target Distance",
+          "desc": "Adjust the Stop Distance Carrot setting.",
           "min": 0,
           "max": 2000,
           "step": 10
@@ -909,15 +909,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "SameSpiCamFilter",
-          "label": "同方向测速相机过滤",
-          "desc": "同方向测速相机过滤 参数。",
+          "label": "Same Direction Speed Cam Filter",
+          "desc": "Adjust the Same Spi Cam Filter setting.",
           "default": True
         },
         {
           "type": "int",
           "param": "HapticFeedbackWhenSpeedCamera",
-          "label": "测速相机震动提醒",
-          "desc": "测速相机震动提醒 参数。",
+          "label": "Speed Camera Haptic Alert",
+          "desc": "Adjust the Haptic Feedback When Speed Camera setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -925,8 +925,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "TrafficStopDistanceAdjust",
-          "label": "红绿灯停车距离修正",
-          "desc": "红绿灯停车距离修正 参数。",
+          "label": "Traffic Stop Distance Adjust",
+          "desc": "Adjust the Traffic Stop Distance Adjust setting.",
           "min": -500,
           "max": 500,
           "step": 10
@@ -934,8 +934,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "TrafficLightDetectMode",
-          "label": "红绿灯检测模式",
-          "desc": "红绿灯检测模式 参数。",
+          "label": "Traffic Light Detect Mode",
+          "desc": "Adjust the Traffic Light Detect Mode setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -945,13 +945,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "道路限速"
+          "label": "Road Speed Limits"
         },
         {
           "type": "int",
           "param": "AutoRoadSpeedAdjust",
-          "label": "道路限速自动修正",
-          "desc": "道路限速自动修正 参数。",
+          "label": "Road Speed Auto Adjust",
+          "desc": "Adjust the Auto Road Speed Adjust setting.",
           "min": -50,
           "max": 50,
           "step": 1
@@ -959,8 +959,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoRoadSpeedLimitOffset",
-          "label": "道路限速偏移量",
-          "desc": "道路限速偏移量 参数。",
+          "label": "Road Speed Limit Offset",
+          "desc": "Adjust the Auto Road Speed Limit Offset setting.",
           "min": -30,
           "max": 30,
           "step": 1
@@ -968,8 +968,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoSpeedUptoRoadSpeedLimit",
-          "label": "自动提速至道路限速",
-          "desc": "自动提速至道路限速 参数。",
+          "label": "Auto Speed Up to Road Limit",
+          "desc": "Adjust the Auto Speed Upto Road Speed Limit setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -977,8 +977,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SpeedFromPCM",
-          "label": "车速来源 PCM",
-          "desc": "车速来源 PCM 参数。",
+          "label": "Speed Source PCM",
+          "desc": "Adjust the Speed From P C M setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -986,8 +986,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "RoadType",
-          "label": "道路类型",
-          "desc": "道路类型 参数。",
+          "label": "Road Type",
+          "desc": "Adjust the Road Type setting.",
           "min": -1,
           "max": 5,
           "step": 1
@@ -1002,8 +1002,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "multiple_button",
           "param": "VehicleNaviCanControl",
-          "label": "车辆导航 CAN 控制",
-          "desc": "车辆导航 CAN 控制 参数。",
+          "label": "Vehicle Navi CAN Control",
+          "desc": "Adjust the Vehicle Navi Can Control setting.",
           "buttons": ["Off", "Camera/Bump Always", "Camera Always/Bump Route", "Camera/Bump Route"],
           "visible_if": {
             "param": "CarrotEnabled",
@@ -1013,8 +1013,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "VehicleNaviSchoolZoneControl",
-          "label": "学校区域 CAN 控制",
-          "desc": "学校区域 CAN 控制 参数。",
+          "label": "School Zone CAN Control",
+          "desc": "Adjust the Vehicle Navi School Zone Control setting.",
           "visible_if": {
             "param": "CarrotEnabled",
             "eq": "1"
@@ -1024,8 +1024,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "multiple_button",
           "param": "VehicleSpeedCameraControlMode",
-          "label": "测速相机控制模式",
-          "desc": "测速相机控制模式 参数。",
+          "label": "Speed Camera Control Mode",
+          "desc": "Adjust the Vehicle Speed Camera Control Mode setting.",
           "buttons": ["Off", "Always Apply", "Gas Floor", "Gas Pause"],
           "visible_if": {
             "param": "CarrotEnabled",
@@ -1035,8 +1035,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "VehicleSpeedCameraDistanceTime",
-          "label": "测速相机提前提醒时间",
-          "desc": "测速相机提前提醒时间 参数。",
+          "label": "Speed Camera Alert Time",
+          "desc": "Adjust the Vehicle Speed Camera Distance Time setting.",
           "min": 10,
           "max": 200,
           "step": 1,
@@ -1055,8 +1055,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviSpeedBumpEndDistance",
-          "label": "减速带结束距离",
-          "desc": "减速带结束距离 参数。",
+          "label": "Speed Bump End Distance",
+          "desc": "Adjust the Auto Navi Speed Bump End Distance setting.",
           "min": 0,
           "max": 5000,
           "step": 10,
@@ -1068,8 +1068,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviCountDownMode",
-          "label": "倒计时模式",
-          "desc": "倒计时模式 参数。",
+          "label": "Countdown Mode",
+          "desc": "Adjust the Auto Navi Count Down Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -1077,8 +1077,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviSpeedBumpSpeed",
-          "label": "减速带目标速度",
-          "desc": "减速带目标速度 参数。",
+          "label": "Speed Bump Target Speed",
+          "desc": "Adjust the Auto Navi Speed Bump Speed setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1086,14 +1086,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoNaviSpeedBumpTime",
-          "label": "减速带保持时间",
-          "desc": "减速带保持时间 参数。",
+          "label": "Speed Bump Hold Time",
+          "desc": "Adjust the Auto Navi Speed Bump Time setting.",
           "min": 0,
           "max": 10,
           "step": 1
         },
       ]},
-      {"type": "tab", "tab": "速度", "widgets": [
+      {"type": "tab", "tab": "Speed", "widgets": [
         {
           "type": "section",
           "label": "ATC Turn Control"
@@ -1101,8 +1101,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoTurnControl",
-          "label": "自动转向控制",
-          "desc": "自动转向控制 参数。",
+          "label": "Auto Turn Control",
+          "desc": "Adjust the Auto Turn Control setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -1110,8 +1110,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoTurnControlSpeedTurn",
-          "label": "自动转向车速阈值",
-          "desc": "自动转向车速阈值 参数。",
+          "label": "Auto Turn Speed Threshold",
+          "desc": "Adjust the Auto Turn Control Speed Turn setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1119,8 +1119,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoTurnControlTurnEnd",
-          "label": "自动转向结束距离",
-          "desc": "自动转向结束距离 参数。",
+          "label": "Auto Turn End Distance",
+          "desc": "Adjust the Auto Turn Control Turn End setting.",
           "min": 0,
           "max": 50,
           "step": 1
@@ -1128,8 +1128,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoTurnMapChange",
-          "label": "导航变道时自动转向",
-          "desc": "导航变道时自动转向 参数。",
+          "label": "Auto Turn on Navi Lane Change",
+          "desc": "Adjust the Auto Turn Map Change setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1137,8 +1137,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoTurnDistOffset",
-          "label": "自动转向距离偏移",
-          "desc": "自动转向距离偏移 参数。",
+          "label": "Auto Turn Distance Offset",
+          "desc": "Adjust the Auto Turn Dist Offset setting.",
           "min": 0,
           "max": 1000,
           "step": 5
@@ -1146,8 +1146,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "AutoTurnInNotRoadEdge",
-          "label": "非路沿处允许自动转向",
-          "desc": "非路沿处允许自动转向 参数。",
+          "label": "Auto Turn Outside Road Edge",
+          "desc": "Adjust the Auto Turn In Not Road Edge setting.",
           "default": True
         },
         {
@@ -1160,8 +1160,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoForkDistOffset",
-          "label": "匝道汇入距离偏移",
-          "desc": "匝道汇入距离偏移 参数。",
+          "label": "Fork Merge Distance Offset",
+          "desc": "Adjust the Auto Fork Dist Offset setting.",
           "min": 0,
           "max": 500,
           "step": 5
@@ -1169,8 +1169,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoForkDistOffsetH",
-          "label": "匝道汇入距离偏移（高速）",
-          "desc": "匝道汇入距离偏移（高速） 参数。",
+          "label": "Fork Merge Distance Offset (Highway)",
+          "desc": "Adjust the Auto Fork Dist Offset H setting.",
           "min": 0,
           "max": 2000,
           "step": 10
@@ -1178,8 +1178,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoDoForkBlinkerDist",
-          "label": "匝道转向灯触发距离",
-          "desc": "匝道转向灯触发距离 参数。",
+          "label": "Fork Blinker Trigger Distance",
+          "desc": "Adjust the Auto Do Fork Blinker Dist setting.",
           "min": 0,
           "max": 200,
           "step": 1
@@ -1187,8 +1187,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoDoForkBlinkerDistH",
-          "label": "匝道转向灯触发距离（高速）",
-          "desc": "匝道转向灯触发距离（高速） 参数。",
+          "label": "Fork Blinker Trigger Distance (Highway)",
+          "desc": "Adjust the Auto Do Fork Blinker Dist H setting.",
           "min": 0,
           "max": 500,
           "step": 1
@@ -1196,8 +1196,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoDoForkNavDist",
-          "label": "导航匝道触发距离",
-          "desc": "导航匝道触发距离 参数。",
+          "label": "Fork Navi Trigger Distance",
+          "desc": "Adjust the Auto Do Fork Nav Dist setting.",
           "min": 0,
           "max": 200,
           "step": 1
@@ -1205,8 +1205,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoDoForkNavDistH",
-          "label": "导航匝道触发距离（高速）",
-          "desc": "导航匝道触发距离（高速） 参数。",
+          "label": "Fork Navi Trigger Distance (Highway)",
+          "desc": "Adjust the Auto Do Fork Nav Dist H setting.",
           "min": 0,
           "max": 500,
           "step": 1
@@ -1214,8 +1214,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoDoForkDecalDist",
-          "label": "匝道减速触发距离",
-          "desc": "匝道减速触发距离 参数。",
+          "label": "Fork Decel Trigger Distance",
+          "desc": "Adjust the Auto Do Fork Decal Dist setting.",
           "min": 0,
           "max": 300,
           "step": 1
@@ -1223,8 +1223,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoDoForkDecalDistH",
-          "label": "匝道减速触发距离（高速）",
-          "desc": "匝道减速触发距离（高速） 参数。",
+          "label": "Fork Decel Trigger Distance (Highway)",
+          "desc": "Adjust the Auto Do Fork Decal Dist H setting.",
           "min": 0,
           "max": 500,
           "step": 1
@@ -1232,8 +1232,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoForkDecalRate",
-          "label": "匝道减速率",
-          "desc": "匝道减速率 参数。",
+          "label": "Fork Decel Rate",
+          "desc": "Adjust the Auto Fork Decal Rate setting.",
           "min": 0,
           "max": 500,
           "step": 10
@@ -1241,8 +1241,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoForkDecalRateH",
-          "label": "匝道减速率（高速）",
-          "desc": "匝道减速率（高速） 参数。",
+          "label": "Fork Decel Rate (Highway)",
+          "desc": "Adjust the Auto Fork Decal Rate H setting.",
           "min": 0,
           "max": 500,
           "step": 10
@@ -1250,8 +1250,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoForkSpeedMin",
-          "label": "匝道最低速度",
-          "desc": "匝道最低速度 参数。",
+          "label": "Fork Minimum Speed",
+          "desc": "Adjust the Auto Fork Speed Min setting.",
           "min": 0,
           "max": 120,
           "step": 5
@@ -1259,8 +1259,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoForkSpeedMinH",
-          "label": "匝道最低速度（高速）",
-          "desc": "匝道最低速度（高速） 参数。",
+          "label": "Fork Minimum Speed (Highway)",
+          "desc": "Adjust the Auto Fork Speed Min H setting.",
           "min": 0,
           "max": 120,
           "step": 5
@@ -1268,8 +1268,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoKeepForkSpeed",
-          "label": "匝道保持速度",
-          "desc": "匝道保持速度 参数。",
+          "label": "Fork Keep Speed",
+          "desc": "Adjust the Auto Keep Fork Speed setting.",
           "min": 0,
           "max": 60,
           "step": 1
@@ -1277,8 +1277,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoKeepForkSpeedH",
-          "label": "匝道保持速度（高速）",
-          "desc": "匝道保持速度（高速） 参数。",
+          "label": "Fork Keep Speed (Highway)",
+          "desc": "Adjust the Auto Keep Fork Speed H setting.",
           "min": 0,
           "max": 60,
           "step": 1
@@ -1293,8 +1293,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "MapTurnSpeedFactor",
-          "label": "地图弯道速度系数",
-          "desc": "地图弯道速度系数 参数。",
+          "label": "Map Turn Speed Factor",
+          "desc": "Adjust the Map Turn Speed Factor setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -1302,8 +1302,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "TurnSpeedControlMode",
-          "label": "弯道速度控制模式",
-          "desc": "弯道速度控制模式 参数。",
+          "label": "Turn Speed Control Mode",
+          "desc": "Adjust the Turn Speed Control Mode setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1313,13 +1313,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "弯道限速"
+          "label": "Curve Speed"
         },
         {
           "type": "int",
           "param": "AutoCurveSpeedFactor",
-          "label": "弯道限速系数",
-          "desc": "弯道限速系数 参数。",
+          "label": "Curve Speed Factor",
+          "desc": "Adjust the Auto Curve Speed Factor setting.",
           "min": 10,
           "max": 200,
           "step": 5
@@ -1327,8 +1327,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoCurveSpeedFactorH",
-          "label": "弯道限速系数（高速）",
-          "desc": "弯道限速系数（高速） 参数。",
+          "label": "Curve Speed Factor (Highway)",
+          "desc": "Adjust the Auto Curve Speed Factor H setting.",
           "min": 10,
           "max": 200,
           "step": 5
@@ -1336,8 +1336,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoCurveSpeedAggressivenessH",
-          "label": "高速弯道激进程度",
-          "desc": "高速弯道激进程度 参数。",
+          "label": "Highway Curve Aggressiveness",
+          "desc": "Adjust the Auto Curve Speed Aggressiveness H setting.",
           "min": 10,
           "max": 200,
           "step": 5
@@ -1345,8 +1345,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoCurveSpeedLowerLimit",
-          "label": "弯道限速下限",
-          "desc": "弯道限速下限 参数。",
+          "label": "Curve Speed Lower Limit",
+          "desc": "Adjust the Auto Curve Speed Lower Limit setting.",
           "min": 0,
           "max": 150,
           "step": 5
@@ -1361,8 +1361,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoUpRoadLimit",
-          "label": "自动提升道路限速",
-          "desc": "自动提升道路限速 参数。",
+          "label": "Auto Up Road Limit",
+          "desc": "Adjust the Auto Up Road Limit setting.",
           "min": 0,
           "max": 120,
           "step": 5
@@ -1370,8 +1370,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoUpRoadLimit40KMH",
-          "label": "40 km/h 限速自动提升",
-          "desc": "40 km/h 限速自动提升 参数。",
+          "label": "Auto Up 40 km/h Road Limit",
+          "desc": "Adjust the Auto Up Road Limit40 K M H setting.",
           "min": 0,
           "max": 60,
           "step": 1
@@ -1379,8 +1379,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoUpHighwayRoadLimit",
-          "label": "高速公路限速自动提升",
-          "desc": "高速公路限速自动提升 参数。",
+          "label": "Auto Up Highway Limit",
+          "desc": "Adjust the Auto Up Highway Road Limit setting.",
           "min": 0,
           "max": 160,
           "step": 5
@@ -1388,14 +1388,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoUpHighwayRoadLimit40KMH",
-          "label": "高速 40 km/h 限速自动提升",
-          "desc": "高速 40 km/h 限速自动提升 参数。",
+          "label": "Auto Up 40 km/h Highway Limit",
+          "desc": "Adjust the Auto Up Highway Road Limit40 K M H setting.",
           "min": 0,
           "max": 60,
           "step": 1
         },
       ]},
-      {"type": "tab", "tab": "调节", "widgets": [
+      {"type": "tab", "tab": "Tuning", "widgets": [
         {
           "type": "section",
           "label": "Lateral Mode"
@@ -1403,8 +1403,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AlwaysLateral",
-          "label": "始终启用横向控制",
-          "desc": "始终启用横向控制 参数。",
+          "label": "Always Lateral",
+          "desc": "Adjust the Always Lateral setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1419,8 +1419,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CustomSR",
-          "label": "自定义转向比",
-          "desc": "自定义转向比 参数。",
+          "label": "Custom Steer Ratio",
+          "desc": "Adjust the Custom S R setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1428,8 +1428,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CustomSteerMax",
-          "label": "自定义最大转向角",
-          "desc": "自定义最大转向角 参数。",
+          "label": "Max Steer Angle",
+          "desc": "Adjust the Custom Steer Max setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1437,8 +1437,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CustomSteerDeltaDown",
-          "label": "转向变化率下限",
-          "desc": "转向变化率下限 参数。",
+          "label": "Steer Delta Down",
+          "desc": "Adjust the Custom Steer Delta Down setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1446,8 +1446,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CustomSteerDeltaUp",
-          "label": "转向变化率上限",
-          "desc": "转向变化率上限 参数。",
+          "label": "Steer Delta Up",
+          "desc": "Adjust the Custom Steer Delta Up setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1455,8 +1455,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CustomSteerDeltaDownLC",
-          "label": "变道转向变化率下限",
-          "desc": "变道转向变化率下限 参数。",
+          "label": "Steer Delta Down (Lane Change)",
+          "desc": "Adjust the Custom Steer Delta Down L C setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1464,8 +1464,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CustomSteerDeltaUpLC",
-          "label": "变道转向变化率上限",
-          "desc": "变道转向变化率上限 参数。",
+          "label": "Steer Delta Up (Lane Change)",
+          "desc": "Adjust the Custom Steer Delta Up L C setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1473,8 +1473,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SteerActuatorDelay",
-          "label": "转向执行器延迟",
-          "desc": "转向执行器延迟 参数。",
+          "label": "Steer Actuator Delay",
+          "desc": "Adjust the Steer Actuator Delay setting.",
           "min": 0,
           "max": 200,
           "step": 5
@@ -1482,8 +1482,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SteerRatioRate",
-          "label": "转向比变化率",
-          "desc": "转向比变化率 参数。",
+          "label": "Steer Ratio Rate",
+          "desc": "Adjust the Steer Ratio Rate setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -1498,8 +1498,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "PathOffset",
-          "label": "路径偏移",
-          "desc": "路径偏移 参数。",
+          "label": "Path Offset",
+          "desc": "Adjust the Path Offset setting.",
           "min": -100,
           "max": 100,
           "step": 1
@@ -1507,8 +1507,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AdjustLaneOffset",
-          "label": "车道偏移调整",
-          "desc": "车道偏移调整 参数。",
+          "label": "Lane Offset Adjust",
+          "desc": "Adjust the Adjust Lane Offset setting.",
           "min": -50,
           "max": 50,
           "step": 1
@@ -1516,8 +1516,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "CameraYawTrimDeg",
-          "label": "相机偏航修正",
-          "desc": "相机偏航修正 参数。",
+          "label": "Camera Yaw Trim",
+          "desc": "Adjust the Camera Yaw Trim Deg setting.",
           "min": -20,
           "max": 20,
           "step": 1
@@ -1532,8 +1532,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatMpcAccelCost",
-          "label": "横向加速度代价",
-          "desc": "横向加速度代价 参数。",
+          "label": "Lateral Acceleration Cost",
+          "desc": "Adjust the Lat Mpc Accel Cost setting.",
           "min": 0,
           "max": 500,
           "step": 5
@@ -1541,8 +1541,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatMpcJerkCost",
-          "label": "横向急动度代价",
-          "desc": "横向急动度代价 参数。",
+          "label": "Lateral Jerk Cost",
+          "desc": "Adjust the Lat Mpc Jerk Cost setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1550,8 +1550,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatMpcMotionCost",
-          "label": "横向运动代价",
-          "desc": "横向运动代价 参数。",
+          "label": "Lateral Motion Cost",
+          "desc": "Adjust the Lat Mpc Motion Cost setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1559,8 +1559,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatMpcPathCost",
-          "label": "横向路径代价",
-          "desc": "横向路径代价 参数。",
+          "label": "Lateral Path Cost",
+          "desc": "Adjust the Lat Mpc Path Cost setting.",
           "min": 0,
           "max": 1000,
           "step": 5
@@ -1568,8 +1568,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatMpcSteeringRateCost",
-          "label": "横向转向速率代价",
-          "desc": "横向转向速率代价 参数。",
+          "label": "Lateral Steering Rate Cost",
+          "desc": "Adjust the Lat Mpc Steering Rate Cost setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1584,8 +1584,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueCustom",
-          "label": "自定义横向扭矩",
-          "desc": "自定义横向扭矩 参数。",
+          "label": "Custom Lateral Torque",
+          "desc": "Adjust the Lateral Torque Custom setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1593,8 +1593,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueFriction",
-          "label": "横向扭矩摩擦系数",
-          "desc": "横向扭矩摩擦系数 参数。",
+          "label": "Lateral Torque Friction",
+          "desc": "Adjust the Lateral Torque Friction setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -1602,8 +1602,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueKd",
-          "label": "横向扭矩微分系数",
-          "desc": "横向扭矩微分系数 参数。",
+          "label": "Lateral Torque Derivative",
+          "desc": "Adjust the Lateral Torque Kd setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -1611,8 +1611,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueKf",
-          "label": "横向扭矩前馈系数",
-          "desc": "横向扭矩前馈系数 参数。",
+          "label": "Lateral Torque Feedforward",
+          "desc": "Adjust the Lateral Torque Kf setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -1620,8 +1620,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueKiV",
-          "label": "横向扭矩积分速度系数",
-          "desc": "横向扭矩积分速度系数 参数。",
+          "label": "Lateral Torque Integral Velocity",
+          "desc": "Adjust the Lateral Torque Ki V setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -1629,8 +1629,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueKpV",
-          "label": "横向扭矩比例速度系数",
-          "desc": "横向扭矩比例速度系数 参数。",
+          "label": "Lateral Torque Proportional",
+          "desc": "Adjust the Lateral Torque Kp V setting.",
           "min": 0,
           "max": 300,
           "step": 5
@@ -1638,8 +1638,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LateralTorqueAccelFactor",
-          "label": "横向扭矩加速度系数",
-          "desc": "横向扭矩加速度系数 参数。",
+          "label": "Lateral Torque Accel Factor",
+          "desc": "Adjust the Lateral Torque Accel Factor setting.",
           "min": 0,
           "max": 5000,
           "step": 50
@@ -1654,8 +1654,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatMpcInputOffset",
-          "label": "横向输入偏移",
-          "desc": "横向输入偏移 参数。",
+          "label": "Lateral MPC Input Offset",
+          "desc": "Adjust the Lat Mpc Input Offset setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -1663,8 +1663,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatSmoothSec",
-          "label": "横向平滑时间",
-          "desc": "横向平滑时间 参数。",
+          "label": "Lateral Smooth Seconds",
+          "desc": "Adjust the Lat Smooth Sec setting.",
           "min": 0,
           "max": 50,
           "step": 1
@@ -1674,13 +1674,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "变道"
+          "label": "Lane Change"
         },
         {
           "type": "int",
           "param": "LaneChangeBsd",
-          "label": "变道盲区检测",
-          "desc": "变道盲区检测 参数。",
+          "label": "Lane Change BSD",
+          "desc": "Adjust the Lane Change Bsd setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1688,8 +1688,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LaneChangeDelay",
-          "label": "变道延迟",
-          "desc": "变道延迟 参数。",
+          "label": "Lane Change Delay",
+          "desc": "Adjust the Lane Change Delay setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1697,8 +1697,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LaneChangeNeedTorque",
-          "label": "变道需要手力",
-          "desc": "变道需要手力 参数。",
+          "label": "Lane Change Need Torque",
+          "desc": "Adjust the Lane Change Need Torque setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1706,15 +1706,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ContinuousLaneChange",
-          "label": "连续变道",
-          "desc": "连续变道 参数。",
+          "label": "Continuous Lane Change",
+          "desc": "Adjust the Continuous Lane Change setting.",
           "default": True
         },
         {
           "type": "int",
           "param": "ContinuousLaneChangeCnt",
-          "label": "连续变道次数",
-          "desc": "连续变道次数 参数。",
+          "label": "Continuous Lane Change Count",
+          "desc": "Adjust the Continuous Lane Change Cnt setting.",
           "min": 1,
           "max": 10,
           "step": 1
@@ -1722,8 +1722,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ContinuousLaneChangeInterval",
-          "label": "连续变道间隔",
-          "desc": "连续变道间隔 参数。",
+          "label": "Continuous Lane Change Interval",
+          "desc": "Adjust the Continuous Lane Change Interval setting.",
           "min": 0,
           "max": 30,
           "step": 1
@@ -1731,8 +1731,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AChangeCostStarting",
-          "label": "变道起步代价",
-          "desc": "变道起步代价 参数。",
+          "label": "Lane Change Start Cost",
+          "desc": "Adjust the A Change Cost Starting setting.",
           "min": 0,
           "max": 50,
           "step": 1
@@ -1747,8 +1747,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LaneStabTime",
-          "label": "车道稳定时间",
-          "desc": "车道稳定时间 参数。",
+          "label": "Lane Stabilization Time",
+          "desc": "Adjust the Lane Stab Time setting.",
           "min": 0,
           "max": 200,
           "step": 10
@@ -1756,8 +1756,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "NewLaneWidthDiff",
-          "label": "新车道宽度差阈值",
-          "desc": "新车道宽度差阈值 参数。",
+          "label": "New Lane Width Difference",
+          "desc": "Adjust the New Lane Width Diff setting.",
           "min": 0,
           "max": 50,
           "step": 1
@@ -1765,8 +1765,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoEnTurnNewLaneTime",
-          "label": "自动进入新车道时间",
-          "desc": "自动进入新车道时间 参数。",
+          "label": "Auto Enter New Lane Time",
+          "desc": "Adjust the Auto En Turn New Lane Time setting.",
           "min": 0,
           "max": 60,
           "step": 5
@@ -1774,8 +1774,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "AutoEnTurnNewLaneTimeH",
-          "label": "自动进入新车道时间（高速）",
-          "desc": "自动进入新车道时间（高速） 参数。",
+          "label": "Auto Enter New Lane Time (Highway)",
+          "desc": "Adjust the Auto En Turn New Lane Time H setting.",
           "min": 0,
           "max": 60,
           "step": 5
@@ -1783,29 +1783,29 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "AutoTurnLeft",
-          "label": "自动左转",
-          "desc": "自动左转 参数。",
+          "label": "Auto Turn Left",
+          "desc": "Adjust the Auto Turn Left setting.",
           "default": True
         },
         {
           "type": "bool",
           "param": "StockBlinkerCtrl",
-          "label": "原车转向灯控制",
-          "desc": "原车转向灯控制 参数。",
+          "label": "Stock Blinker Control",
+          "desc": "Adjust the Stock Blinker Ctrl setting.",
           "default": False
         },
         {
           "type": "bool",
           "param": "ExtBlinkerCtrlTest",
-          "label": "扩展转向灯测试",
-          "desc": "扩展转向灯测试 参数。",
+          "label": "Extended Blinker Test",
+          "desc": "Adjust the Ext Blinker Ctrl Test setting.",
           "default": False
         },
         {
           "type": "int",
           "param": "BlinkerMode",
-          "label": "转向灯模式",
-          "desc": "转向灯模式 参数。",
+          "label": "Blinker Mode",
+          "desc": "Adjust the Blinker Mode setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1815,20 +1815,20 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "section",
-          "label": "盲区检测"
+          "label": "Blind Spot"
         },
         {
           "type": "bool",
           "param": "DisableBlindSpot",
-          "label": "禁用盲区检测",
-          "desc": "禁用盲区检测 参数。",
+          "label": "Disable Blind Spot",
+          "desc": "Adjust the Disable Blind Spot setting.",
           "default": False
         },
         {
           "type": "int",
           "param": "DynamicBlindRange",
-          "label": "动态盲区范围",
-          "desc": "动态盲区范围 参数。",
+          "label": "Dynamic Blind Spot Range",
+          "desc": "Adjust the Dynamic Blind Range setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1836,8 +1836,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "DynamicBlindDistance",
-          "label": "动态盲区距离",
-          "desc": "动态盲区距离 参数。",
+          "label": "Dynamic Blind Spot Distance",
+          "desc": "Adjust the Dynamic Blind Distance setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1845,8 +1845,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "BsdDelayTime",
-          "label": "盲区检测延迟",
-          "desc": "盲区检测延迟 参数。",
+          "label": "Blind Spot Delay Time",
+          "desc": "Adjust the Bsd Delay Time setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1854,8 +1854,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SideBsdDelayTime",
-          "label": "侧向盲区延迟",
-          "desc": "侧向盲区延迟 参数。",
+          "label": "Side Blind Spot Delay",
+          "desc": "Adjust the Side Bsd Delay Time setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1863,8 +1863,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SideRelDistTime",
-          "label": "侧向相对距离时间",
-          "desc": "侧向相对距离时间 参数。",
+          "label": "Side Relative Distance Time",
+          "desc": "Adjust the Side Rel Dist Time setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1872,8 +1872,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SidevRelDistTime",
-          "label": "侧向相对速度时间",
-          "desc": "侧向相对速度时间 参数。",
+          "label": "Side vRel Distance Time",
+          "desc": "Adjust the Sidev Rel Dist Time setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -1881,8 +1881,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SideRadarMinDist",
-          "label": "侧向雷达最小距离",
-          "desc": "侧向雷达最小距离 参数。",
+          "label": "Side Radar Min Distance",
+          "desc": "Adjust the Side Radar Min Dist setting.",
           "min": 0,
           "max": 50,
           "step": 1
@@ -1897,8 +1897,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LaneLineCheck",
-          "label": "车道线检查",
-          "desc": "车道线检查 参数。",
+          "label": "Lane Line Check",
+          "desc": "Adjust the Lane Line Check setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -1906,8 +1906,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "OnnxBsdIntervalMs",
-          "label": "ONNX 盲区检测间隔",
-          "desc": "ONNX 盲区检测间隔 参数。",
+          "label": "ONNX BSD Interval",
+          "desc": "Adjust the Onnx Bsd Interval Ms setting.",
           "min": 50,
           "max": 1000,
           "step": 10
@@ -1915,8 +1915,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "OnnxBsdSmoothingMs",
-          "label": "ONNX 盲区检测平滑",
-          "desc": "ONNX 盲区检测平滑 参数。",
+          "label": "ONNX BSD Smoothing",
+          "desc": "Adjust the Onnx Bsd Smoothing Ms setting.",
           "min": 0,
           "max": 1000,
           "step": 10
@@ -1924,8 +1924,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "OnnxBsdThreshold",
-          "label": "ONNX 盲区检测阈值",
-          "desc": "ONNX 盲区检测阈值 参数。",
+          "label": "ONNX BSD Threshold",
+          "desc": "Adjust the Onnx Bsd Threshold setting.",
           "min": 0,
           "max": 100,
           "step": 1
@@ -1933,8 +1933,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "OnnxLaneIntervalMs",
-          "label": "ONNX 车道检测间隔",
-          "desc": "ONNX 车道检测间隔 参数。",
+          "label": "ONNX Lane Interval",
+          "desc": "Adjust the Onnx Lane Interval Ms setting.",
           "min": 50,
           "max": 1000,
           "step": 10
@@ -1942,14 +1942,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "OnnxLaneThreshold",
-          "label": "ONNX 车道检测阈值",
-          "desc": "ONNX 车道检测阈值 参数。",
+          "label": "ONNX Lane Threshold",
+          "desc": "Adjust the Onnx Lane Threshold setting.",
           "min": 0,
           "max": 100,
           "step": 1
         },
       ]},
-      {"type": "tab", "tab": "显示", "widgets": [
+      {"type": "tab", "tab": "Display", "widgets": [
         {
           "type": "section",
           "label": "Steering Suspend"
@@ -1957,8 +1957,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "LatSuspendAngleDeg",
-          "label": "横向挂起角度",
-          "desc": "横向挂起角度 参数。",
+          "label": "Lateral Suspend Angle",
+          "desc": "Adjust the Lat Suspend Angle Deg setting.",
           "min": 45,
           "max": 300,
           "step": 10
@@ -1973,8 +1973,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "multiple_button",
           "param": "ClusterNaviMapTheme",
-          "label": "仪表导航地图主题",
-          "desc": "仪表导航地图主题 参数。",
+          "label": "Cluster Navigation Map Theme",
+          "desc": "Adjust the Cluster Navi Map Theme setting.",
           "buttons": ["Auto", "Dark", "Light"],
           "visible_if": {
             "param": "CarrotEnabled",
@@ -1984,8 +1984,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "multiple_button",
           "param": "ClusterNaviMapType",
-          "label": "仪表导航地图类型",
-          "desc": "仪表导航地图类型 参数。",
+          "label": "Cluster Navigation Map Type",
+          "desc": "Adjust the Cluster Navi Map Type setting.",
           "buttons": ["Normal", "Satellite"],
           "visible_if": {
             "param": "CarrotEnabled",
@@ -1995,8 +1995,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "multiple_button",
           "param": "ClusterNaviMapFps",
-          "label": "仪表导航地图帧率",
-          "desc": "仪表导航地图帧率 参数。",
+          "label": "Cluster Navigation Map FPS",
+          "desc": "Adjust the Cluster Navi Map Fps setting.",
           "buttons": ["5 FPS", "10 FPS", "20 FPS", "30 FPS"],
           "visible_if": {
             "param": "CarrotEnabled",
@@ -2006,8 +2006,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "CarrotNaviHudMapProfile",
-          "label": "Carrot HUD 地图配置",
-          "desc": "Carrot HUD 地图配置 参数。",
+          "label": "Carrot Navi HUD Profile",
+          "desc": "Adjust the Carrot Navi Hud Map Profile setting.",
           "visible_if": {
             "param": "CarrotEnabled",
             "eq": "1"
@@ -2024,15 +2024,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ClusterHud",
-          "label": "仪表 HUD",
-          "desc": "仪表 HUD 参数。",
+          "label": "Cluster HUD",
+          "desc": "Adjust the Cluster Hud setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "ClusterHudBrightness",
-          "label": "仪表 HUD 亮度",
-          "desc": "仪表 HUD 亮度 参数。",
+          "label": "Cluster HUD Brightness",
+          "desc": "Adjust the Cluster Hud Brightness setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -2040,8 +2040,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ClusterHudCameraViewMode",
-          "label": "仪表 HUD 相机视图模式",
-          "desc": "仪表 HUD 相机视图模式 参数。",
+          "label": "Cluster HUD Camera View Mode",
+          "desc": "Adjust the Cluster Hud Camera View Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2049,8 +2049,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ClusterHudCoreMode",
-          "label": "仪表 HUD 核心模式",
-          "desc": "仪表 HUD 核心模式 参数。",
+          "label": "Cluster HUD Core Mode",
+          "desc": "Adjust the Cluster Hud Core Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2058,22 +2058,22 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ClusterHudDebug",
-          "label": "仪表 HUD 调试",
-          "desc": "仪表 HUD 调试 参数。",
+          "label": "Cluster HUD Debug",
+          "desc": "Adjust the Cluster Hud Debug setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ClusterHudEncoder",
-          "label": "仪表 HUD 编码器",
-          "desc": "仪表 HUD 编码器 参数。",
+          "label": "Cluster HUD Encoder",
+          "desc": "Adjust the Cluster Hud Encoder setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "ClusterHudLiveFps",
-          "label": "仪表 HUD 实时帧率",
-          "desc": "仪表 HUD 实时帧率 参数。",
+          "label": "Cluster HUD Live FPS",
+          "desc": "Adjust the Cluster Hud Live Fps setting.",
           "min": 1,
           "max": 60,
           "step": 1
@@ -2081,15 +2081,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ClusterHudMirror",
-          "label": "仪表 HUD 镜像",
-          "desc": "仪表 HUD 镜像 参数。",
+          "label": "Cluster HUD Mirror",
+          "desc": "Adjust the Cluster Hud Mirror setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "ClusterHudOrientation",
-          "label": "仪表 HUD 方向",
-          "desc": "仪表 HUD 方向 参数。",
+          "label": "Cluster HUD Orientation",
+          "desc": "Adjust the Cluster Hud Orientation setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2097,8 +2097,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ClusterHudPanelLayout",
-          "label": "仪表 HUD 面板布局",
-          "desc": "仪表 HUD 面板布局 参数。",
+          "label": "Cluster HUD Panel Layout",
+          "desc": "Adjust the Cluster Hud Panel Layout setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2106,8 +2106,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ClusterHudPriority",
-          "label": "仪表 HUD 优先级",
-          "desc": "仪表 HUD 优先级 参数。",
+          "label": "Cluster HUD Priority",
+          "desc": "Adjust the Cluster Hud Priority setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -2115,15 +2115,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ClusterHudRadarDisplay",
-          "label": "仪表 HUD 雷达显示",
-          "desc": "仪表 HUD 雷达显示 参数。",
+          "label": "Cluster HUD Radar Display",
+          "desc": "Adjust the Cluster Hud Radar Display setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "ClusterHudRadarInfo",
-          "label": "仪表 HUD 雷达信息",
-          "desc": "仪表 HUD 雷达信息 参数。",
+          "label": "Cluster HUD Radar Info",
+          "desc": "Adjust the Cluster Hud Radar Info setting.",
           "min": 0,
           "max": 10,
           "step": 1
@@ -2131,15 +2131,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ClusterHudRadarSourceColor",
-          "label": "仪表 HUD 雷达颜色源",
-          "desc": "仪表 HUD 雷达颜色源 参数。",
+          "label": "Cluster HUD Radar Source Color",
+          "desc": "Adjust the Cluster Hud Radar Source Color setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "ClusterHudScreenMode",
-          "label": "仪表 HUD 屏幕模式",
-          "desc": "仪表 HUD 屏幕模式 参数。",
+          "label": "Cluster HUD Screen Mode",
+          "desc": "Adjust the Cluster Hud Screen Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2147,8 +2147,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ClusterHudTheme",
-          "label": "仪表 HUD 主题",
-          "desc": "仪表 HUD 主题 参数。",
+          "label": "Cluster HUD Theme",
+          "desc": "Adjust the Cluster Hud Theme setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2163,15 +2163,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ShowCameraWithCluster",
-          "label": "仪表显示摄像头",
-          "desc": "仪表显示摄像头 参数。",
+          "label": "Show Camera with Cluster",
+          "desc": "Adjust the Show Camera With Cluster setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "ShowCustomBrightness",
-          "label": "自定义亮度显示",
-          "desc": "自定义亮度显示 参数。",
+          "label": "Show Custom Brightness",
+          "desc": "Adjust the Show Custom Brightness setting.",
           "min": 0,
           "max": 100,
           "step": 5
@@ -2179,71 +2179,71 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ShowDateTime",
-          "label": "显示日期时间",
-          "desc": "显示日期时间 参数。",
+          "label": "Show Date Time",
+          "desc": "Adjust the Show Date Time setting.",
           "default": 1
         },
         {
           "type": "bool",
           "param": "ShowDebugUI",
-          "label": "显示调试界面",
-          "desc": "显示调试界面 参数。",
+          "label": "Show Debug UI",
+          "desc": "Adjust the Show Debug U I setting.",
           "default": 1
         },
         {
           "type": "bool",
           "param": "ShowDeviceState",
-          "label": "显示设备状态",
-          "desc": "显示设备状态 参数。",
+          "label": "Show Device State",
+          "desc": "Adjust the Show Device State setting.",
           "default": 1
         },
         {
           "type": "bool",
           "param": "ShowLaneInfo",
-          "label": "显示车道信息",
-          "desc": "显示车道信息 参数。",
+          "label": "Show Lane Info",
+          "desc": "Adjust the Show Lane Info setting.",
           "default": 1
         },
         {
           "type": "bool",
           "param": "ShowModelView",
-          "label": "显示模型视图",
-          "desc": "显示模型视图 参数。",
+          "label": "Show Model View",
+          "desc": "Adjust the Show Model View setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ShowPlotMode",
-          "label": "显示绘图模式",
-          "desc": "显示绘图模式 参数。",
+          "label": "Show Plot Mode",
+          "desc": "Adjust the Show Plot Mode setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ShowRadarInfo",
-          "label": "显示雷达信息",
-          "desc": "显示雷达信息 参数。",
+          "label": "Show Radar Info",
+          "desc": "Adjust the Show Radar Info setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ShowRouteInfo",
-          "label": "显示路线信息",
-          "desc": "显示路线信息 参数。",
+          "label": "Show Route Info",
+          "desc": "Adjust the Show Route Info setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ShowTpms",
-          "label": "显示胎压",
-          "desc": "显示胎压 参数。",
+          "label": "Show TPMS",
+          "desc": "Adjust the Show Tpms setting.",
           "default": 1
         },
         {
           "type": "bool",
           "param": "SoftwareMenu",
-          "label": "软件菜单",
-          "desc": "软件菜单 参数。",
+          "label": "Software Menu",
+          "desc": "Adjust the Software Menu setting.",
           "default": 0
         },
         {
@@ -2256,8 +2256,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SoundVolumeAdjust",
-          "label": "提示音音量调整",
-          "desc": "提示音音量调整 参数。",
+          "label": "Sound Volume Adjust",
+          "desc": "Adjust the Sound Volume Adjust setting.",
           "min": 0,
           "max": 200,
           "step": 10
@@ -2265,8 +2265,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "SoundVolumeAdjustEngage",
-          "label": "激活提示音音量",
-          "desc": "激活提示音音量 参数。",
+          "label": "Sound Volume Adjust Engage",
+          "desc": "Adjust the Sound Volume Adjust Engage setting.",
           "min": 0,
           "max": 200,
           "step": 10
@@ -2274,14 +2274,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "text",
           "param": "SoundLanguageSetting",
-          "label": "提示音语言",
-          "desc": "提示音语言 参数。"
+          "label": "Sound Language",
+          "desc": "Adjust the Sound Language Setting setting."
         },
         {
           "type": "int",
           "param": "MapboxStyle",
-          "label": "Mapbox 地图样式",
-          "desc": "Mapbox 地图样式 参数。",
+          "label": "Mapbox Style",
+          "desc": "Adjust the Mapbox Style setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2296,15 +2296,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "CarrotYouTubeLive",
-          "label": "Carrot YouTube 直播",
-          "desc": "Carrot YouTube 直播 参数。",
+          "label": "Carrot YouTube Live",
+          "desc": "Adjust the Carrot You Tube Live setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "CarrotYouTubeQuality",
-          "label": "Carrot YouTube 画质",
-          "desc": "Carrot YouTube 画质 参数。",
+          "label": "Carrot YouTube Quality",
+          "desc": "Adjust the Carrot You Tube Quality setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2312,12 +2312,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "CarrotYouTubeTimestamp",
-          "label": "Carrot YouTube 时间戳",
-          "desc": "Carrot YouTube 时间戳 参数。",
+          "label": "Carrot YouTube Timestamp",
+          "desc": "Adjust the Carrot You Tube Timestamp setting.",
           "default": 0
         },
       ]},
-      {"type": "tab", "tab": "轨迹", "widgets": [
+      {"type": "tab", "tab": "Path", "widgets": [
         {
           "type": "section",
           "label": "Path Appearance"
@@ -2325,8 +2325,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ShowPathColor",
-          "label": "路径颜色",
-          "desc": "路径颜色 参数。",
+          "label": "Path Color",
+          "desc": "Adjust the Show Path Color setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -2334,8 +2334,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ShowPathColorCruiseOff",
-          "label": "未巡航路径颜色",
-          "desc": "未巡航路径颜色 参数。",
+          "label": "Path Color Cruise Off",
+          "desc": "Adjust the Show Path Color Cruise Off setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -2343,8 +2343,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ShowPathColorLane",
-          "label": "车道路径颜色",
-          "desc": "车道路径颜色 参数。",
+          "label": "Path Color Lane",
+          "desc": "Adjust the Show Path Color Lane setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -2352,15 +2352,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "ShowPathEnd",
-          "label": "路径终点显示",
-          "desc": "路径终点显示 参数。",
+          "label": "Show Path End",
+          "desc": "Adjust the Show Path End setting.",
           "default": 1
         },
         {
           "type": "int",
           "param": "ShowPathMode",
-          "label": "路径显示模式",
-          "desc": "路径显示模式 参数。",
+          "label": "Path Display Mode",
+          "desc": "Adjust the Show Path Mode setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -2368,8 +2368,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "ShowPathModeLane",
-          "label": "车道路径显示模式",
-          "desc": "车道路径显示模式 参数。",
+          "label": "Path Display Mode Lane",
+          "desc": "Adjust the Show Path Mode Lane setting.",
           "min": 0,
           "max": 20,
           "step": 1
@@ -2384,15 +2384,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "CarrotTireTrajectory",
-          "label": "轮胎轨迹",
-          "desc": "轮胎轨迹 参数。",
+          "label": "Tire Trajectory",
+          "desc": "Adjust the Carrot Tire Trajectory setting.",
           "default": 0
         },
         {
           "type": "int",
           "param": "UseLaneLineCurveSpeed",
-          "label": "使用车道线弯道限速",
-          "desc": "使用车道线弯道限速 参数。",
+          "label": "Use Lane Line Curve Speed",
+          "desc": "Adjust the Use Lane Line Curve Speed setting.",
           "min": 0,
           "max": 2,
           "step": 1
@@ -2400,14 +2400,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "UseLaneLineSpeed",
-          "label": "使用车道线速度",
-          "desc": "使用车道线速度 参数。",
+          "label": "Use Lane Line Speed",
+          "desc": "Adjust the Use Lane Line Speed setting.",
           "min": 0,
           "max": 2,
           "step": 1
         },
       ]},
-      {"type": "tab", "tab": "车辆", "widgets": [
+      {"type": "tab", "tab": "Vehicle", "widgets": [
         {
           "type": "section",
           "label": "Driver / Safety"
@@ -2415,15 +2415,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "DisableDM",
-          "label": "禁用驾驶员监控",
-          "desc": "禁用驾驶员监控 参数。",
+          "label": "Disable Driver Monitoring",
+          "desc": "Adjust the Disable D M setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "DisableMinSteerSpeed",
-          "label": "禁用最低转向速度",
-          "desc": "禁用最低转向速度 参数。",
+          "label": "Disable Min Steer Speed",
+          "desc": "Adjust the Disable Min Steer Speed setting.",
           "default": 0
         },
         {
@@ -2436,36 +2436,36 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "HyundaiCameraSCC",
-          "label": "现代摄像头自适应巡航",
-          "desc": "现代摄像头自适应巡航 参数。",
+          "label": "Hyundai Camera SCC",
+          "desc": "Adjust the Hyundai Camera S C C setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "IsLdwsCar",
-          "label": "车道偏离预警车辆",
-          "desc": "车道偏离预警车辆 参数。",
+          "label": "LDWS Vehicle",
+          "desc": "Adjust the Is Ldws Car setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "HDPuse",
-          "label": "HDP 使用",
-          "desc": "HDP 使用 参数。",
+          "label": "HDP Use",
+          "desc": "Adjust the H D Puse setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "HotspotOnBoot",
-          "label": "开机启动热点",
-          "desc": "开机启动热点 参数。",
+          "label": "Hotspot on Boot",
+          "desc": "Adjust the Hotspot On Boot setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "UseWideCamera",
-          "label": "使用广角摄像头",
-          "desc": "使用广角摄像头 参数。",
+          "label": "Use Wide Camera",
+          "desc": "Adjust the Use Wide Camera setting.",
           "default": 1
         },
         {
@@ -2478,22 +2478,22 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "EnableCornerRadar",
-          "label": "启用角雷达",
-          "desc": "启用角雷达 参数。",
+          "label": "Enable Corner Radar",
+          "desc": "Adjust the Enable Corner Radar setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "EnableRadarTracks",
-          "label": "启用雷达跟踪",
-          "desc": "启用雷达跟踪 参数。",
+          "label": "Enable Radar Tracks",
+          "desc": "Adjust the Enable Radar Tracks setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "EnableSpeedTF",
-          "label": "启用速度 TF",
-          "desc": "启用速度 TF 参数。",
+          "label": "Enable Speed TF",
+          "desc": "Adjust the Enable Speed T F setting.",
           "default": 0
         },
         {
@@ -2506,15 +2506,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "MuteDoor",
-          "label": "静音车门",
-          "desc": "静音车门 参数。",
+          "label": "Mute Door",
+          "desc": "Adjust the Mute Door setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "MuteSeatbelt",
-          "label": "静音安全带",
-          "desc": "静音安全带 参数。",
+          "label": "Mute Seatbelt",
+          "desc": "Adjust the Mute Seatbelt setting.",
           "default": 0
         },
         {
@@ -2527,15 +2527,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "RecordRoadCam",
-          "label": "录制道路摄像头",
-          "desc": "录制道路摄像头 参数。",
+          "label": "Record Road Camera",
+          "desc": "Adjust the Record Road Cam setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ShareData",
-          "label": "共享数据",
-          "desc": "共享数据 参数。",
+          "label": "Share Data",
+          "desc": "Adjust the Share Data setting.",
           "default": 0
         },
         {
@@ -2548,8 +2548,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "MaxAngleFrames",
-          "label": "最大角度帧数",
-          "desc": "最大角度帧数 参数。",
+          "label": "Max Angle Frames",
+          "desc": "Adjust the Max Angle Frames setting.",
           "min": 0,
           "max": 200,
           "step": 1
@@ -2558,7 +2558,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "type": "int",
           "param": "MaxTimeOffroadMin",
           "label": "Max Time Offroad (min)",
-          "desc": "Maximum offroad time before shutdown (minutes). Default 60.",
+          "desc": "Adjust the Max Time Offroad Min setting.",
           "min": 0,
           "max": 600,
           "step": 5
@@ -2573,8 +2573,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "MyDrivingMode",
-          "label": "我的驾驶模式",
-          "desc": "我的驾驶模式 参数。",
+          "label": "My Driving Mode",
+          "desc": "Adjust the My Driving Mode setting.",
           "min": 0,
           "max": 3,
           "step": 1
@@ -2582,14 +2582,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "int",
           "param": "MyDrivingModeAuto",
-          "label": "我的驾驶模式自动",
-          "desc": "我的驾驶模式自动 参数。",
+          "label": "My Driving Mode Auto",
+          "desc": "Adjust the My Driving Mode Auto setting.",
           "min": 0,
           "max": 2,
           "step": 1
         },
       ]},
-      {"type": "tab", "tab": "开发者", "widgets": [
+      {"type": "tab", "tab": "Developer", "widgets": [
         {
           "type": "section",
           "label": "CAN-FD Debug"
@@ -2597,15 +2597,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "CanfdDebug",
-          "label": "CANFD 调试",
-          "desc": "CANFD 调试 参数。",
+          "label": "CANFD Debug",
+          "desc": "Adjust the Canfd Debug setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "CanfdHDA2",
           "label": "CANFD HDA2",
-          "desc": "CANFD HDA2 参数。",
+          "desc": "Adjust the Canfd H D A2 setting.",
           "default": 0
         },
         {
@@ -2618,36 +2618,36 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         {
           "type": "bool",
           "param": "HardwareC3xLite",
-          "label": "C3X Lite 硬件",
-          "desc": "C3X Lite 硬件 参数。",
+          "label": "C3x Lite Hardware",
+          "desc": "Adjust the Hardware C3x Lite setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "CruiseButtonTest1",
-          "label": "巡航按钮测试 1",
-          "desc": "巡航按钮测试 1 参数。",
+          "label": "Cruise Button Test 1",
+          "desc": "Adjust the Cruise Button Test1 setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "CruiseButtonTest2",
-          "label": "巡航按钮测试 2",
-          "desc": "巡航按钮测试 2 参数。",
+          "label": "Cruise Button Test 2",
+          "desc": "Adjust the Cruise Button Test2 setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "CruiseButtonTest3",
-          "label": "巡航按钮测试 3",
-          "desc": "巡航按钮测试 3 参数。",
+          "label": "Cruise Button Test 3",
+          "desc": "Adjust the Cruise Button Test3 setting.",
           "default": 0
         },
         {
           "type": "bool",
           "param": "ShowDebugLog",
-          "label": "显示调试日志",
-          "desc": "显示调试日志 参数。",
+          "label": "Show Debug Log",
+          "desc": "Adjust the Show Debug Log setting.",
           "default": False
         },
       ]},
