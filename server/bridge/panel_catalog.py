@@ -427,10 +427,2244 @@ PANELS: list[dict[str, Any]] = [
 SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning": {
     "id": "navigation__carrot_tuning",
-    "title": "Carrot Tuning",
+    "title": "Carrot 调参",
     "parent": "navigation",
-    "widgets": [{'type': 'tabs', 'tabs': ['开始', '巡航', '导航', '速度', '调节', '显示', '轨迹', '车辆', '开发者'], 'default': '开始'}, {'type': 'tab', 'tab': '开始', 'widgets': [{'type': 'section', 'label': 'Auto Start / Cruise'}, {'type': 'int', 'param': 'AutoEngage', 'label': 'Auto Engage', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Automatic engagement mode. Default 0.'}, {'type': 'int', 'param': 'AutoCruiseControl', 'label': 'Auto Cruise Control', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Automatic cruise-control behavior mode. Default 0.'}, {'type': 'int', 'param': 'CruiseOnDist', 'label': 'Cruise Engage Distance', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Distance at which cruise auto-engages (m). Default 0.'}, {'type': 'int', 'param': 'CruiseEcoControl', 'label': 'Cruise Eco Control', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Eco cruise control mode. Default 2.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Button Behavior'}, {'type': 'int', 'param': 'CruiseButtonMode', 'label': 'Cruise Button Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cruise button handling mode. Default 0.'}, {'type': 'int', 'param': 'CancelButtonMode', 'label': 'Cancel Button Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Behavior of the cancel button. Default 0.'}, {'type': 'int', 'param': 'SoftHoldOnCancel', 'label': 'Soft Hold On Cancel', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Soft hold behavior when cancelling. Default 0.'}, {'type': 'int', 'param': 'CruiseButtonLongDelay', 'label': 'Cruise Button Long Delay', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Long-press delay for cruise buttons (x0.1 s). Default 40 (4.0 s).'}, {'type': 'separator'}, {'type': 'section', 'label': 'Speed Presets'}, {'type': 'int', 'param': 'CruiseSpeed1', 'label': 'Cruise Speed Preset 1', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed preset 1 (km/h). Default 10.'}, {'type': 'int', 'param': 'CruiseSpeed2', 'label': 'Cruise Speed Preset 2', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed preset 2 (km/h). Default 10.'}, {'type': 'int', 'param': 'CruiseSpeed3', 'label': 'Cruise Speed Preset 3', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed preset 3 (km/h). Default 10.'}, {'type': 'int', 'param': 'CruiseSpeed4', 'label': 'Cruise Speed Preset 4', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed preset 4 (km/h). Default 10.'}, {'type': 'int', 'param': 'CruiseSpeed5', 'label': 'Cruise Speed Preset 5', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed preset 5 (km/h). Default 10.'}, {'type': 'int', 'param': 'CruiseSpeedUnit', 'label': 'Cruise Speed Unit', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed unit scaling. Default 10.'}, {'type': 'int', 'param': 'CruiseSpeedUnitBasic', 'label': 'Cruise Speed Unit (Basic)', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Cruise speed unit scaling for basic mode. Default 10.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Steering Buttons'}, {'type': 'int', 'param': 'LfaButtonMode', 'label': 'LFA Button Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'LFA button handling mode. Default 0.'}, {'type': 'int', 'param': 'PaddleMode', 'label': 'Paddle Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Steering-wheel paddle mode. Default 1.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Auto Gas'}, {'type': 'int', 'param': 'AutoGasCancelSpeed', 'label': 'Auto Gas Cancel Speed', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Speed above which auto-gas cancels (km/h). Default 30.'}, {'type': 'int', 'param': 'AutoGasSyncSpeed', 'label': 'Auto Gas Sync Speed', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Auto-gas sync speed (km/h). Default 0.'}, {'type': 'int', 'param': 'AutoGasTokSpeed', 'label': 'Auto Gas Tok Speed', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Auto-gas token speed (km/h). Default 0.'}]}, {'type': 'tab', 'tab': '巡航', 'widgets': [{'type': 'section', 'label': 'Following Distance'}, {'type': 'text', 'param': 'TFollowGap1', 'label': 'Follow Gap 1', 'desc': 'Following distance multiplier for the most aggressive mode. Default 1.8.'}, {'type': 'text', 'param': 'TFollowGap2', 'label': 'Follow Gap 2', 'desc': 'Following distance multiplier for the sport mode. Default 1.5.'}, {'type': 'text', 'param': 'TFollowGap3', 'label': 'Follow Gap 3', 'desc': 'Following distance multiplier for the normal mode. Default 1.2.'}, {'type': 'text', 'param': 'TFollowGap4', 'label': 'Follow Gap 4', 'desc': 'Following distance multiplier for the eco/safe mode. Default 1.0.'}, {'type': 'text', 'param': 'DynamicTFollow', 'label': 'Dynamic T-Follow', 'desc': 'Dynamic time-to-follow multiplier applied to the gap. Default 0.0 (disabled).'}, {'type': 'text', 'param': 'DynamicTFollowLC', 'label': 'Dynamic T-Follow (Lane Change)', 'desc': 'Dynamic time-to-follow multiplier used during lane changes. Default 100.0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Longitudinal Gains'}, {'type': 'int', 'param': 'LeadAccelResponse', 'label': 'Lead Accel Response', 'min': -100, 'max': 100, 'step': 5, 'desc': 'Gain on lead vehicle acceleration response for following. Default 0.'}, {'type': 'int', 'param': 'LongActuatorDelay', 'label': 'Long Actuator Delay', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Longitudinal actuator delay (ms). Default 20.'}, {'type': 'int', 'param': 'LongTuningKf', 'label': 'Long Tuning Kf', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Longitudinal controller feed-forward gain. Default 100.'}, {'type': 'int', 'param': 'LongTuningKiV', 'label': 'Long Tuning KiV', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Longitudinal controller integral gain on speed error. Default 0.'}, {'type': 'int', 'param': 'LongTuningKpV', 'label': 'Long Tuning KpV', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Longitudinal controller proportional gain on speed error. Default 100.'}, {'type': 'int', 'param': 'StoppingAccel', 'label': 'Stopping Accel', 'min': -200, 'max': 0, 'step': 5, 'desc': 'Acceleration used while coming to a stop (%). Default -50.'}, {'type': 'int', 'param': 'TFollowDecelBoost', 'label': 'T-Follow Decel Boost', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Extra deceleration boost added to the time-to-follow gap. Default 0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Acceleration Limits'}, {'type': 'text', 'param': 'CruiseMaxVals0', 'label': 'Max Accel 0', 'desc': 'Maximum acceleration at low speed (m/s^2). Default 1.5.'}, {'type': 'text', 'param': 'CruiseMaxVals1', 'label': 'Max Accel 1', 'desc': 'Maximum acceleration at moderate speed (m/s^2). Default 1.8.'}, {'type': 'text', 'param': 'CruiseMaxVals2', 'label': 'Max Accel 2', 'desc': 'Maximum acceleration at higher speed (m/s^2). Default 2.0.'}, {'type': 'text', 'param': 'CruiseMaxVals3', 'label': 'Max Accel 3', 'desc': 'Maximum acceleration at highway speed (m/s^2). Default 2.2.'}, {'type': 'text', 'param': 'CruiseMaxVals4', 'label': 'Max Accel 4', 'desc': 'Maximum acceleration at high speed (m/s^2). Default 2.4.'}, {'type': 'text', 'param': 'CruiseMaxVals5', 'label': 'Max Accel 5', 'desc': 'Maximum acceleration at very high speed (m/s^2). Default 2.6.'}, {'type': 'text', 'param': 'CruiseMaxVals6', 'label': 'Max Accel 6', 'desc': 'Maximum acceleration at top speed (m/s^2). Default 2.8.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Cruise Behavior'}, {'type': 'int', 'param': 'CarrotCruiseDecel', 'label': 'Cruise Decel', 'min': -100, 'max': 0, 'step': 1, 'desc': 'Cruise deceleration limit (%). Default -1 (auto).'}, {'type': 'int', 'param': 'CarrotCruiseAtcDecel', 'label': 'Cruise ATC Decel', 'min': -100, 'max': 0, 'step': 1, 'desc': 'Cruise decel for auto-turn-control (%). Default -1 (auto).'}, {'type': 'int', 'param': 'VEgoStopping', 'label': 'vEgo Stopping', 'min': 0, 'max': 500, 'step': 5, 'desc': 'Vehicle speed threshold treated as stopped (x0.01 m/s). Default 50 (0.5 m/s).'}, {'type': 'int', 'param': 'ApplyModelSpeed', 'label': 'Apply Model Speed', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Apply model-predicted speed mode. Default 0.'}]}, {'type': 'tab', 'tab': '导航', 'widgets': [{'type': 'section', 'label': 'Navi Speed Control'}, {'type': 'int', 'param': 'AutoNaviSpeedCtrlMode', 'label': 'Navi Speed Control Mode', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Navi speed control strategy. Default 0.'}, {'type': 'int', 'param': 'AutoNaviSpeedDecelRate', 'label': 'Navi Speed Decel Rate', 'min': 0, 'max': 500, 'step': 10, 'desc': 'Deceleration rate for navi speed control (x0.01 m/s^2). Default 150.'}, {'type': 'int', 'param': 'AutoNaviSpeedSafetyFactor', 'label': 'Navi Speed Safety Factor', 'min': 50, 'max': 150, 'step': 5, 'desc': 'Percent safety factor applied to navi speed targets. Default 100.'}, {'type': 'int', 'param': 'AutoNaviSpeedCtrlEnd', 'label': 'Navi Speed Ctrl End', 'min': 0, 'max': 30, 'step': 1, 'desc': 'Distance (m) before destination to end navi speed control. Default 7.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Stops / Cameras'}, {'type': 'int', 'param': 'StopDistanceCarrot', 'label': 'Stop Distance', 'min': 0, 'max': 2000, 'step': 10, 'desc': 'Distance before a destination stop at which the car slows down. Default 550.'}, {'type': 'bool', 'param': 'SameSpiCamFilter', 'label': 'Same Camera Filter', 'default': True, 'desc': 'Filter out speed-camera events already passed. Default on.'}, {'type': 'int', 'param': 'HapticFeedbackWhenSpeedCamera', 'label': 'Haptic On Speed Camera', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Haptic feedback when a speed camera is detected. Default 0.'}, {'type': 'int', 'param': 'TrafficStopDistanceAdjust', 'label': 'Traffic Stop Distance Adjust', 'min': -500, 'max': 500, 'step': 10, 'desc': 'Adjust the traffic-light stop distance (cm). Default -150.'}, {'type': 'int', 'param': 'TrafficLightDetectMode', 'label': 'Traffic Light Detect Mode', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Traffic-light assist mode (0=off,1=red stop,2=+green go). Default 2.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Road Speed Limits'}, {'type': 'int', 'param': 'AutoRoadSpeedAdjust', 'label': 'Auto Road Speed Adjust', 'min': -50, 'max': 50, 'step': 1, 'desc': 'Automatic adjustment to road speed limit (km/h). Default 0.'}, {'type': 'int', 'param': 'AutoRoadSpeedLimitOffset', 'label': 'Road Speed Limit Offset', 'min': -30, 'max': 30, 'step': 1, 'desc': 'Offset applied to the road speed limit (km/h). Default -1 (auto).'}, {'type': 'int', 'param': 'AutoSpeedUptoRoadSpeedLimit', 'label': 'Auto Speed Up To Limit', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Automatically raise target speed up to the road speed limit. Default 0 (off).'}, {'type': 'int', 'param': 'SpeedFromPCM', 'label': 'Speed From PCM', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Use vehicle PCM-reported speed source mode. Default 0.'}, {'type': 'int', 'param': 'RoadType', 'label': 'Road Type Override', 'min': -1, 'max': 5, 'step': 1, 'desc': 'Road type override used by ATC speed logic (-1 = auto). Default -1.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Vehicle CAN Speed Arbitration'}, {'type': 'multiple_button', 'param': 'VehicleNaviCanControl', 'label': 'Vehicle Navi CAN Control', 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'buttons': ['Off', 'Camera/Bump Always', 'Camera Always/Bump Route', 'Camera/Bump Route'], 'desc': 'How vehicle CAN navigation deceleration is applied. Off disables; mode 1 always applies camera and bump; mode 2 always applies camera and only route bumps; mode 3 applies both only when on route.'}, {'type': 'bool', 'param': 'VehicleNaviSchoolZoneControl', 'label': 'Vehicle School Zone 30 km/h Limit', 'default': False, 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'desc': 'Cap target speed at 30 km/h while the vehicle reports a confirmed 30 km/h zone entry.'}, {'type': 'multiple_button', 'param': 'VehicleSpeedCameraControlMode', 'label': 'Vehicle Speed Camera Mode', 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'buttons': ['Off', 'Always Apply', 'Gas Floor', 'Gas Pause'], 'desc': 'How vehicle CAN speed-camera enforcement is used. Off disables; Always Apply ignores gas; Gas Floor keeps the highest speed reached during override as a floor; Gas Pause pauses deceleration while gas is pressed.'}, {'type': 'int', 'param': 'VehicleSpeedCameraDistanceTime', 'label': 'Speed Camera Virtual Distance Time', 'min': 10, 'max': 200, 'step': 1, 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'desc': 'Virtual deceleration distance time when the vehicle sends only a speed limit without distance. Stored in 0.1 s units (60 = 6.0 s).'}, {'type': 'separator'}, {'type': 'section', 'label': 'Speed Bumps'}, {'type': 'int', 'param': 'AutoNaviSpeedBumpEndDistance', 'label': 'Speed Bump Early Release Distance', 'min': 0, 'max': 5000, 'step': 10, 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'desc': 'Release speed-bump deceleration when remaining distance is at or below this value (cm). 0 keeps control until the received point.'}, {'type': 'int', 'param': 'AutoNaviCountDownMode', 'label': 'Navi Countdown Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'School-zone / countdown announcement mode. Default 2.'}, {'type': 'int', 'param': 'AutoNaviSpeedBumpSpeed', 'label': 'Speed Bump Target Speed', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Target speed (km/h) over a speed bump. Default 35.'}, {'type': 'int', 'param': 'AutoNaviSpeedBumpTime', 'label': 'Speed Bump Time', 'min': 0, 'max': 10, 'step': 1, 'desc': 'Virtual speed-bump deceleration time (x0.1 s). Default 1.'}]}, {'type': 'tab', 'tab': '速度', 'widgets': [{'type': 'section', 'label': 'ATC Turn Control'}, {'type': 'int', 'param': 'AutoTurnControl', 'label': 'Auto Turn Control', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Automatic turn control mode. Default 0.'}, {'type': 'int', 'param': 'AutoTurnControlSpeedTurn', 'label': 'ATC Turn Speed', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Speed (km/h) below which auto turn control engages. Default 20.'}, {'type': 'int', 'param': 'AutoTurnControlTurnEnd', 'label': 'ATC Turn End Speed', 'min': 0, 'max': 50, 'step': 1, 'desc': 'Speed (km/h) at which an auto turn is considered complete. Default 6.'}, {'type': 'int', 'param': 'AutoTurnMapChange', 'label': 'ATC Map Change', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Auto turn behavior on map-implied lane change. Default 0.'}, {'type': 'int', 'param': 'AutoTurnDistOffset', 'label': 'ATC Turn Distance Offset', 'min': 0, 'max': 1000, 'step': 5, 'desc': 'Extra distance subtracted from the ATC turn trigger distance. Default 0.'}, {'type': 'bool', 'param': 'AutoTurnInNotRoadEdge', 'label': 'Auto Turn Off Road Edge', 'default': True, 'desc': 'Allow auto turns when the lane is not at a road edge. Default on.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Fork Control'}, {'type': 'int', 'param': 'AutoForkDistOffset', 'label': 'Fork Distance Offset', 'min': 0, 'max': 500, 'step': 5, 'desc': 'Distance before a fork at which speed control starts. Default 30.'}, {'type': 'int', 'param': 'AutoForkDistOffsetH', 'label': 'Fork Distance Offset (Highway)', 'min': 0, 'max': 2000, 'step': 10, 'desc': 'Highway variant of the fork distance offset. Default 1000.'}, {'type': 'int', 'param': 'AutoDoForkBlinkerDist', 'label': 'Fork Blinker Distance', 'min': 0, 'max': 200, 'step': 1, 'desc': 'Distance before a fork at which the blinker is auto-activated. Default 15.'}, {'type': 'int', 'param': 'AutoDoForkBlinkerDistH', 'label': 'Fork Blinker Distance (Highway)', 'min': 0, 'max': 500, 'step': 1, 'desc': 'Highway variant. Default 30.'}, {'type': 'int', 'param': 'AutoDoForkNavDist', 'label': 'Fork Nav Distance', 'min': 0, 'max': 200, 'step': 1, 'desc': 'Distance before a fork at which nav-based turn control engages. Default 15.'}, {'type': 'int', 'param': 'AutoDoForkNavDistH', 'label': 'Fork Nav Distance (Highway)', 'min': 0, 'max': 500, 'step': 1, 'desc': 'Highway variant. Default 50.'}, {'type': 'int', 'param': 'AutoDoForkDecalDist', 'label': 'Fork Decel Distance', 'min': 0, 'max': 300, 'step': 1, 'desc': 'Distance before a fork at which deceleration starts. Default 20.'}, {'type': 'int', 'param': 'AutoDoForkDecalDistH', 'label': 'Fork Decel Distance (Highway)', 'min': 0, 'max': 500, 'step': 1, 'desc': 'Highway variant. Default 50.'}, {'type': 'int', 'param': 'AutoForkDecalRate', 'label': 'Fork Decel Rate', 'min': 0, 'max': 500, 'step': 10, 'desc': 'Deceleration rate used for fork slowdowns (x0.01 m/s^2). Default 80.'}, {'type': 'int', 'param': 'AutoForkDecalRateH', 'label': 'Fork Decel Rate (Highway)', 'min': 0, 'max': 500, 'step': 10, 'desc': 'Highway variant. Default 80.'}, {'type': 'int', 'param': 'AutoForkSpeedMin', 'label': 'Fork Speed Min', 'min': 0, 'max': 120, 'step': 5, 'desc': 'Minimum speed target when slowing for a fork (km/h). Default 45.'}, {'type': 'int', 'param': 'AutoForkSpeedMinH', 'label': 'Fork Speed Min (Highway)', 'min': 0, 'max': 120, 'step': 5, 'desc': 'Highway variant. Default 60.'}, {'type': 'int', 'param': 'AutoKeepForkSpeed', 'label': 'Keep Fork Speed', 'min': 0, 'max': 60, 'step': 1, 'desc': 'Speed window in which the fork speed is kept instead of re-targeting. Default 5.'}, {'type': 'int', 'param': 'AutoKeepForkSpeedH', 'label': 'Keep Fork Speed (Highway)', 'min': 0, 'max': 60, 'step': 1, 'desc': 'Highway variant. Default 5.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Turn Speed'}, {'type': 'int', 'param': 'MapTurnSpeedFactor', 'label': 'Map Turn Speed Factor', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Percent multiplier on map-based turn speed targets. Default 90.'}, {'type': 'int', 'param': 'TurnSpeedControlMode', 'label': 'Turn Speed Control Mode', 'min': 0, 'max': 2, 'step': 1, 'desc': 'How turn speed control is applied. Default 1.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Curve Speed'}, {'type': 'int', 'param': 'AutoCurveSpeedFactor', 'label': 'Curve Speed Factor', 'min': 10, 'max': 200, 'step': 5, 'desc': 'Percent multiplier on curve speed targets. Default 120.'}, {'type': 'int', 'param': 'AutoCurveSpeedFactorH', 'label': 'Curve Speed Factor (Highway)', 'min': 10, 'max': 200, 'step': 5, 'desc': 'Percent multiplier on highway curve speed targets. Default 100.'}, {'type': 'int', 'param': 'AutoCurveSpeedAggressivenessH', 'label': 'Curve Speed Aggressiveness (Highway)', 'min': 10, 'max': 200, 'step': 5, 'desc': 'Percent tuning of highway curve deceleration aggressiveness. Default 100.'}, {'type': 'int', 'param': 'AutoCurveSpeedLowerLimit', 'label': 'Curve Speed Lower Limit', 'min': 0, 'max': 150, 'step': 5, 'desc': 'Minimum curve speed target (km/h). Default 30.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Road Limit Raising'}, {'type': 'int', 'param': 'AutoUpRoadLimit', 'label': 'Road Limit Raise Threshold', 'min': 0, 'max': 120, 'step': 5, 'desc': 'vEgo threshold (km/h) for raising road-type limits. Default 0 (disabled).'}, {'type': 'int', 'param': 'AutoUpRoadLimit40KMH', 'label': 'Road Limit Raise Margin', 'min': 0, 'max': 60, 'step': 1, 'desc': 'Margin applied when raising limits below 40 km/h. Default 15.'}, {'type': 'int', 'param': 'AutoUpHighwayRoadLimit', 'label': 'Highway Limit Raise Threshold', 'min': 0, 'max': 160, 'step': 5, 'desc': 'vEgo threshold (km/h) for raising highway road-type limits. Default 0 (disabled).'}, {'type': 'int', 'param': 'AutoUpHighwayRoadLimit40KMH', 'label': 'Highway Limit Raise Margin', 'min': 0, 'max': 60, 'step': 1, 'desc': 'Margin applied when raising highway limits below 40 km/h. Default 15.'}]}, {'type': 'tab', 'tab': '调节', 'widgets': [{'type': 'section', 'label': 'Lateral Mode'}, {'type': 'int', 'param': 'AlwaysLateral', 'label': 'Always Lateral', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Keep lateral control always engaged mode. Default 0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Steering Limits'}, {'type': 'int', 'param': 'CustomSR', 'label': 'Custom Steer Ratio', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Custom steering ratio override (%). Default 0.'}, {'type': 'int', 'param': 'CustomSteerMax', 'label': 'Custom Steer Max', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Custom maximum steering value. Default 0.'}, {'type': 'int', 'param': 'CustomSteerDeltaDown', 'label': 'Custom Steer Delta Down', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Custom steer rate limit down. Default 0.'}, {'type': 'int', 'param': 'CustomSteerDeltaUp', 'label': 'Custom Steer Delta Up', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Custom steer rate limit up. Default 0.'}, {'type': 'int', 'param': 'CustomSteerDeltaDownLC', 'label': 'Custom Steer Delta Down (LC)', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Custom steer rate limit down during lane change. Default 0.'}, {'type': 'int', 'param': 'CustomSteerDeltaUpLC', 'label': 'Custom Steer Delta Up (LC)', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Custom steer rate limit up during lane change. Default 0.'}, {'type': 'int', 'param': 'SteerActuatorDelay', 'label': 'Steer Actuator Delay', 'min': 0, 'max': 200, 'step': 5, 'desc': 'Steering actuator delay (ms). Default 30.'}, {'type': 'int', 'param': 'SteerRatioRate', 'label': 'Steer Ratio Rate', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Steering ratio adaptation rate. Default 100.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Path Offset'}, {'type': 'int', 'param': 'PathOffset', 'label': 'Path Offset', 'min': -100, 'max': 100, 'step': 1, 'desc': 'Lateral path offset (cm). Default 0.'}, {'type': 'int', 'param': 'AdjustLaneOffset', 'label': 'Lane Offset Adjust', 'min': -50, 'max': 50, 'step': 1, 'desc': 'Lateral path offset adjustment (cm). Default 0.'}, {'type': 'int', 'param': 'CameraYawTrimDeg', 'label': 'Camera Yaw Trim', 'min': -20, 'max': 20, 'step': 1, 'desc': 'Camera yaw trim (deg). Default 0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Lateral MPC Costs'}, {'type': 'int', 'param': 'LatMpcAccelCost', 'label': 'Lat MPC Accel Cost', 'min': 0, 'max': 500, 'step': 5, 'desc': 'Lateral MPC acceleration cost. Default 100.'}, {'type': 'int', 'param': 'LatMpcJerkCost', 'label': 'Lat MPC Jerk Cost', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Lateral MPC jerk cost. Default 1.'}, {'type': 'int', 'param': 'LatMpcMotionCost', 'label': 'Lat MPC Motion Cost', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Lateral MPC motion cost. Default 7.'}, {'type': 'int', 'param': 'LatMpcPathCost', 'label': 'Lat MPC Path Cost', 'min': 0, 'max': 1000, 'step': 5, 'desc': 'Lateral MPC path-following cost. Default 200.'}, {'type': 'int', 'param': 'LatMpcSteeringRateCost', 'label': 'Lat MPC Steering Rate Cost', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Lateral MPC steering-rate cost. Default 7.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Lateral Torque'}, {'type': 'int', 'param': 'LateralTorqueCustom', 'label': 'Lateral Torque Custom', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Use custom lateral torque tuning. Default 1.'}, {'type': 'int', 'param': 'LateralTorqueFriction', 'label': 'Lateral Torque Friction', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Lateral torque friction estimate. Default 100.'}, {'type': 'int', 'param': 'LateralTorqueKd', 'label': 'Lateral Torque Kd', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Lateral torque derivative gain. Default 0.'}, {'type': 'int', 'param': 'LateralTorqueKf', 'label': 'Lateral Torque Kf', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Lateral torque feed-forward gain. Default 100.'}, {'type': 'int', 'param': 'LateralTorqueKiV', 'label': 'Lateral Torque KiV', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Lateral torque integral gain on speed error. Default 10.'}, {'type': 'int', 'param': 'LateralTorqueKpV', 'label': 'Lateral Torque KpV', 'min': 0, 'max': 300, 'step': 5, 'desc': 'Lateral torque proportional gain on speed error. Default 100.'}, {'type': 'int', 'param': 'LateralTorqueAccelFactor', 'label': 'Lateral Torque Accel Factor', 'min': 0, 'max': 5000, 'step': 50, 'desc': 'Lateral torque acceleration factor. Default 2500.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Lateral Smoothing'}, {'type': 'int', 'param': 'LatMpcInputOffset', 'label': 'Lat MPC Input Offset', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Lateral MPC input offset. Default 4.'}, {'type': 'int', 'param': 'LatSmoothSec', 'label': 'Lat Smoothing (sec)', 'min': 0, 'max': 50, 'step': 1, 'desc': 'Lateral path smoothing time constant (x0.1 s). Default 13.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Lane Change'}, {'type': 'int', 'param': 'LaneChangeBsd', 'label': 'Lane Change BSD', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Blind-spot requirement mode for auto lane change. Default 0.'}, {'type': 'int', 'param': 'LaneChangeDelay', 'label': 'Lane Change Delay', 'min': 0, 'max': 100, 'step': 1, 'desc': 'Delay before auto lane change engages (x0.1 s). Default 0.'}, {'type': 'int', 'param': 'LaneChangeNeedTorque', 'label': 'Lane Change Need Torque', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Require steering torque before lane change. Default 0.'}, {'type': 'bool', 'param': 'ContinuousLaneChange', 'label': 'Continuous Lane Change', 'default': True, 'desc': 'Allow multiple consecutive auto lane changes. Default on.'}, {'type': 'int', 'param': 'ContinuousLaneChangeCnt', 'label': 'Continuous Lane Change Count', 'min': 1, 'max': 10, 'step': 1, 'desc': 'Max consecutive auto lane changes. Default 4.'}, {'type': 'int', 'param': 'ContinuousLaneChangeInterval', 'label': 'Continuous Lane Change Interval', 'min': 0, 'max': 30, 'step': 1, 'desc': 'Minimum seconds between consecutive auto lane changes. Default 2.'}, {'type': 'int', 'param': 'AChangeCostStarting', 'label': 'Lane Change Cost (Start)', 'min': 0, 'max': 50, 'step': 1, 'desc': 'Extra MPC cost for initiating a lane change. Default 10.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Auto Turn / New Lane'}, {'type': 'int', 'param': 'LaneStabTime', 'label': 'Lane Stabilize Time', 'min': 0, 'max': 200, 'step': 10, 'desc': 'Time a lane must stay stable before auto turn uses it (x0.1 s). Default 50 (5.0 s).'}, {'type': 'int', 'param': 'NewLaneWidthDiff', 'label': 'New Lane Width Diff', 'min': 0, 'max': 50, 'step': 1, 'desc': 'Width difference threshold for detecting a new lane. Default 8.'}, {'type': 'int', 'param': 'AutoEnTurnNewLaneTime', 'label': 'New Lane Turn Enable Time', 'min': 0, 'max': 60, 'step': 5, 'desc': 'Seconds a new lane must exist before auto turn engages. Default 0 (disabled).'}, {'type': 'int', 'param': 'AutoEnTurnNewLaneTimeH', 'label': 'New Lane Turn Enable Time (Highway)', 'min': 0, 'max': 60, 'step': 5, 'desc': 'Highway variant. Default 0 (disabled).'}, {'type': 'bool', 'param': 'AutoTurnLeft', 'label': 'Auto Turn Left', 'default': True, 'desc': 'Enable auto turns to the left. Default on.'}, {'type': 'bool', 'param': 'StockBlinkerCtrl', 'label': 'Stock Blinker Control', 'default': False, 'desc': 'Let the stock system control blinkers during auto turns. Default off.'}, {'type': 'bool', 'param': 'ExtBlinkerCtrlTest', 'label': 'External Blinker Control Test', 'default': False, 'desc': 'Test mode for external blinker control. Default off.'}, {'type': 'int', 'param': 'BlinkerMode', 'label': 'Blinker Mode', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Blinker control mode. Default 1.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Blind Spot'}, {'type': 'bool', 'param': 'DisableBlindSpot', 'label': 'Disable Blind Spot', 'default': False, 'desc': 'Disable the Carrot blind-spot detection/lane-change blocking. Default off.'}, {'type': 'int', 'param': 'DynamicBlindRange', 'label': 'Dynamic Blind Range', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Enable dynamic blind-spot range based on speed. Default 0 (disabled).'}, {'type': 'int', 'param': 'DynamicBlindDistance', 'label': 'Dynamic Blind Distance', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Base dynamic blind-spot distance. Default 0.'}, {'type': 'int', 'param': 'BsdDelayTime', 'label': 'BSD Delay Time', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Blind-spot detection hold time (x0.1 s). Default 20 (2.0 s).'}, {'type': 'int', 'param': 'SideBsdDelayTime', 'label': 'Side BSD Delay Time', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Side blind-spot detection hold time (x0.1 s). Default 20 (2.0 s).'}, {'type': 'int', 'param': 'SideRelDistTime', 'label': 'Side Rel Dist Time', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Time constant for side relative-distance filtering (x0.1 s). Default 10 (1.0 s).'}, {'type': 'int', 'param': 'SidevRelDistTime', 'label': 'Side vRel Dist Time', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Time constant for side relative-speed filtering (x0.1 s). Default 10 (1.0 s).'}, {'type': 'int', 'param': 'SideRadarMinDist', 'label': 'Side Radar Min Dist', 'min': 0, 'max': 50, 'step': 1, 'desc': 'Minimum side radar distance considered valid. Default 0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Lane Line / ONNX'}, {'type': 'int', 'param': 'LaneLineCheck', 'label': 'Lane Line Check', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Lane-line based safety check mode. Default 0.'}, {'type': 'int', 'param': 'OnnxBsdIntervalMs', 'label': 'ONNX BSD Interval', 'min': 50, 'max': 1000, 'step': 10, 'desc': 'ONNX blind-spot model inference interval (ms). Default 250.'}, {'type': 'int', 'param': 'OnnxBsdSmoothingMs', 'label': 'ONNX BSD Smoothing', 'min': 0, 'max': 1000, 'step': 10, 'desc': 'ONNX blind-spot detection smoothing window (ms). Default 200.'}, {'type': 'int', 'param': 'OnnxBsdThreshold', 'label': 'ONNX BSD Threshold', 'min': 0, 'max': 100, 'step': 1, 'desc': 'ONNX blind-spot confidence threshold (%). Default 45.'}, {'type': 'int', 'param': 'OnnxLaneIntervalMs', 'label': 'ONNX Lane Interval', 'min': 50, 'max': 1000, 'step': 10, 'desc': 'ONNX lane-line model inference interval (ms). Default 400.'}, {'type': 'int', 'param': 'OnnxLaneThreshold', 'label': 'ONNX Lane Threshold', 'min': 0, 'max': 100, 'step': 1, 'desc': 'ONNX lane-line confidence threshold (%). Default 25.'}]}, {'type': 'tab', 'tab': '显示', 'widgets': [{'type': 'section', 'label': 'Steering Suspend'}, {'type': 'int', 'param': 'LatSuspendAngleDeg', 'label': 'Auto Steering Suspend Angle', 'min': 45, 'max': 300, 'step': 10, 'desc': 'Steering angle at which automatic steering is suspended. It resumes when the angle returns within 15 deg. Default 300.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Cluster Map'}, {'type': 'multiple_button', 'param': 'ClusterNaviMapTheme', 'label': 'Cluster Map Theme', 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'buttons': ['Auto', 'Dark', 'Light'], 'desc': 'Theme used for the cluster navigation map. Changing it reconnects the external navi app.'}, {'type': 'multiple_button', 'param': 'ClusterNaviMapType', 'label': 'Cluster Map Type', 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'buttons': ['Normal', 'Satellite'], 'desc': 'Map style used for the cluster navigation map. Changing it reconnects the external navi app.'}, {'type': 'multiple_button', 'param': 'ClusterNaviMapFps', 'label': 'Cluster Map FPS', 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'buttons': ['5 FPS', '10 FPS', '20 FPS', '30 FPS'], 'desc': 'Render frame rate for the cluster navigation map. Bitrate is selected automatically.'}, {'type': 'bool', 'param': 'CarrotNaviHudMapProfile', 'label': 'HUD Map Profile', 'default': False, 'visible_if': {'param': 'CarrotEnabled', 'eq': '1'}, 'desc': 'Use the HUD-optimized map profile (raised screen center) when a HUD map client is connected.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Cluster HUD'}, {'type': 'bool', 'param': 'ClusterHud', 'label': 'Cluster HUD', 'default': 0, 'desc': 'Enable the cluster / HUD render client. Default off.'}, {'type': 'int', 'param': 'ClusterHudBrightness', 'label': 'Cluster HUD Brightness', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Cluster HUD brightness (%). Default 0 (auto).'}, {'type': 'int', 'param': 'ClusterHudCameraViewMode', 'label': 'Cluster Camera View Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cluster camera view mode. Default 0.'}, {'type': 'int', 'param': 'ClusterHudCoreMode', 'label': 'Cluster Core Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cluster core layout mode. Default 0.'}, {'type': 'bool', 'param': 'ClusterHudDebug', 'label': 'Cluster HUD Debug', 'default': 0, 'desc': 'Show debug overlays on the cluster HUD. Default off.'}, {'type': 'bool', 'param': 'ClusterHudEncoder', 'label': 'Cluster HUD Encoder', 'default': 0, 'desc': 'Enable the cluster HUD encoder path. Default off.'}, {'type': 'int', 'param': 'ClusterHudLiveFps', 'label': 'Cluster Live FPS', 'min': 1, 'max': 60, 'step': 1, 'desc': 'Target render frame rate for live cluster feed. Default 1.'}, {'type': 'bool', 'param': 'ClusterHudMirror', 'label': 'Cluster Mirror', 'default': 0, 'desc': 'Mirror the cluster HUD horizontally. Default off.'}, {'type': 'int', 'param': 'ClusterHudOrientation', 'label': 'Cluster Orientation', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cluster HUD orientation. Default 0.'}, {'type': 'int', 'param': 'ClusterHudPanelLayout', 'label': 'Cluster Panel Layout', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cluster HUD panel layout. Default 0.'}, {'type': 'int', 'param': 'ClusterHudPriority', 'label': 'Cluster Priority', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Cluster HUD process priority. Default 10.'}, {'type': 'bool', 'param': 'ClusterHudRadarDisplay', 'label': 'Cluster Radar Display', 'default': 0, 'desc': 'Show radar objects on the cluster HUD. Default off.'}, {'type': 'int', 'param': 'ClusterHudRadarInfo', 'label': 'Cluster Radar Info', 'min': 0, 'max': 10, 'step': 1, 'desc': 'Cluster radar info detail level. Default 4.'}, {'type': 'bool', 'param': 'ClusterHudRadarSourceColor', 'label': 'Cluster Radar Source Color', 'default': 0, 'desc': 'Color-code radar source on cluster HUD. Default off.'}, {'type': 'int', 'param': 'ClusterHudScreenMode', 'label': 'Cluster Screen Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cluster HUD screen mode. Default 0.'}, {'type': 'int', 'param': 'ClusterHudTheme', 'label': 'Cluster Theme', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Cluster HUD theme. Default 0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'On-Screen Info'}, {'type': 'bool', 'param': 'ShowCameraWithCluster', 'label': 'Camera With Cluster', 'default': 0, 'desc': 'Show the camera feed alongside the cluster HUD. Default off.'}, {'type': 'int', 'param': 'ShowCustomBrightness', 'label': 'Custom Brightness', 'min': 0, 'max': 100, 'step': 5, 'desc': 'Custom screen brightness (%). Default 100.'}, {'type': 'bool', 'param': 'ShowDateTime', 'label': 'Show Date/Time', 'default': 1, 'desc': 'Show date and time on the HUD. Default on.'}, {'type': 'bool', 'param': 'ShowDebugUI', 'label': 'Show Debug UI', 'default': 1, 'desc': 'Show the debug UI overlay. Default on.'}, {'type': 'bool', 'param': 'ShowDeviceState', 'label': 'Show Device State', 'default': 1, 'desc': 'Show device state on the HUD. Default on.'}, {'type': 'bool', 'param': 'ShowLaneInfo', 'label': 'Show Lane Info', 'default': 1, 'desc': 'Show lane information on the HUD. Default on.'}, {'type': 'bool', 'param': 'ShowModelView', 'label': 'Show Model View', 'default': 0, 'desc': 'Show the model path view. Default off.'}, {'type': 'bool', 'param': 'ShowPlotMode', 'label': 'Show Plot Mode', 'default': 0, 'desc': 'Show the debug plot overlay. Default off.'}, {'type': 'bool', 'param': 'ShowRadarInfo', 'label': 'Show Radar Info', 'default': 0, 'desc': 'Show radar information on the HUD. Default off.'}, {'type': 'bool', 'param': 'ShowRouteInfo', 'label': 'Show Route Info', 'default': 0, 'desc': 'Show route information on the HUD. Default off.'}, {'type': 'bool', 'param': 'ShowTpms', 'label': 'Show TPMS', 'default': 1, 'desc': 'Show tire pressure (TPMS) on the HUD. Default on.'}, {'type': 'bool', 'param': 'SoftwareMenu', 'label': 'Software Menu', 'default': 0, 'desc': 'Show the software menu on the HUD. Default off.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Sound / Map'}, {'type': 'int', 'param': 'SoundVolumeAdjust', 'label': 'Sound Volume Adjust', 'min': 0, 'max': 200, 'step': 10, 'desc': 'Percent adjustment of Carrot sound volume. Default 100.'}, {'type': 'int', 'param': 'SoundVolumeAdjustEngage', 'label': 'Engage Volume Adjust', 'min': 0, 'max': 200, 'step': 10, 'desc': 'Percent adjustment of the engage sound volume. Default 100.'}, {'type': 'text', 'param': 'SoundLanguageSetting', 'label': 'Sound Language', 'desc': 'Sound/voice language setting (e.g. auto, en, ko). Default auto.'}, {'type': 'int', 'param': 'MapboxStyle', 'label': 'Mapbox Style', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Mapbox map style preset. Default 0.'}, {'type': 'separator'}, {'type': 'section', 'label': 'YouTube Live'}, {'type': 'bool', 'param': 'CarrotYouTubeLive', 'label': 'YouTube Live', 'default': 0, 'desc': 'Stream the driving view to YouTube live. Default off.'}, {'type': 'int', 'param': 'CarrotYouTubeQuality', 'label': 'YouTube Quality', 'min': 0, 'max': 3, 'step': 1, 'desc': 'YouTube live stream quality preset. Default 0 (auto).'}, {'type': 'bool', 'param': 'CarrotYouTubeTimestamp', 'label': 'YouTube Timestamp', 'default': 0, 'desc': 'Overlay a timestamp on the YouTube live stream. Default off.'}]}, {'type': 'tab', 'tab': '轨迹', 'widgets': [{'type': 'section', 'label': 'Path Appearance'}, {'type': 'int', 'param': 'ShowPathColor', 'label': 'Path Color', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Color used for the planned path. Default 12.'}, {'type': 'int', 'param': 'ShowPathColorCruiseOff', 'label': 'Path Color (Cruise Off)', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Path color when cruise is off. Default 1.'}, {'type': 'int', 'param': 'ShowPathColorLane', 'label': 'Path Color (Lane)', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Path color in lane mode. Default 3.'}, {'type': 'bool', 'param': 'ShowPathEnd', 'label': 'Show Path End', 'default': 1, 'desc': 'Show the end of the planned path. Default on.'}, {'type': 'int', 'param': 'ShowPathMode', 'label': 'Path Mode', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Path rendering mode. Default 9.'}, {'type': 'int', 'param': 'ShowPathModeLane', 'label': 'Path Mode (Lane)', 'min': 0, 'max': 20, 'step': 1, 'desc': 'Path rendering mode in lane mode. Default 11.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Trajectory / Lane Line'}, {'type': 'bool', 'param': 'CarrotTireTrajectory', 'label': 'Tire Trajectory', 'default': 0, 'desc': 'Render tire trajectory debug overlay. Default off.'}, {'type': 'int', 'param': 'UseLaneLineCurveSpeed', 'label': 'Use Lane Line Curve Speed', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Use lane-line curvature for curve speed. Default 0.'}, {'type': 'int', 'param': 'UseLaneLineSpeed', 'label': 'Use Lane Line Speed', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Use lane-line based speed. Default 0.'}]}, {'type': 'tab', 'tab': '车辆', 'widgets': [{'type': 'section', 'label': 'Driver / Safety'}, {'type': 'bool', 'param': 'DisableDM', 'label': 'Disable Driver Monitoring', 'default': 0, 'desc': 'Disable driver monitoring (LITE-style). Default off.'}, {'type': 'bool', 'param': 'DisableMinSteerSpeed', 'label': 'Disable Min Steer Speed', 'default': 0, 'desc': 'Disable the minimum steering speed gate. Default off.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Vehicle Features'}, {'type': 'bool', 'param': 'HyundaiCameraSCC', 'label': 'Hyundai Camera SCC', 'default': 0, 'desc': 'Use camera-based SCC on Hyundai platforms. Default off.'}, {'type': 'bool', 'param': 'IsLdwsCar', 'label': 'LDWS Car', 'default': 0, 'desc': 'Vehicle has a lane departure warning system. Default off.'}, {'type': 'bool', 'param': 'HDPuse', 'label': 'HD Pause', 'default': 0, 'desc': 'Pause control in high-definition map mode. Default off.'}, {'type': 'bool', 'param': 'HotspotOnBoot', 'label': 'Hotspot On Boot', 'default': 0, 'desc': 'Start a Wi-Fi hotspot on boot. Default off.'}, {'type': 'bool', 'param': 'UseWideCamera', 'label': 'Use Wide Camera', 'default': 1, 'desc': 'Use the wide camera for vision. Default on.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Radar / Tracks'}, {'type': 'bool', 'param': 'EnableCornerRadar', 'label': 'Enable Corner Radar', 'default': 0, 'desc': 'Enable corner radar processing. Default off.'}, {'type': 'bool', 'param': 'EnableRadarTracks', 'label': 'Enable Radar Tracks', 'default': 0, 'desc': 'Enable radar track fusion. Default off.'}, {'type': 'bool', 'param': 'EnableSpeedTF', 'label': 'Enable Speed TF', 'default': 0, 'desc': 'Enable speed time-to-event fusion. Default off.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Comfort'}, {'type': 'bool', 'param': 'MuteDoor', 'label': 'Mute Door', 'default': 0, 'desc': 'Mute door-open chime. Default off.'}, {'type': 'bool', 'param': 'MuteSeatbelt', 'label': 'Mute Seatbelt', 'default': 0, 'desc': 'Mute seatbelt chime. Default off.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Driving Data'}, {'type': 'bool', 'param': 'RecordRoadCam', 'label': 'Record Road Cam', 'default': 0, 'desc': 'Record the road camera. Default off.'}, {'type': 'bool', 'param': 'ShareData', 'label': 'Share Data', 'default': 0, 'desc': 'Share anonymous driving data. Default off.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Timeouts'}, {'type': 'int', 'param': 'MaxAngleFrames', 'label': 'Max Angle Frames', 'min': 0, 'max': 200, 'step': 1, 'desc': 'Maximum steering-angle stabilization frames. Default 89.'}, {'type': 'int', 'param': 'MaxTimeOffroadMin', 'label': 'Max Time Offroad (min)', 'min': 0, 'max': 600, 'step': 5, 'desc': 'Maximum offroad time before shutdown (minutes). Default 60.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Driving Mode'}, {'type': 'int', 'param': 'MyDrivingMode', 'label': 'My Driving Mode', 'min': 0, 'max': 3, 'step': 1, 'desc': 'Carrot driving style preset (0=eco,1=normal,2=sport,3=safe). Default 3.'}, {'type': 'int', 'param': 'MyDrivingModeAuto', 'label': 'My Driving Mode Auto', 'min': 0, 'max': 2, 'step': 1, 'desc': 'Automatically switch driving mode. Default 0.'}]}, {'type': 'tab', 'tab': '开发者', 'widgets': [{'type': 'section', 'label': 'CAN-FD Debug'}, {'type': 'bool', 'param': 'CanfdDebug', 'label': 'CAN-FD Debug', 'default': 0, 'desc': 'Enable CAN-FD debug logging. Default off.'}, {'type': 'bool', 'param': 'CanfdHDA2', 'label': 'CAN-FD HDA2', 'default': 0, 'desc': 'CAN-FD HDA2 variant. Default off.'}, {'type': 'separator'}, {'type': 'section', 'label': 'Hardware / Tests'}, {'type': 'bool', 'param': 'HardwareC3xLite', 'label': 'Hardware C3x Lite', 'default': 0, 'desc': 'C3x Lite hardware variant. Default off.'}, {'type': 'bool', 'param': 'CruiseButtonTest1', 'label': 'Cruise Button Test 1', 'default': 0, 'desc': 'Cruise button test hook 1. Default off.'}, {'type': 'bool', 'param': 'CruiseButtonTest2', 'label': 'Cruise Button Test 2', 'default': 0, 'desc': 'Cruise button test hook 2. Default off.'}, {'type': 'bool', 'param': 'CruiseButtonTest3', 'label': 'Cruise Button Test 3', 'default': 0, 'desc': 'Cruise button test hook 3. Default off.'}, {'type': 'bool', 'param': 'ShowDebugLog', 'label': 'Show Debug Log', 'default': False, 'desc': 'Enable verbose Carrot debug logging. Default off.'}]}, {'type': 'separator'}, {'type': 'action', 'action': 'carrot_tuning_reset', 'label': 'Reset Carrot Tuning', 'button': 'RESET', 'confirm': 'Reset all Carrot tuning parameters to defaults?', 'desc': 'Restore every Carrot tuning parameter on this page to its compiled-in default.'}],
+    "widgets": [
+      {"type": "tabs", "tabs": ["开始", "巡航", "导航", "速度", "调节", "显示", "轨迹", "车辆", "开发者"], "default": "开始"},
+      {"type": "tab", "tab": "开始", "widgets": [
+        {
+          "type": "section",
+          "label": "自动起步 / 巡航"
+        },
+        {
+          "type": "int",
+          "param": "AutoEngage",
+          "label": "自动开启辅助驾驶",
+          "desc": "自动开启辅助驾驶 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoCruiseControl",
+          "label": "自动设定巡航速度",
+          "desc": "自动设定巡航速度 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseOnDist",
+          "label": "达到设定距离自动开启",
+          "desc": "达到设定距离自动开启 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "CruiseEcoControl",
+          "label": "经济巡航控制",
+          "desc": "经济巡航控制 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "按钮行为"
+        },
+        {
+          "type": "int",
+          "param": "CruiseButtonMode",
+          "label": "巡航按钮模式",
+          "desc": "巡航按钮模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CancelButtonMode",
+          "label": "取消按钮模式",
+          "desc": "取消按钮模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "SoftHoldOnCancel",
+          "label": "取消后自动驻车",
+          "desc": "取消后自动驻车 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseButtonLongDelay",
+          "label": "巡航按钮长按延迟",
+          "desc": "巡航按钮长按延迟 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "速度预设"
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeed1",
+          "label": "巡航预设速度 1",
+          "desc": "巡航预设速度 1 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeed2",
+          "label": "巡航预设速度 2",
+          "desc": "巡航预设速度 2 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeed3",
+          "label": "巡航预设速度 3",
+          "desc": "巡航预设速度 3 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeed4",
+          "label": "巡航预设速度 4",
+          "desc": "巡航预设速度 4 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeed5",
+          "label": "巡航预设速度 5",
+          "desc": "巡航预设速度 5 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeedUnit",
+          "label": "巡航预设速度单位",
+          "desc": "巡航预设速度单位 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseSpeedUnitBasic",
+          "label": "基础巡航预设速度单位",
+          "desc": "基础巡航预设速度单位 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "方向盘按钮"
+        },
+        {
+          "type": "int",
+          "param": "LfaButtonMode",
+          "label": "车道保持按钮模式",
+          "desc": "车道保持按钮模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "PaddleMode",
+          "label": "换挡拨片模式",
+          "desc": "换挡拨片模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "自动油门"
+        },
+        {
+          "type": "int",
+          "param": "AutoGasCancelSpeed",
+          "label": "自动油门取消速度",
+          "desc": "自动油门取消速度 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoGasSyncSpeed",
+          "label": "自动油门同步速度",
+          "desc": "自动油门同步速度 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoGasTokSpeed",
+          "label": "自动油门接管速度",
+          "desc": "自动油门接管速度 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+      ]},
+      {"type": "tab", "tab": "巡航", "widgets": [
+        {
+          "type": "section",
+          "label": "跟车距离"
+        },
+        {
+          "type": "text",
+          "param": "TFollowGap1",
+          "label": "跟车时距 1",
+          "desc": "跟车时距 1 参数。"
+        },
+        {
+          "type": "text",
+          "param": "TFollowGap2",
+          "label": "跟车时距 2",
+          "desc": "跟车时距 2 参数。"
+        },
+        {
+          "type": "text",
+          "param": "TFollowGap3",
+          "label": "跟车时距 3",
+          "desc": "跟车时距 3 参数。"
+        },
+        {
+          "type": "text",
+          "param": "TFollowGap4",
+          "label": "跟车时距 4",
+          "desc": "跟车时距 4 参数。"
+        },
+        {
+          "type": "text",
+          "param": "DynamicTFollow",
+          "label": "动态跟车时距",
+          "desc": "动态跟车时距 参数。"
+        },
+        {
+          "type": "text",
+          "param": "DynamicTFollowLC",
+          "label": "变道时动态跟车时距",
+          "desc": "变道时动态跟车时距 参数。"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "纵向增益"
+        },
+        {
+          "type": "int",
+          "param": "LeadAccelResponse",
+          "label": "前车加速响应",
+          "desc": "前车加速响应 参数。",
+          "min": -100,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LongActuatorDelay",
+          "label": "纵向执行器延迟补偿",
+          "desc": "纵向执行器延迟补偿 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LongTuningKf",
+          "label": "纵向前馈系数",
+          "desc": "纵向前馈系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LongTuningKiV",
+          "label": "纵向积分速度系数",
+          "desc": "纵向积分速度系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LongTuningKpV",
+          "label": "纵向比例速度系数",
+          "desc": "纵向比例速度系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "StoppingAccel",
+          "label": "停车加速度",
+          "desc": "停车加速度 参数。",
+          "min": -200,
+          "max": 0,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "TFollowDecelBoost",
+          "label": "跟车减速增强",
+          "desc": "跟车减速增强 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "加速度限制"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals0",
+          "label": "巡航最大加速度 0",
+          "desc": "巡航最大加速度 0 参数。"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals1",
+          "label": "巡航最大加速度 1",
+          "desc": "巡航最大加速度 1 参数。"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals2",
+          "label": "巡航最大加速度 2",
+          "desc": "巡航最大加速度 2 参数。"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals3",
+          "label": "巡航最大加速度 3",
+          "desc": "巡航最大加速度 3 参数。"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals4",
+          "label": "巡航最大加速度 4",
+          "desc": "巡航最大加速度 4 参数。"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals5",
+          "label": "巡航最大加速度 5",
+          "desc": "巡航最大加速度 5 参数。"
+        },
+        {
+          "type": "text",
+          "param": "CruiseMaxVals6",
+          "label": "巡航最大加速度 6",
+          "desc": "巡航最大加速度 6 参数。"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "巡航行为"
+        },
+        {
+          "type": "int",
+          "param": "CarrotCruiseDecel",
+          "label": "Carrot 巡航减速强度",
+          "desc": "Carrot 巡航减速强度 参数。",
+          "min": -100,
+          "max": 0,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CarrotCruiseAtcDecel",
+          "label": "Carrot 巡航 ATC 减速强度",
+          "desc": "Carrot 巡航 ATC 减速强度 参数。",
+          "min": -100,
+          "max": 0,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "VEgoStopping",
+          "label": "停车判定车速",
+          "desc": "停车判定车速 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "ApplyModelSpeed",
+          "label": "模型速度补偿",
+          "desc": "模型速度补偿 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+      ]},
+      {"type": "tab", "tab": "导航", "widgets": [
+        {
+          "type": "section",
+          "label": "导航限速控制"
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedCtrlMode",
+          "label": "导航限速控制模式",
+          "desc": "导航限速控制模式 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedDecelRate",
+          "label": "导航限速减速率",
+          "desc": "导航限速减速率 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedSafetyFactor",
+          "label": "导航限速安全余量",
+          "desc": "导航限速安全余量 参数。",
+          "min": 50,
+          "max": 150,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedCtrlEnd",
+          "label": "导航限速控制结束距离",
+          "desc": "导航限速控制结束距离 参数。",
+          "min": 0,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "停车 / 测速相机"
+        },
+        {
+          "type": "int",
+          "param": "StopDistanceCarrot",
+          "label": "停车目标距离",
+          "desc": "停车目标距离 参数。",
+          "min": 0,
+          "max": 2000,
+          "step": 10
+        },
+        {
+          "type": "bool",
+          "param": "SameSpiCamFilter",
+          "label": "同方向测速相机过滤",
+          "desc": "同方向测速相机过滤 参数。",
+          "default": True
+        },
+        {
+          "type": "int",
+          "param": "HapticFeedbackWhenSpeedCamera",
+          "label": "测速相机震动提醒",
+          "desc": "测速相机震动提醒 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "TrafficStopDistanceAdjust",
+          "label": "红绿灯停车距离修正",
+          "desc": "红绿灯停车距离修正 参数。",
+          "min": -500,
+          "max": 500,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "TrafficLightDetectMode",
+          "label": "红绿灯检测模式",
+          "desc": "红绿灯检测模式 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "道路限速"
+        },
+        {
+          "type": "int",
+          "param": "AutoRoadSpeedAdjust",
+          "label": "道路限速自动修正",
+          "desc": "道路限速自动修正 参数。",
+          "min": -50,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoRoadSpeedLimitOffset",
+          "label": "道路限速偏移量",
+          "desc": "道路限速偏移量 参数。",
+          "min": -30,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoSpeedUptoRoadSpeedLimit",
+          "label": "自动提速至道路限速",
+          "desc": "自动提速至道路限速 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "SpeedFromPCM",
+          "label": "车速来源 PCM",
+          "desc": "车速来源 PCM 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "RoadType",
+          "label": "道路类型",
+          "desc": "道路类型 参数。",
+          "min": -1,
+          "max": 5,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Vehicle CAN Speed Arbitration"
+        },
+        {
+          "type": "multiple_button",
+          "param": "VehicleNaviCanControl",
+          "label": "车辆导航 CAN 控制",
+          "desc": "车辆导航 CAN 控制 参数。",
+          "buttons": ["Off", "Camera/Bump Always", "Camera Always/Bump Route", "Camera/Bump Route"],
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "bool",
+          "param": "VehicleNaviSchoolZoneControl",
+          "label": "学校区域 CAN 控制",
+          "desc": "学校区域 CAN 控制 参数。",
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          },
+          "default": False
+        },
+        {
+          "type": "multiple_button",
+          "param": "VehicleSpeedCameraControlMode",
+          "label": "测速相机控制模式",
+          "desc": "测速相机控制模式 参数。",
+          "buttons": ["Off", "Always Apply", "Gas Floor", "Gas Pause"],
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "int",
+          "param": "VehicleSpeedCameraDistanceTime",
+          "label": "测速相机提前提醒时间",
+          "desc": "测速相机提前提醒时间 参数。",
+          "min": 10,
+          "max": 200,
+          "step": 1,
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Speed Bumps"
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedBumpEndDistance",
+          "label": "减速带结束距离",
+          "desc": "减速带结束距离 参数。",
+          "min": 0,
+          "max": 5000,
+          "step": 10,
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviCountDownMode",
+          "label": "倒计时模式",
+          "desc": "倒计时模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedBumpSpeed",
+          "label": "减速带目标速度",
+          "desc": "减速带目标速度 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviSpeedBumpTime",
+          "label": "减速带保持时间",
+          "desc": "减速带保持时间 参数。",
+          "min": 0,
+          "max": 10,
+          "step": 1
+        },
+      ]},
+      {"type": "tab", "tab": "速度", "widgets": [
+        {
+          "type": "section",
+          "label": "ATC Turn Control"
+        },
+        {
+          "type": "int",
+          "param": "AutoTurnControl",
+          "label": "自动转向控制",
+          "desc": "自动转向控制 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoTurnControlSpeedTurn",
+          "label": "自动转向车速阈值",
+          "desc": "自动转向车速阈值 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoTurnControlTurnEnd",
+          "label": "自动转向结束距离",
+          "desc": "自动转向结束距离 参数。",
+          "min": 0,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoTurnMapChange",
+          "label": "导航变道时自动转向",
+          "desc": "导航变道时自动转向 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoTurnDistOffset",
+          "label": "自动转向距离偏移",
+          "desc": "自动转向距离偏移 参数。",
+          "min": 0,
+          "max": 1000,
+          "step": 5
+        },
+        {
+          "type": "bool",
+          "param": "AutoTurnInNotRoadEdge",
+          "label": "非路沿处允许自动转向",
+          "desc": "非路沿处允许自动转向 参数。",
+          "default": True
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Fork Control"
+        },
+        {
+          "type": "int",
+          "param": "AutoForkDistOffset",
+          "label": "匝道汇入距离偏移",
+          "desc": "匝道汇入距离偏移 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoForkDistOffsetH",
+          "label": "匝道汇入距离偏移（高速）",
+          "desc": "匝道汇入距离偏移（高速） 参数。",
+          "min": 0,
+          "max": 2000,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "AutoDoForkBlinkerDist",
+          "label": "匝道转向灯触发距离",
+          "desc": "匝道转向灯触发距离 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoDoForkBlinkerDistH",
+          "label": "匝道转向灯触发距离（高速）",
+          "desc": "匝道转向灯触发距离（高速） 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoDoForkNavDist",
+          "label": "导航匝道触发距离",
+          "desc": "导航匝道触发距离 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoDoForkNavDistH",
+          "label": "导航匝道触发距离（高速）",
+          "desc": "导航匝道触发距离（高速） 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoDoForkDecalDist",
+          "label": "匝道减速触发距离",
+          "desc": "匝道减速触发距离 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoDoForkDecalDistH",
+          "label": "匝道减速触发距离（高速）",
+          "desc": "匝道减速触发距离（高速） 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoForkDecalRate",
+          "label": "匝道减速率",
+          "desc": "匝道减速率 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "AutoForkDecalRateH",
+          "label": "匝道减速率（高速）",
+          "desc": "匝道减速率（高速） 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "AutoForkSpeedMin",
+          "label": "匝道最低速度",
+          "desc": "匝道最低速度 参数。",
+          "min": 0,
+          "max": 120,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoForkSpeedMinH",
+          "label": "匝道最低速度（高速）",
+          "desc": "匝道最低速度（高速） 参数。",
+          "min": 0,
+          "max": 120,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoKeepForkSpeed",
+          "label": "匝道保持速度",
+          "desc": "匝道保持速度 参数。",
+          "min": 0,
+          "max": 60,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoKeepForkSpeedH",
+          "label": "匝道保持速度（高速）",
+          "desc": "匝道保持速度（高速） 参数。",
+          "min": 0,
+          "max": 60,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Turn Speed"
+        },
+        {
+          "type": "int",
+          "param": "MapTurnSpeedFactor",
+          "label": "地图弯道速度系数",
+          "desc": "地图弯道速度系数 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "TurnSpeedControlMode",
+          "label": "弯道速度控制模式",
+          "desc": "弯道速度控制模式 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "弯道限速"
+        },
+        {
+          "type": "int",
+          "param": "AutoCurveSpeedFactor",
+          "label": "弯道限速系数",
+          "desc": "弯道限速系数 参数。",
+          "min": 10,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoCurveSpeedFactorH",
+          "label": "弯道限速系数（高速）",
+          "desc": "弯道限速系数（高速） 参数。",
+          "min": 10,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoCurveSpeedAggressivenessH",
+          "label": "高速弯道激进程度",
+          "desc": "高速弯道激进程度 参数。",
+          "min": 10,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoCurveSpeedLowerLimit",
+          "label": "弯道限速下限",
+          "desc": "弯道限速下限 参数。",
+          "min": 0,
+          "max": 150,
+          "step": 5
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Road Limit Raising"
+        },
+        {
+          "type": "int",
+          "param": "AutoUpRoadLimit",
+          "label": "自动提升道路限速",
+          "desc": "自动提升道路限速 参数。",
+          "min": 0,
+          "max": 120,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoUpRoadLimit40KMH",
+          "label": "40 km/h 限速自动提升",
+          "desc": "40 km/h 限速自动提升 参数。",
+          "min": 0,
+          "max": 60,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoUpHighwayRoadLimit",
+          "label": "高速公路限速自动提升",
+          "desc": "高速公路限速自动提升 参数。",
+          "min": 0,
+          "max": 160,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoUpHighwayRoadLimit40KMH",
+          "label": "高速 40 km/h 限速自动提升",
+          "desc": "高速 40 km/h 限速自动提升 参数。",
+          "min": 0,
+          "max": 60,
+          "step": 1
+        },
+      ]},
+      {"type": "tab", "tab": "调节", "widgets": [
+        {
+          "type": "section",
+          "label": "Lateral Mode"
+        },
+        {
+          "type": "int",
+          "param": "AlwaysLateral",
+          "label": "始终启用横向控制",
+          "desc": "始终启用横向控制 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Steering Limits"
+        },
+        {
+          "type": "int",
+          "param": "CustomSR",
+          "label": "自定义转向比",
+          "desc": "自定义转向比 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CustomSteerMax",
+          "label": "自定义最大转向角",
+          "desc": "自定义最大转向角 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CustomSteerDeltaDown",
+          "label": "转向变化率下限",
+          "desc": "转向变化率下限 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CustomSteerDeltaUp",
+          "label": "转向变化率上限",
+          "desc": "转向变化率上限 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CustomSteerDeltaDownLC",
+          "label": "变道转向变化率下限",
+          "desc": "变道转向变化率下限 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CustomSteerDeltaUpLC",
+          "label": "变道转向变化率上限",
+          "desc": "变道转向变化率上限 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "SteerActuatorDelay",
+          "label": "转向执行器延迟",
+          "desc": "转向执行器延迟 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "SteerRatioRate",
+          "label": "转向比变化率",
+          "desc": "转向比变化率 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Path Offset"
+        },
+        {
+          "type": "int",
+          "param": "PathOffset",
+          "label": "路径偏移",
+          "desc": "路径偏移 参数。",
+          "min": -100,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AdjustLaneOffset",
+          "label": "车道偏移调整",
+          "desc": "车道偏移调整 参数。",
+          "min": -50,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CameraYawTrimDeg",
+          "label": "相机偏航修正",
+          "desc": "相机偏航修正 参数。",
+          "min": -20,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Lateral MPC Costs"
+        },
+        {
+          "type": "int",
+          "param": "LatMpcAccelCost",
+          "label": "横向加速度代价",
+          "desc": "横向加速度代价 参数。",
+          "min": 0,
+          "max": 500,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LatMpcJerkCost",
+          "label": "横向急动度代价",
+          "desc": "横向急动度代价 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LatMpcMotionCost",
+          "label": "横向运动代价",
+          "desc": "横向运动代价 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LatMpcPathCost",
+          "label": "横向路径代价",
+          "desc": "横向路径代价 参数。",
+          "min": 0,
+          "max": 1000,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LatMpcSteeringRateCost",
+          "label": "横向转向速率代价",
+          "desc": "横向转向速率代价 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Lateral Torque"
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueCustom",
+          "label": "自定义横向扭矩",
+          "desc": "自定义横向扭矩 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueFriction",
+          "label": "横向扭矩摩擦系数",
+          "desc": "横向扭矩摩擦系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueKd",
+          "label": "横向扭矩微分系数",
+          "desc": "横向扭矩微分系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueKf",
+          "label": "横向扭矩前馈系数",
+          "desc": "横向扭矩前馈系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueKiV",
+          "label": "横向扭矩积分速度系数",
+          "desc": "横向扭矩积分速度系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueKpV",
+          "label": "横向扭矩比例速度系数",
+          "desc": "横向扭矩比例速度系数 参数。",
+          "min": 0,
+          "max": 300,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "LateralTorqueAccelFactor",
+          "label": "横向扭矩加速度系数",
+          "desc": "横向扭矩加速度系数 参数。",
+          "min": 0,
+          "max": 5000,
+          "step": 50
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Lateral Smoothing"
+        },
+        {
+          "type": "int",
+          "param": "LatMpcInputOffset",
+          "label": "横向输入偏移",
+          "desc": "横向输入偏移 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LatSmoothSec",
+          "label": "横向平滑时间",
+          "desc": "横向平滑时间 参数。",
+          "min": 0,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "变道"
+        },
+        {
+          "type": "int",
+          "param": "LaneChangeBsd",
+          "label": "变道盲区检测",
+          "desc": "变道盲区检测 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LaneChangeDelay",
+          "label": "变道延迟",
+          "desc": "变道延迟 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LaneChangeNeedTorque",
+          "label": "变道需要手力",
+          "desc": "变道需要手力 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "ContinuousLaneChange",
+          "label": "连续变道",
+          "desc": "连续变道 参数。",
+          "default": True
+        },
+        {
+          "type": "int",
+          "param": "ContinuousLaneChangeCnt",
+          "label": "连续变道次数",
+          "desc": "连续变道次数 参数。",
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ContinuousLaneChangeInterval",
+          "label": "连续变道间隔",
+          "desc": "连续变道间隔 参数。",
+          "min": 0,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AChangeCostStarting",
+          "label": "变道起步代价",
+          "desc": "变道起步代价 参数。",
+          "min": 0,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Auto Turn / New Lane"
+        },
+        {
+          "type": "int",
+          "param": "LaneStabTime",
+          "label": "车道稳定时间",
+          "desc": "车道稳定时间 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "NewLaneWidthDiff",
+          "label": "新车道宽度差阈值",
+          "desc": "新车道宽度差阈值 参数。",
+          "min": 0,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoEnTurnNewLaneTime",
+          "label": "自动进入新车道时间",
+          "desc": "自动进入新车道时间 参数。",
+          "min": 0,
+          "max": 60,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "AutoEnTurnNewLaneTimeH",
+          "label": "自动进入新车道时间（高速）",
+          "desc": "自动进入新车道时间（高速） 参数。",
+          "min": 0,
+          "max": 60,
+          "step": 5
+        },
+        {
+          "type": "bool",
+          "param": "AutoTurnLeft",
+          "label": "自动左转",
+          "desc": "自动左转 参数。",
+          "default": True
+        },
+        {
+          "type": "bool",
+          "param": "StockBlinkerCtrl",
+          "label": "原车转向灯控制",
+          "desc": "原车转向灯控制 参数。",
+          "default": False
+        },
+        {
+          "type": "bool",
+          "param": "ExtBlinkerCtrlTest",
+          "label": "扩展转向灯测试",
+          "desc": "扩展转向灯测试 参数。",
+          "default": False
+        },
+        {
+          "type": "int",
+          "param": "BlinkerMode",
+          "label": "转向灯模式",
+          "desc": "转向灯模式 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "盲区检测"
+        },
+        {
+          "type": "bool",
+          "param": "DisableBlindSpot",
+          "label": "禁用盲区检测",
+          "desc": "禁用盲区检测 参数。",
+          "default": False
+        },
+        {
+          "type": "int",
+          "param": "DynamicBlindRange",
+          "label": "动态盲区范围",
+          "desc": "动态盲区范围 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "DynamicBlindDistance",
+          "label": "动态盲区距离",
+          "desc": "动态盲区距离 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "BsdDelayTime",
+          "label": "盲区检测延迟",
+          "desc": "盲区检测延迟 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "SideBsdDelayTime",
+          "label": "侧向盲区延迟",
+          "desc": "侧向盲区延迟 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "SideRelDistTime",
+          "label": "侧向相对距离时间",
+          "desc": "侧向相对距离时间 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "SidevRelDistTime",
+          "label": "侧向相对速度时间",
+          "desc": "侧向相对速度时间 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "SideRadarMinDist",
+          "label": "侧向雷达最小距离",
+          "desc": "侧向雷达最小距离 参数。",
+          "min": 0,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Lane Line / ONNX"
+        },
+        {
+          "type": "int",
+          "param": "LaneLineCheck",
+          "label": "车道线检查",
+          "desc": "车道线检查 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "OnnxBsdIntervalMs",
+          "label": "ONNX 盲区检测间隔",
+          "desc": "ONNX 盲区检测间隔 参数。",
+          "min": 50,
+          "max": 1000,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "OnnxBsdSmoothingMs",
+          "label": "ONNX 盲区检测平滑",
+          "desc": "ONNX 盲区检测平滑 参数。",
+          "min": 0,
+          "max": 1000,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "OnnxBsdThreshold",
+          "label": "ONNX 盲区检测阈值",
+          "desc": "ONNX 盲区检测阈值 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "OnnxLaneIntervalMs",
+          "label": "ONNX 车道检测间隔",
+          "desc": "ONNX 车道检测间隔 参数。",
+          "min": 50,
+          "max": 1000,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "OnnxLaneThreshold",
+          "label": "ONNX 车道检测阈值",
+          "desc": "ONNX 车道检测阈值 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+      ]},
+      {"type": "tab", "tab": "显示", "widgets": [
+        {
+          "type": "section",
+          "label": "Steering Suspend"
+        },
+        {
+          "type": "int",
+          "param": "LatSuspendAngleDeg",
+          "label": "横向挂起角度",
+          "desc": "横向挂起角度 参数。",
+          "min": 45,
+          "max": 300,
+          "step": 10
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Cluster Map"
+        },
+        {
+          "type": "multiple_button",
+          "param": "ClusterNaviMapTheme",
+          "label": "仪表导航地图主题",
+          "desc": "仪表导航地图主题 参数。",
+          "buttons": ["Auto", "Dark", "Light"],
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "multiple_button",
+          "param": "ClusterNaviMapType",
+          "label": "仪表导航地图类型",
+          "desc": "仪表导航地图类型 参数。",
+          "buttons": ["Normal", "Satellite"],
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "multiple_button",
+          "param": "ClusterNaviMapFps",
+          "label": "仪表导航地图帧率",
+          "desc": "仪表导航地图帧率 参数。",
+          "buttons": ["5 FPS", "10 FPS", "20 FPS", "30 FPS"],
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          }
+        },
+        {
+          "type": "bool",
+          "param": "CarrotNaviHudMapProfile",
+          "label": "Carrot HUD 地图配置",
+          "desc": "Carrot HUD 地图配置 参数。",
+          "visible_if": {
+            "param": "CarrotEnabled",
+            "eq": "1"
+          },
+          "default": False
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Cluster HUD"
+        },
+        {
+          "type": "bool",
+          "param": "ClusterHud",
+          "label": "仪表 HUD",
+          "desc": "仪表 HUD 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudBrightness",
+          "label": "仪表 HUD 亮度",
+          "desc": "仪表 HUD 亮度 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudCameraViewMode",
+          "label": "仪表 HUD 相机视图模式",
+          "desc": "仪表 HUD 相机视图模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudCoreMode",
+          "label": "仪表 HUD 核心模式",
+          "desc": "仪表 HUD 核心模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "ClusterHudDebug",
+          "label": "仪表 HUD 调试",
+          "desc": "仪表 HUD 调试 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ClusterHudEncoder",
+          "label": "仪表 HUD 编码器",
+          "desc": "仪表 HUD 编码器 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudLiveFps",
+          "label": "仪表 HUD 实时帧率",
+          "desc": "仪表 HUD 实时帧率 参数。",
+          "min": 1,
+          "max": 60,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "ClusterHudMirror",
+          "label": "仪表 HUD 镜像",
+          "desc": "仪表 HUD 镜像 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudOrientation",
+          "label": "仪表 HUD 方向",
+          "desc": "仪表 HUD 方向 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudPanelLayout",
+          "label": "仪表 HUD 面板布局",
+          "desc": "仪表 HUD 面板布局 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudPriority",
+          "label": "仪表 HUD 优先级",
+          "desc": "仪表 HUD 优先级 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "ClusterHudRadarDisplay",
+          "label": "仪表 HUD 雷达显示",
+          "desc": "仪表 HUD 雷达显示 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudRadarInfo",
+          "label": "仪表 HUD 雷达信息",
+          "desc": "仪表 HUD 雷达信息 参数。",
+          "min": 0,
+          "max": 10,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "ClusterHudRadarSourceColor",
+          "label": "仪表 HUD 雷达颜色源",
+          "desc": "仪表 HUD 雷达颜色源 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudScreenMode",
+          "label": "仪表 HUD 屏幕模式",
+          "desc": "仪表 HUD 屏幕模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ClusterHudTheme",
+          "label": "仪表 HUD 主题",
+          "desc": "仪表 HUD 主题 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "On-Screen Info"
+        },
+        {
+          "type": "bool",
+          "param": "ShowCameraWithCluster",
+          "label": "仪表显示摄像头",
+          "desc": "仪表显示摄像头 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "ShowCustomBrightness",
+          "label": "自定义亮度显示",
+          "desc": "自定义亮度显示 参数。",
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "bool",
+          "param": "ShowDateTime",
+          "label": "显示日期时间",
+          "desc": "显示日期时间 参数。",
+          "default": 1
+        },
+        {
+          "type": "bool",
+          "param": "ShowDebugUI",
+          "label": "显示调试界面",
+          "desc": "显示调试界面 参数。",
+          "default": 1
+        },
+        {
+          "type": "bool",
+          "param": "ShowDeviceState",
+          "label": "显示设备状态",
+          "desc": "显示设备状态 参数。",
+          "default": 1
+        },
+        {
+          "type": "bool",
+          "param": "ShowLaneInfo",
+          "label": "显示车道信息",
+          "desc": "显示车道信息 参数。",
+          "default": 1
+        },
+        {
+          "type": "bool",
+          "param": "ShowModelView",
+          "label": "显示模型视图",
+          "desc": "显示模型视图 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ShowPlotMode",
+          "label": "显示绘图模式",
+          "desc": "显示绘图模式 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ShowRadarInfo",
+          "label": "显示雷达信息",
+          "desc": "显示雷达信息 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ShowRouteInfo",
+          "label": "显示路线信息",
+          "desc": "显示路线信息 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ShowTpms",
+          "label": "显示胎压",
+          "desc": "显示胎压 参数。",
+          "default": 1
+        },
+        {
+          "type": "bool",
+          "param": "SoftwareMenu",
+          "label": "软件菜单",
+          "desc": "软件菜单 参数。",
+          "default": 0
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Sound / Map"
+        },
+        {
+          "type": "int",
+          "param": "SoundVolumeAdjust",
+          "label": "提示音音量调整",
+          "desc": "提示音音量调整 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 10
+        },
+        {
+          "type": "int",
+          "param": "SoundVolumeAdjustEngage",
+          "label": "激活提示音音量",
+          "desc": "激活提示音音量 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 10
+        },
+        {
+          "type": "text",
+          "param": "SoundLanguageSetting",
+          "label": "提示音语言",
+          "desc": "提示音语言 参数。"
+        },
+        {
+          "type": "int",
+          "param": "MapboxStyle",
+          "label": "Mapbox 地图样式",
+          "desc": "Mapbox 地图样式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "YouTube Live"
+        },
+        {
+          "type": "bool",
+          "param": "CarrotYouTubeLive",
+          "label": "Carrot YouTube 直播",
+          "desc": "Carrot YouTube 直播 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "CarrotYouTubeQuality",
+          "label": "Carrot YouTube 画质",
+          "desc": "Carrot YouTube 画质 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "CarrotYouTubeTimestamp",
+          "label": "Carrot YouTube 时间戳",
+          "desc": "Carrot YouTube 时间戳 参数。",
+          "default": 0
+        },
+      ]},
+      {"type": "tab", "tab": "轨迹", "widgets": [
+        {
+          "type": "section",
+          "label": "Path Appearance"
+        },
+        {
+          "type": "int",
+          "param": "ShowPathColor",
+          "label": "路径颜色",
+          "desc": "路径颜色 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ShowPathColorCruiseOff",
+          "label": "未巡航路径颜色",
+          "desc": "未巡航路径颜色 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ShowPathColorLane",
+          "label": "车道路径颜色",
+          "desc": "车道路径颜色 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "bool",
+          "param": "ShowPathEnd",
+          "label": "路径终点显示",
+          "desc": "路径终点显示 参数。",
+          "default": 1
+        },
+        {
+          "type": "int",
+          "param": "ShowPathMode",
+          "label": "路径显示模式",
+          "desc": "路径显示模式 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "ShowPathModeLane",
+          "label": "车道路径显示模式",
+          "desc": "车道路径显示模式 参数。",
+          "min": 0,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Trajectory / Lane Line"
+        },
+        {
+          "type": "bool",
+          "param": "CarrotTireTrajectory",
+          "label": "轮胎轨迹",
+          "desc": "轮胎轨迹 参数。",
+          "default": 0
+        },
+        {
+          "type": "int",
+          "param": "UseLaneLineCurveSpeed",
+          "label": "使用车道线弯道限速",
+          "desc": "使用车道线弯道限速 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "UseLaneLineSpeed",
+          "label": "使用车道线速度",
+          "desc": "使用车道线速度 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+      ]},
+      {"type": "tab", "tab": "车辆", "widgets": [
+        {
+          "type": "section",
+          "label": "Driver / Safety"
+        },
+        {
+          "type": "bool",
+          "param": "DisableDM",
+          "label": "禁用驾驶员监控",
+          "desc": "禁用驾驶员监控 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "DisableMinSteerSpeed",
+          "label": "禁用最低转向速度",
+          "desc": "禁用最低转向速度 参数。",
+          "default": 0
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Vehicle Features"
+        },
+        {
+          "type": "bool",
+          "param": "HyundaiCameraSCC",
+          "label": "现代摄像头自适应巡航",
+          "desc": "现代摄像头自适应巡航 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "IsLdwsCar",
+          "label": "车道偏离预警车辆",
+          "desc": "车道偏离预警车辆 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "HDPuse",
+          "label": "HDP 使用",
+          "desc": "HDP 使用 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "HotspotOnBoot",
+          "label": "开机启动热点",
+          "desc": "开机启动热点 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "UseWideCamera",
+          "label": "使用广角摄像头",
+          "desc": "使用广角摄像头 参数。",
+          "default": 1
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Radar / Tracks"
+        },
+        {
+          "type": "bool",
+          "param": "EnableCornerRadar",
+          "label": "启用角雷达",
+          "desc": "启用角雷达 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "EnableRadarTracks",
+          "label": "启用雷达跟踪",
+          "desc": "启用雷达跟踪 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "EnableSpeedTF",
+          "label": "启用速度 TF",
+          "desc": "启用速度 TF 参数。",
+          "default": 0
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Comfort"
+        },
+        {
+          "type": "bool",
+          "param": "MuteDoor",
+          "label": "静音车门",
+          "desc": "静音车门 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "MuteSeatbelt",
+          "label": "静音安全带",
+          "desc": "静音安全带 参数。",
+          "default": 0
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Driving Data"
+        },
+        {
+          "type": "bool",
+          "param": "RecordRoadCam",
+          "label": "录制道路摄像头",
+          "desc": "录制道路摄像头 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ShareData",
+          "label": "共享数据",
+          "desc": "共享数据 参数。",
+          "default": 0
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Timeouts"
+        },
+        {
+          "type": "int",
+          "param": "MaxAngleFrames",
+          "label": "最大角度帧数",
+          "desc": "最大角度帧数 参数。",
+          "min": 0,
+          "max": 200,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "MaxTimeOffroadMin",
+          "label": "Max Time Offroad (min)",
+          "desc": "Maximum offroad time before shutdown (minutes). Default 60.",
+          "min": 0,
+          "max": 600,
+          "step": 5
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Driving Mode"
+        },
+        {
+          "type": "int",
+          "param": "MyDrivingMode",
+          "label": "我的驾驶模式",
+          "desc": "我的驾驶模式 参数。",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "MyDrivingModeAuto",
+          "label": "我的驾驶模式自动",
+          "desc": "我的驾驶模式自动 参数。",
+          "min": 0,
+          "max": 2,
+          "step": 1
+        },
+      ]},
+      {"type": "tab", "tab": "开发者", "widgets": [
+        {
+          "type": "section",
+          "label": "CAN-FD Debug"
+        },
+        {
+          "type": "bool",
+          "param": "CanfdDebug",
+          "label": "CANFD 调试",
+          "desc": "CANFD 调试 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "CanfdHDA2",
+          "label": "CANFD HDA2",
+          "desc": "CANFD HDA2 参数。",
+          "default": 0
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "section",
+          "label": "Hardware / Tests"
+        },
+        {
+          "type": "bool",
+          "param": "HardwareC3xLite",
+          "label": "C3X Lite 硬件",
+          "desc": "C3X Lite 硬件 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "CruiseButtonTest1",
+          "label": "巡航按钮测试 1",
+          "desc": "巡航按钮测试 1 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "CruiseButtonTest2",
+          "label": "巡航按钮测试 2",
+          "desc": "巡航按钮测试 2 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "CruiseButtonTest3",
+          "label": "巡航按钮测试 3",
+          "desc": "巡航按钮测试 3 参数。",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "ShowDebugLog",
+          "label": "显示调试日志",
+          "desc": "显示调试日志 参数。",
+          "default": False
+        },
+      ]},
+      {
+        "type": "separator"
+      },
+      {
+        "type": "action",
+        "label": "Reset Carrot Tuning",
+        "desc": "Restore every Carrot tuning parameter on this page to its compiled-in default.",
+        "action": "carrot_tuning_reset",
+        "confirm": "Reset all Carrot tuning parameters to defaults?",
+        "button": "RESET"
+      },
+    ],
   },
+
   "steering__mads": {
     "id": "steering__mads",
     "title": "Customize MADS",
