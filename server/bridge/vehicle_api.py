@@ -265,9 +265,11 @@ def vehicle_brand_widgets() -> dict[str, Any]:
 
   try:
     from openpilot.common.params import Params
+    from webui.server.bridge.car_context import get_car_context
     p = Params()
     values: dict[str, str] = {}
     out: list[dict[str, Any]] = []
+    ctx = get_car_context()
     for w in widgets:
       key = w.get("param")
       if not key:
@@ -285,6 +287,14 @@ def vehicle_brand_widgets() -> dict[str, Any]:
       except Exception:
         pass
       out.append({**w, "available": True, "value": val, "param_type": ptype, "locked": locked})
-    return {"ok": True, "brand": brand, "widgets": out, "values": values}
+    return {
+      "ok": True,
+      "brand": brand,
+      "widgets": out,
+      "values": values,
+      "hyundai_long_tuning_available": ctx.alpha_long_available,
+      "tesla_has_vehicle_bus": ctx.tesla_has_vehicle_bus,
+      "subaru_sng_available": ctx.subaru_sng_available,
+    }
   except Exception as exc:
     return {"ok": False, "error": str(exc)}
