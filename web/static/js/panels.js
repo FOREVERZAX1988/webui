@@ -1602,6 +1602,21 @@ function disposePanelWidgets(container) {
   }
 }
 
+function activateDefaultTab(container, data) {
+  const tabsRow = container.querySelector(".opui-tabs-row");
+  if (!tabsRow) return;
+  const defaultTab = data.widgets.find((w) => w.type === "tabs")?.default;
+  const firstBtn = tabsRow.querySelector(".opui-tab-btn");
+  const target = defaultTab || firstBtn?.dataset.tabTarget;
+  if (!target) return;
+  for (const b of container.querySelectorAll(".opui-tab-btn")) {
+    b.classList.toggle("opui-tab-btn--active", b.dataset.tabTarget === target);
+  }
+  for (const pane of container.querySelectorAll(".opui-tab-pane")) {
+    pane.classList.toggle("opui-tab-pane--active", pane.dataset.tabName === target);
+  }
+}
+
 function renderGenericPanel(container, data, panelId = "") {
   // Preserve scroll position when the same panel is re-rendered after a param change.
   const scrollHost = container?.closest(".opui-panel-scroll-host") || container;
@@ -1612,6 +1627,7 @@ function renderGenericPanel(container, data, panelId = "") {
   disposePanelWidgets(container);
   container.innerHTML = "";
   appendPanelWidgets(container, data);
+  activateDefaultTab(container, data);
   if (scrollHost && savedScrollTop > 0) {
     // Re-apply the captured scroll offset once the DOM has settled.
     requestAnimationFrame(() => { scrollHost.scrollTop = savedScrollTop; });
@@ -1669,6 +1685,14 @@ function renderWidget(w, panelData) {
     return renderSubpanelRow(w);
   }
 
+  if (kind === "tabs") {
+    return renderTabsRow(w);
+  }
+
+  if (kind === "tab") {
+    return renderTabPane(w, panelData);
+  }
+
   if (kind === "custom") {
     if (w.custom === "ssh_keys") return renderSshKeysBlock();
     if (w.custom === "chestnut_status") return renderChestnutStatusRow();
@@ -1715,6 +1739,47 @@ function renderWidget(w, panelData) {
   }
 
   return null;
+}
+
+function renderTabsRow(w) {
+  const wrap = document.createElement("div");
+  wrap.className = "opui-tabs-row";
+  const tabs = Array.isArray(w.tabs) ? w.tabs : [];
+  for (const tabName of tabs) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "opui-tab-btn";
+    btn.textContent = t(tabName);
+    btn.dataset.tabTarget = tabName;
+    btn.addEventListener("click", () => {
+      const panel = wrap.closest(".opui-panel-body") || wrap.parentElement;
+      if (!panel) return;
+      for (const b of panel.querySelectorAll(".opui-tab-btn")) {
+        b.classList.toggle("opui-tab-btn--active", b.dataset.tabTarget === tabName);
+      }
+      for (const pane of panel.querySelectorAll(".opui-tab-pane")) {
+        pane.classList.toggle("opui-tab-pane--active", pane.dataset.tabName === tabName);
+      }
+      const scrollHost = panel.closest(".opui-panel-scroll-host");
+      if (scrollHost) scrollHost.scrollTop = 0;
+    });
+    wrap.appendChild(btn);
+  }
+  return wrap;
+}
+
+function renderTabPane(w, panelData) {
+  const pane = document.createElement("div");
+  pane.className = "opui-tab-pane";
+  pane.dataset.tabName = w.tab || "";
+  for (const child of prunePanelWidgets(w.widgets, panelData)) {
+    const el = renderWidget(child, panelData);
+    if (el) {
+      el.dataset.panelWidget = "1";
+      pane.appendChild(el);
+    }
+  }
+  return pane;
 }
 
 function renderReadonlyRow(w) {
