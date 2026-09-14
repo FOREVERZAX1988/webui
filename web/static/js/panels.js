@@ -2787,7 +2787,7 @@ function renderActionRow(w) {
     const res = await apiPost(`/api/opui/action/${encodeURIComponent(w.action)}`);
     if (res.ok) {
       toast(t(w.label));
-      if (w.action === "reset_calibration") requestPanelRefresh();
+      if (w.action === "reset_calibration" || w.action === "carrot_tuning_reset") requestPanelRefresh();
     } else toast(res.error || "Failed");
   });
   return row;

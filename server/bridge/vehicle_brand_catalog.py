@@ -7,6 +7,18 @@ from typing import Any
 # Only brands with non-empty native BIG UI layouts (vehicle/brands/*.py items).
 BRAND_WIDGETS: dict[str, list[dict[str, Any]]] = {
   "toyota": [
+    {"type": "bool", "param": "ToyotaAutoHold", "label": "Toyota: Auto Brake Hold FOR TSS2 HYBRID CARS",
+     "desc": "Use the vehicle's auto brake hold feature on supported TSS2 hybrid Toyotas.",
+     "needs_cycle": True},
+    {"type": "bool", "param": "ToyotaEnhancedBsm", "label": "Toyota: Prius TSS2 BSM and some tssp",
+     "desc": "Enable enhanced blind-spot monitoring behavior for certain Prius TSS2 and TSS-P Toyotas.",
+     "needs_cycle": True},
+    {"type": "bool", "param": "ToyotaTSS2Long", "label": "Toyota: custom longitudinal for TSS2",
+     "desc": "Use a custom longitudinal tuning profile for TSS2 Toyota vehicles.",
+     "needs_cycle": True},
+    {"type": "bool", "param": "ToyotaDriveMode", "label": "Enable drive mode btn link",
+     "desc": "Link the Toyota drive-mode button (ECO/NORMAL/SPORT) into sunnypilot logic.",
+     "needs_cycle": True},
     {"type": "bool", "param": "ToyotaEnforceStockLongitudinal", "label": "Enforce Factory Longitudinal Control",
      "desc": "sunnypilot will not take over control of gas and brakes. Factory Toyota longitudinal control will be used.",
      "confirm_enable_rich": True, "needs_cycle": True},
