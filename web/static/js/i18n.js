@@ -8,6 +8,7 @@ const LOCAL_FALLBACKS = {
   en: {
     Refresh: "Refresh",
     "Loading...": "Loading...",
+    "fetching...": "Fetching...",
     "webui_storage_routes_autodelete_hint": (
       "Routes auto-delete when free space is below 10% or 5 GB (oldest first). "
       + "Upload is not required. Starred routes are kept."
@@ -110,6 +111,7 @@ const LOCAL_FALLBACKS = {
     "Cancel": "取消",
     "Fetching Latest Models": "正在获取最新模型",
     "Refresh Model List": "刷新模型列表",
+    "fetching...": "获取中...",
     "Clear Model Cache": "清除模型缓存",
     "Failed": "失败",
     "MB": "MB",
@@ -926,6 +928,7 @@ const LOCAL_FALLBACKS = {
     "Cancel": "取消",
     "Fetching Latest Models": "正在取得最新模型",
     "Refresh Model List": "重新整理模型列表",
+    "fetching...": "取得中...",
     "Clear Model Cache": "清除模型快取",
     "Failed": "失敗",
     "MB": "MB",

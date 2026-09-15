@@ -193,7 +193,7 @@ def refresh_car_context(sm: Any, started: bool) -> WebuiCarContext:
     ctx.is_sp_release = ctx.is_release_branch
     ctx.custom_model_active = (
       p.get("ModelManager_ActiveBundle") is not None
-      or p.get("ModelManager_ActiveBundleUSBGPU") is not None
+      or p.get("ModelManager_ActiveBundleChestnut") is not None
     )
 
     ctx.mads_limited = False

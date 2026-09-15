@@ -93,6 +93,7 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
 
     if action == "models_sync":
       p.put("ModelManager_LastSyncTime", 0, block=True)
+      p.put("ModelManager_LastSyncTime_Chestnut", 0, block=True)
       return {"ok": True, "action": action}
 
     if action == "models_clear_cache":

@@ -23,6 +23,46 @@ const TripsState = {
 
 let lastModelsStatus = null;
 
+async function runModelsSyncRefresh(button, originalText) {
+  if (button.disabled) return;
+  button.disabled = true;
+  button.textContent = t("fetching...");
+  const res = await apiPost("/api/opui/action/models_sync");
+  if (!res.ok) {
+    toast(res.error || t("Failed"));
+    button.disabled = false;
+    button.textContent = originalText;
+    return;
+  }
+  const startedAt = Date.now();
+  const timeoutMs = 20000;
+  const pollIntervalMs = 1000;
+  const check = async () => {
+    try {
+      const status = await apiGet("/api/opui/models/status");
+      if (status?.ok) {
+        lastModelsStatus = status;
+        const qcom = status.last_sync;
+        const chestnut = status.last_sync_chestnut;
+        if ((qcom && qcom !== "0") || (chestnut && chestnut !== "0")) {
+          button.disabled = false;
+          button.textContent = originalText;
+          requestPanelRefresh();
+          return;
+        }
+      }
+    } catch (_) { /* ignore polling errors */ }
+    if (Date.now() - startedAt < timeoutMs) {
+      setTimeout(check, pollIntervalMs);
+    } else {
+      button.disabled = false;
+      button.textContent = originalText;
+      requestPanelRefresh();
+    }
+  };
+  check();
+}
+
 function trFormat(template, ...args) {
   let i = 0;
   return tr(template)
@@ -2795,10 +2835,7 @@ function renderActionRow(w) {
       return;
     }
     if (w.action === "models_sync") {
-      const res = await apiPost("/api/opui/action/models_sync");
-      if (!res.ok) { toast(res.error || t("Failed")); return; }
-      await showConfirm({ message: t("Fetching Latest Models"), single: true, confirmText: t("OK") });
-      requestPanelRefresh();
+      await runModelsSyncRefresh(btn, btn.textContent);
       return;
     }
     if (w.action === "developer_error_log") {
@@ -3518,13 +3555,8 @@ function buildModelsRefreshRow(w) {
     </div>
     <button type="button" class="opui-btn opui-btn--action">${escapeHtml(t(w.button || "GO"))}</button>`;
   row.querySelector("button")?.addEventListener("click", async () => {
-    const res = await apiPost("/api/opui/action/models_sync");
-    if (!res.ok) {
-      toast(res.error || t("Failed"));
-      return;
-    }
-    await showConfirm({ message: t("Fetching Latest Models"), single: true, confirmText: t("OK") });
-    requestPanelRefresh();
+    const btn = row.querySelector("button");
+    await runModelsSyncRefresh(btn, btn.textContent);
   });
   return row;
 }

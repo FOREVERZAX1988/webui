@@ -58,7 +58,7 @@ def _models_state(p) -> dict[str, bool]:
   try:
     return {
       "qcom_selected": bool(p.get("ModelManager_ActiveBundle")),
-      "usbgpu_selected": bool(p.get("ModelManager_ActiveBundleUSBGPU")),
+      "usbgpu_selected": bool(p.get("ModelManager_ActiveBundleChestnut")),
     }
   except Exception:
     return {"qcom_selected": False, "usbgpu_selected": False}

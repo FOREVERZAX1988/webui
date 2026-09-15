@@ -429,6 +429,7 @@ def _models_status_impl() -> dict[str, Any]:
     "download": download,
     "queued_name": _queued_name(download.get("ref", ""), p),
     "last_sync": p.get("ModelManager_LastSyncTime") or "",
+    "last_sync_chestnut": p.get("ModelManager_LastSyncTime_Chestnut") or "",
     "cache_clear_pending": p.get_bool("ModelManager_ClearCache"),
     "cache_size_mb": _cache_size_mb(),
     "model_manager_online": mm is not None,
