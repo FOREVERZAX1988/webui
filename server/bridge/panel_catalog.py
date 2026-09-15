@@ -244,8 +244,10 @@ PANELS: list[dict[str, Any]] = [
     "id": "navigation",
     "title": "Navigation",
     "widgets": [
-      {"type": "bool", "param": "AmapEnabled", "label": "Enable Amap Navigation", "offroad_only": True,
-       "desc": "Use Amap (Gaode) navigation data for map-based features."},
+      {"type": "bool", "param": "AmapMapDataEnabled", "label": "Enable Amap Map Data", "offroad_only": True,
+       "desc": "Use Amap (Gaode) online map data for speed limits and road names in China."},
+      {"type": "bool", "param": "CarrotAmapBlindSpotEnabled", "label": "Enable Amap Blind Spot Data", "offroad_only": True,
+       "desc": "Parse blind-spot / LiDAR / extBlinker fields from the 7706 UDP stream."},
       {"type": "bool", "param": "CarrotEnabled", "label": "Enable Carrot Navigation", "offroad_only": True,
        "desc": "Use Carrot navigation data for map-based features."},
       {"type": "bool", "param": "CarrotNaviV2Enabled", "label": "Enable Carrot Navi v2 (7714)", "offroad_only": True,
