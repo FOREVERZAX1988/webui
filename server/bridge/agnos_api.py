@@ -18,14 +18,28 @@ _DEV_PARTITIONS = ("xbl", "abl", "boot", "system", "vendor")
 
 
 def _openpilot_dir() -> Path:
+  """Directory that holds the ``openpilot`` python package (i.e. ``<repo>/openpilot``).
+
+  ``openpilot.common.basedir.BASEDIR`` is the *monorepo root* in the nested
+  layout (``<repo>/openpilot/common/...``), while every caller here wants the
+  package dir (``<repo>/openpilot/common/hardware/comma/agnos.py``).  Resolve by
+  probing for that file instead of trusting the name, so both flat and nested
+  layouts work.
+  """
+  candidates: list[Path] = []
   try:
     from openpilot.common.basedir import BASEDIR
-    return Path(BASEDIR)
+    candidates.append(Path(BASEDIR))
   except Exception:
-    root = Path(os.environ.get("OPENPILOT_ROOT") or Path(__file__).resolve().parents[3])
-    if (root / "openpilot").is_dir():
-      return root / "openpilot"
-    return root
+    pass
+  candidates.append(Path(os.environ.get("OPENPILOT_ROOT") or Path(__file__).resolve().parents[3]))
+
+  probes = ("common", "hardware", "comma", "agnos.py")
+  for base in candidates:
+    for cand in (base, base / "openpilot"):
+      if cand.joinpath(*probes).is_file():
+        return cand
+  return candidates[0]
 
 
 def _is_dev_pc() -> bool:
@@ -97,6 +111,9 @@ def _read_state() -> dict[str, Any]:
 def _write_state(**kwargs: Any) -> dict[str, Any]:
   state = _read_state()
   state.update(kwargs)
+  if kwargs.get("status") in ("running", "done", "failed"):
+    # the target slot content changed (or a job started/finished): re-verify fresh
+    _VERIFY_CACHE.clear()
   state["updated_at"] = time.time()
   try:
     _state_path().write_text(json.dumps(state), encoding="utf-8")
@@ -156,6 +173,37 @@ def _dev_agnos_snapshot() -> dict[str, Any]:
   }
 
 
+_VERIFY_CACHE: dict[tuple[str, int, float], tuple[float, bool, str]] = {}
+_VERIFY_TTL_SEC = 120.0
+
+
+def _cached_verify(manifest: str, target_slot: int, verify_fn) -> tuple[bool, str]:
+  """Memoise ``verify_agnos_update``.
+
+  It sha256s every partition of the target slot (several GB when
+  ``full_check`` is set), so a page poll must not trigger it every time.
+  """
+  try:
+    stamp = os.stat(manifest).st_mtime
+  except OSError:
+    stamp = 0.0
+  key = (manifest, target_slot, stamp)
+  now = time.time()
+  hit = _VERIFY_CACHE.get(key)
+  if hit is not None and now - hit[0] < _VERIFY_TTL_SEC:
+    return hit[1], hit[2]
+
+  try:
+    result, error = bool(verify_fn(manifest, target_slot)), ""
+  except Exception as exc:
+    result, error = False, str(exc)
+
+  if len(_VERIFY_CACHE) > 8:
+    _VERIFY_CACHE.clear()
+  _VERIFY_CACHE[key] = (now, result, error)
+  return result, error
+
+
 def _agnos_pending_status() -> dict[str, Any]:
   """Shared AGNOS update detection for /api/opui/agnos and home screen."""
   if _is_dev_pc():
@@ -187,10 +235,15 @@ def _agnos_pending_status() -> dict[str, Any]:
   ready_to_reboot = False
   verify_error = ""
 
-  if os.path.isfile(manifest):
+  # ``verify_agnos_update`` hashes every target-slot partition (several GB with
+  # full_check), so never run it while an install is writing that slot: the
+  # poll would fight the flasher for I/O and report garbage.
+  job_running = _read_state().get("status") == "running"
+
+  if os.path.isfile(manifest) and not job_running:
     try:
       from openpilot.common.hardware.comma.agnos import get_target_slot_number, verify_agnos_update
-      ready_to_reboot = verify_agnos_update(manifest, get_target_slot_number())
+      ready_to_reboot, verify_error = _cached_verify(manifest, get_target_slot_number(), verify_agnos_update)
     except Exception as exc:
       verify_error = str(exc)
 
