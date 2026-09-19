@@ -267,6 +267,16 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "TurnSpeedControlMode": ("int", 1),
   "UseWideCamera": ("bool", 1),
   "VehicleSpeedCameraDistanceTime": ("int", 60),
+  # --- cp tuning alignment: params present in CarrotPilot settings but missing
+  # here; defaults mirror config.py::_DEFAULT_NAV_PARAMS ---
+  "CanfdStopRetry": ("bool", 0),
+  "CruiseGapLevels": ("int", 4),
+  "LeadAccelResponseTF1": ("int", -1),
+  "LeadAccelResponseTF2": ("int", -1),
+  "LeadAccelResponseTF3": ("int", -1),
+  "LeadAccelResponseTF4": ("int", -1),
+  "SpeedTFFactor": ("int", 10),
+  "AutoNaviRearCameraHoldDistance": ("int", 100),
 }
 
 _PARAM_TYPE_NAMES = {"bool": "BOOL", "int": "INT", "float": "FLOAT", "str": "STRING"}

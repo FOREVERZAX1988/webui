@@ -706,6 +706,60 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         },
         {
           "type": "int",
+          "param": "LeadAccelResponseTF1",
+          "label": "Lead Accel Response (Gap 1)",
+          "desc": "Lead accel response for follow-gap level 1 (cp default -1).",
+          "min": -1,
+          "max": 5,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LeadAccelResponseTF2",
+          "label": "Lead Accel Response (Gap 2)",
+          "desc": "Lead accel response for follow-gap level 2 (cp default -1).",
+          "min": -1,
+          "max": 5,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LeadAccelResponseTF3",
+          "label": "Lead Accel Response (Gap 3)",
+          "desc": "Lead accel response for follow-gap level 3 (cp default -1).",
+          "min": -1,
+          "max": 5,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "LeadAccelResponseTF4",
+          "label": "Lead Accel Response (Gap 4)",
+          "desc": "Lead accel response for follow-gap level 4 (cp default -1).",
+          "min": -1,
+          "max": 5,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "SpeedTFFactor",
+          "label": "Speed Time-Gap Factor",
+          "desc": "Speed-dependent time-gap factor (cp default 10).",
+          "min": 10,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "type": "int",
+          "param": "CruiseGapLevels",
+          "label": "Follow-Gap Levels",
+          "desc": "Number of follow-gap levels (cp default 4).",
+          "min": 2,
+          "max": 4,
+          "step": 1
+        },
+        {
+          "type": "int",
           "param": "LongActuatorDelay",
           "label": "Longitudinal Actuator Delay",
           "desc": "Adjust the Long Actuator Delay setting.",
@@ -891,6 +945,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "min": 0,
           "max": 30,
           "step": 1
+        },
+        {
+          "type": "int",
+          "param": "AutoNaviRearCameraHoldDistance",
+          "label": "Navi Rear-Camera Hold Distance",
+          "desc": "Navi rear-camera hold distance in cm (cp default 100).",
+          "min": 0,
+          "max": 300,
+          "step": 10
         },
         {
           "type": "separator"
@@ -2608,6 +2671,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "param": "CanfdHDA2",
           "label": "CANFD HDA2",
           "desc": "Adjust the Canfd H D A2 setting.",
+          "default": 0
+        },
+        {
+          "type": "bool",
+          "param": "CanfdStopRetry",
+          "label": "CANFD Stop & Retry",
+          "desc": "CANFD stop-and-retry fallback (cp default 0).",
           "default": 0
         },
         {
