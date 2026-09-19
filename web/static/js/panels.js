@@ -1317,9 +1317,20 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
     const max = w.max ?? 100;
     let val = kind === "option" ? resolveOptionIndex(w, w.value) : parseInt(w.value, 10);
     if (Number.isNaN(val)) val = min;
-    const span = el.querySelector(".opui-option-value, .opui-int-control span");
-    if (span) {
-      span.textContent = kind === "option" ? formatOptionLabel(w, w.value, panelData) : String(val);
+    const valueEl = el.querySelector(".opui-option-value, .opui-int-control span, .opui-int-control input");
+    if (valueEl) {
+      let text;
+      if (kind === "option") {
+        text = formatOptionLabel(w, w.value, panelData);
+      } else {
+        const vm = w.value_map || {};
+        text = String(Object.keys(vm).length > 0 ? (vm[String(val)] ?? val) : val);
+      }
+      if (valueEl.tagName === "INPUT") {
+        if (document.activeElement !== valueEl) valueEl.value = text;  // don't clobber mid-typing
+      } else {
+        valueEl.textContent = text;
+      }
     }
     const minus = el.querySelector(".opui-option-bar button:first-child, .opui-int-control button:first-child");
     const plus = el.querySelector(".opui-option-bar button:last-child, .opui-int-control button:last-child");
@@ -2002,7 +2013,9 @@ function renderIntRow(w) {
   const step = w.step ?? 1;
   const valueMap = w.value_map || {};
   const hasMap = Object.keys(valueMap).length > 0;
-  const displayVal = hasMap ? (valueMap[String(val)] ?? val) : val;
+  // The value box is a text input so a number can be typed directly instead of tapping
+  // -/+ (step is 1, so e.g. 1024 -> 7706 used to need ~6700 taps). Same save path as +/-.
+  const displayOf = (v) => String(hasMap ? (valueMap[String(v)] ?? v) : v);
 
   row.innerHTML = `
     <div class="opui-sp-row-text">
@@ -2013,8 +2026,11 @@ function renderIntRow(w) {
   const minus = document.createElement("button");
   minus.type = "button";
   minus.textContent = "−";
-  const span = document.createElement("span");
-  span.textContent = String(displayVal);
+  const input = document.createElement("input");
+  input.type = "text";
+  input.inputMode = "numeric";
+  input.className = "opui-int-input";
+  input.value = displayOf(val);
   const plus = document.createElement("button");
   plus.type = "button";
   plus.textContent = "+";
@@ -2022,15 +2038,37 @@ function renderIntRow(w) {
   const save = async (v) => {
     v = Math.max(min, Math.min(max, v));
     const store = hasMap ? (valueMap[String(v)] ?? v) : v;
-    span.textContent = String(hasMap ? (valueMap[String(v)] ?? v) : v);
+    input.value = displayOf(v);
     const res = await putParam(w.param, String(store));
     if (!res.ok) toast(res.error || t("Save failed"));
   };
 
+  const commitTyped = async () => {
+    // Typed text is in the displayed domain; map it back onto the control value (+/- key space).
+    const raw = String(input.value).trim().replace(/\s+/g, "");
+    if (raw === "" || raw === displayOf(val)) { input.value = displayOf(val); return; }
+    const typed = Number(raw);
+    if (!Number.isFinite(typed)) { input.value = displayOf(val); return; }
+    let target;
+    if (hasMap) {
+      const key = Object.keys(valueMap).find((k) => Math.abs(Number(valueMap[k]) - typed) < 1e-6);
+      if (key === undefined) { input.value = displayOf(val); return; }  // not an offered value: revert
+      target = parseInt(key, 10);
+    } else {
+      target = Math.round(typed);
+    }
+    val = Math.max(min, Math.min(max, target));
+    await save(val);
+  };
+
   minus.addEventListener("click", () => { val = Math.max(min, val - step); save(val); });
   plus.addEventListener("click", () => { val = Math.min(max, val + step); save(val); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); input.blur(); }  // blur commits
+  });
+  input.addEventListener("blur", () => { commitTyped(); });
 
-  ctrl.append(minus, span, plus);
+  ctrl.append(minus, input, plus);
   row.appendChild(ctrl);
   return row;
 }
