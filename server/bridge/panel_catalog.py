@@ -253,7 +253,7 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "CarrotNaviV2Enabled", "label": "Enable Carrot Navi v2 (7714)", "offroad_only": True,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."},
-      {"type": "int", "param": "CarrotManUdpPort", "label": "Carrot UDP Port", "min": 1024, "max": 65535, "step": 1,
+      {"type": "int", "param": "CarrotManUdpPort", "label": "Carrot UDP Port", "min": 0, "max": 65535, "step": 1,
        "offroad_only": True,
        "desc": "UDP port the Carrot companion app pushes navigation data to. Must match the port configured in the app (0 disables)."},
       {"type": "bool", "param": "CarrotWebEnabled", "label": "Carrot Web Panel", "offroad_only": True,
