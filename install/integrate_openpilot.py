@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 LAUNCH_MARKER = "start_webui"
+# Bump when START_WEBUI_FN changes so installed launch scripts get re-patched.
+BOOTSTRAP_MARKER = "webui-bootstrap-v2"
 
 START_WEBUI_FN = r'''  start_webui() {
     local root="$DIR"
@@ -21,18 +23,25 @@ START_WEBUI_FN = r'''  start_webui() {
     local web_py=python3.12
     command -v "$web_py" >/dev/null 2>&1 || web_py=python3
     local venv_site="/usr/local/venv/lib/python3.12/site-packages"
-    local pydeps="/data/.pydeps"
+    local pydeps="$root/.pydeps"
     local py_path="$root"
     [ -d "$venv_site" ] && py_path="$py_path:$venv_site"
     [ -d "$pydeps" ] && py_path="$py_path:$pydeps"
+    # webui-bootstrap-v2
     # AGNOS rootfs is read-only; install aiohttp into $pydeps on first boot.
-    if ! "$web_py" -c "import aiohttp" 2>/dev/null; then
+    # The probe MUST see $pydeps (PYTHONPATH). Without it the check misses the .pydeps copy,
+    # fails on every boot, and pip then runs -- over the network -- right here, before
+    # ./manager.py, so the UI start waits on the network (slow/half-working hotspot = the
+    # comma logo stalls for minutes). Every network fallback below is time-bounded for that
+    # reason (default pip retries alone can burn 90 s of boot).
+    if ! PYTHONPATH="$py_path" "$web_py" -c "import aiohttp" 2>/dev/null; then
       if [ -d "$pydeps" ] || mkdir -p "$pydeps" 2>/dev/null; then
         if ! "$web_py" -c "import pip" 2>/dev/null; then
-          curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null && \
+          curl -fsSL --max-time 20 https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null && \
             "$web_py" /tmp/get-pip.py --target="$pydeps" --no-warn-script-location >> /tmp/webui.log 2>&1 || true
         fi
-        PYTHONPATH="$py_path" "$web_py" -m pip install --target="$pydeps" aiohttp >> /tmp/webui.log 2>&1 || true
+        PYTHONPATH="$py_path" "$web_py" -m pip install --target="$pydeps" --timeout 5 --retries 0 \
+          --disable-pip-version-check aiohttp >> /tmp/webui.log 2>&1 || true
         py_path="$root"
         [ -d "$venv_site" ] && py_path="$py_path:$venv_site"
         py_path="$py_path:$pydeps"
@@ -43,7 +52,8 @@ START_WEBUI_FN = r'''  start_webui() {
     fi
     echo "[webui] starting :5080 TLS ($(date))" >> /tmp/webui.log
     # Headless (no builtin panel): native ui is skipped; WebUI is the primary UI.
-    # Override: OPENPILOT_HEADLESS=1 force headless, =0 force display mode.
+    # Override detection: OPENPILOT_HEADLESS=1 force headless, =0 force display mode.
+    # Auto-detect requires panel backlight sysfs AND fts_ts touch IRQ (disassembled units may lack touch).
     # Headless first boot: USB tether (RNDIS) -> https://10.255.128.121:5080/ (accept TLS cert once).
     (cd "$root" && PYTHONPATH="$py_path" WEBUI_TLS=1 "$web_py" -m webui.webuid >> /tmp/webui.log 2>&1 &)
   }
@@ -71,7 +81,7 @@ def find_launch_script(root: Path) -> Path | None:
 def _upgrade_start_webui(content: str) -> tuple[str, bool]:
   if LAUNCH_MARKER not in content:
     return content, False
-  if ".pydeps" in content and "WEBUI_TLS=1" in content:
+  if BOOTSTRAP_MARKER in content:
     return content, False
   if '[ ! -f "$root/webui/webuid.py" ]' not in content:
     return content, False
