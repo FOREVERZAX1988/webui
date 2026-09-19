@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import unittest
+from pathlib import Path
 
 from webui.server.bridge import carrot_tuning_api
 from webui.server.bridge.panel_catalog import panel_param_keys
@@ -13,9 +14,31 @@ from webui.server.bridge.panel_catalog import panel_param_keys
 _PANEL_EXCLUDED = {"CarrotException"}
 
 
+_CONFIG_RELPATHS = (
+  Path("sunnypilot") / "carrot" / "config.py",          # nested: <repo>/openpilot/sunnypilot/carrot/config.py
+  Path("openpilot") / "sunnypilot" / "carrot" / "config.py",  # flat: <repo>/sunnypilot/carrot/config.py
+)
+
+
+def _find_config_py() -> Path:
+  """Locate sunnypilot/carrot/config.py from the checkout this test lives in.
+
+  The path must be derived from the repo, never hardcoded to a developer machine
+  (the previous literal pointed at a Windows dev checkout, so these tests could
+  never run on the device).
+  """
+  for base in Path(__file__).resolve().parents:
+    for rel in _CONFIG_RELPATHS:
+      candidate = base / rel
+      if candidate.is_file():
+        return candidate
+  raise FileNotFoundError(
+    f"sunnypilot/carrot/config.py not found above {Path(__file__).resolve()}")
+
+
 def _config_nav_param_keys() -> set[str]:
   """Parse _DEFAULT_NAV_PARAMS keys from config.py without importing openpilot."""
-  src = open(r"E:\sp\openpilot\sunnypilot\carrot\config.py", encoding="utf-8").read()
+  src = _find_config_py().read_text(encoding="utf-8")
   for node in ast.walk(ast.parse(src)):
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) \
        and node.target.id == "_DEFAULT_NAV_PARAMS":
