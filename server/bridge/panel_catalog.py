@@ -1564,13 +1564,11 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Road Limit Raising"
       },
       {
-        "type": "int",
+        "type": "bool",
         "param": "AutoUpRoadLimit",
         "label": "Auto Up Road Limit",
         "desc": "Adjust the Auto Up Road Limit setting.",
-        "min": 0,
-        "max": 1,
-        "step": 5
+        "default": False
       },
       {
         "type": "int",
@@ -1579,16 +1577,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Up Road Limit40 K M H setting.",
         "min": 0,
         "max": 60,
-        "step": 1
+        "step": 5
       },
       {
-        "type": "int",
+        "type": "bool",
         "param": "AutoUpHighwayRoadLimit",
         "label": "Auto Up Highway Limit",
         "desc": "Adjust the Auto Up Highway Road Limit setting.",
-        "min": 0,
-        "max": 1,
-        "step": 5
+        "default": False
       },
       {
         "type": "int",
@@ -1597,7 +1593,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Up Highway Road Limit40 K M H setting.",
         "min": 0,
         "max": 60,
-        "step": 1
+        "step": 5
       },
     ],
   },
@@ -1886,8 +1882,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "LaneChangeBsd",
         "label": "Lane Change BSD",
         "desc": "Adjust the Lane Change Bsd setting.",
-        "min": 0,
-        "max": 2,
+        "min": -1,
+        "max": 1,
         "step": 1
       },
       {
@@ -2174,8 +2170,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "LatSuspendAngleDeg",
         "label": "Lateral Suspend Angle",
         "desc": "Adjust the Lat Suspend Angle Deg setting.",
-        "min": 0,
-        "max": 90,
+        "min": 45,
+        "max": 300,
         "step": 1,
       },
       {
@@ -2627,8 +2623,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Use Lane Line Curve Speed",
         "desc": "Adjust the Use Lane Line Curve Speed setting.",
         "min": 0,
-        "max": 2,
-        "step": 1
+        "max": 200,
+        "step": 10
       },
       {
         "type": "int",
@@ -2636,7 +2632,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Use Lane Line Speed",
         "desc": "Adjust the Use Lane Line Speed setting.",
         "min": 0,
-        "max": 2,
+        "max": 200,
         "step": 1
       },
     ],
