@@ -2237,13 +2237,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },
       {
         "type": "section",
-        "label": "Cluster HUD"
+        "label": "Cluster HUD (external display required)"
       },
       {
         "type": "bool",
         "param": "ClusterHud",
         "label": "Cluster HUD",
-        "desc": "Adjust the Cluster Hud setting.",
+        "desc": "Requires a TURZX USB cluster display, which is not supported in this build yet. These settings are stored but have no effect until the display is added.",
         "default": 0
       },
       {
