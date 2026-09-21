@@ -1569,7 +1569,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Up Road Limit",
         "desc": "Adjust the Auto Up Road Limit setting.",
         "min": 0,
-        "max": 120,
+        "max": 1,
         "step": 5
       },
       {
@@ -1587,7 +1587,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Up Highway Limit",
         "desc": "Adjust the Auto Up Highway Road Limit setting.",
         "min": 0,
-        "max": 160,
+        "max": 1,
         "step": 5
       },
       {
