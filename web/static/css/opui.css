@@ -3010,6 +3010,34 @@ html.opui-portrait-host .opui-modal-scroll {
   cursor: not-allowed;
 }
 
+/* Subpanel entry that carries a description: title on top, explanation below.
+   Colors mirror the native tokens (off_bg #393939, item_text #fff, item_desc
+   #808080) the same way .opui-simple-btn already does. */
+.opui-simple-btn--with-desc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  height: auto;
+  min-height: 150px;
+  padding: 20px 28px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.opui-simple-btn-title {
+  font-size: 50px;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.opui-simple-btn-desc {
+  font-size: 40px;
+  color: #808080;
+  line-height: 1.2;
+}
+
 .opui-progress {
   width: 300px;
   height: 24px;
