@@ -127,8 +127,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "CruiseSpeedUnit": ("int", 10),
   "CruiseSpeedUnitBasic": ("int", 10),
   # --- Carrot speed limits / road speed (webui exposure) ---
-  "AutoRoadSpeedAdjust": ("int", 0),
-  "AutoSpeedUptoRoadSpeedLimit": ("int", 0),
   "SpeedFromPCM": ("int", 0),
   # --- Carrot traffic stop / lights (webui exposure) ---
   "HapticFeedbackWhenSpeedCamera": ("int", 0),
@@ -236,7 +234,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "MapTurnSpeedFactor": ("int", 100),
   "MapboxStyle": ("int", 0),
   "MaxAngleFrames": ("int", 89),
-  "MaxTimeOffroadMin": ("int", 60),
   "MuteDoor": ("bool", 0),
   "MuteSeatbelt": ("bool", 0),
   "MyDrivingMode": ("int", 3),

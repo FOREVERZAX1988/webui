@@ -1169,30 +1169,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },
       {
         "type": "int",
-        "param": "AutoRoadSpeedAdjust",
-        "label": "Road Speed Auto Adjust",
-        "desc": "Adjust the Auto Road Speed Adjust setting.",
-        "min": -50,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
         "param": "AutoRoadSpeedLimitOffset",
         "label": "Road Speed Limit Offset",
         "desc": "Adjust the Auto Road Speed Limit Offset setting.",
         "min": -20,
         "max": 20,
         "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "AutoSpeedUptoRoadSpeedLimit",
-        "label": "Auto Speed Up to Road Limit",
-        "desc": "Adjust the Auto Speed Upto Road Speed Limit setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
       },
       {
         "type": "int",
@@ -2813,15 +2795,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 100,
         "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "MaxTimeOffroadMin",
-        "label": "Max Time Offroad (min)",
-        "desc": "Adjust the Max Time Offroad Min setting.",
-        "min": 0,
-        "max": 600,
-        "step": 5
       },
       {
         "type": "separator"
