@@ -218,7 +218,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "CruiseButtonTest1": ("bool", 0),
   "CruiseButtonTest2": ("bool", 0),
   "CruiseButtonTest3": ("bool", 0),
-  "DisableDM": ("bool", 0),
   "DisableMinSteerSpeed": ("bool", 0),
   "EnableCornerRadar": ("bool", 0),
   "EnableRadarTracks": ("bool", 0),

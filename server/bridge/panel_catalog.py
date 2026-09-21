@@ -2652,13 +2652,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Driver / Safety"
       },
       {
-        "type": "bool",
-        "param": "DisableDM",
-        "label": "Disable Driver Monitoring",
-        "desc": "Adjust the Disable D M setting.",
-        "default": 0
-      },
-      {
         "type": "int",
         "param": "DisableMinSteerSpeed",
           "step": 1,
