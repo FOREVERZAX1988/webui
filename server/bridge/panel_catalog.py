@@ -945,7 +945,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },
       {
         "type": "section",
-        "label": "Acceleration Limits"
+        "label": "Acceleration Limits (not applied yet)"
       },
       {
         "type": "int",
