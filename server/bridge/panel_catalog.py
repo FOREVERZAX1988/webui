@@ -549,7 +549,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Engage setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -558,7 +558,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Cruise Control setting.",
         "min": 0,
         "max": 3,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -567,7 +567,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise On Dist setting.",
         "min": 0,
         "max": 300,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -576,7 +576,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Eco Control setting.",
         "min": 0,
         "max": 3,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -592,7 +592,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Button Mode setting.",
         "min": 0,
         "max": 3,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -619,7 +619,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Button Long Delay setting.",
         "min": 0,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "separator"
@@ -635,7 +635,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed1 setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -644,7 +644,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed2 setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -653,7 +653,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed3 setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -662,7 +662,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed4 setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -671,7 +671,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed5 setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -680,7 +680,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed Unit setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -689,7 +689,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cruise Speed Unit Basic setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -705,7 +705,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Lfa Button Mode setting.",
         "min": 0,
         "max": 3,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -714,7 +714,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Paddle Mode setting.",
         "min": 0,
         "max": 3,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -730,7 +730,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Gas Cancel Speed setting.",
         "min": 0,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -748,7 +748,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Gas Tok Speed setting.",
         "min": 0,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
     ],
   },
@@ -763,40 +763,58 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Following Distance"
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "TFollowGap1",
         "label": "Follow Time Gap 1",
-        "desc": "Adjust the T Follow Gap1 setting."
+        "desc": "Adjust the T Follow Gap1 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "TFollowGap2",
         "label": "Follow Time Gap 2",
-        "desc": "Adjust the T Follow Gap2 setting."
+        "desc": "Adjust the T Follow Gap2 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "TFollowGap3",
         "label": "Follow Time Gap 3",
-        "desc": "Adjust the T Follow Gap3 setting."
+        "desc": "Adjust the T Follow Gap3 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "TFollowGap4",
         "label": "Follow Time Gap 4",
-        "desc": "Adjust the T Follow Gap4 setting."
+        "desc": "Adjust the T Follow Gap4 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "DynamicTFollow",
         "label": "Dynamic Follow Time",
-        "desc": "Adjust the Dynamic T Follow setting."
+        "desc": "Adjust the Dynamic T Follow setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "DynamicTFollowLC",
         "label": "Dynamic Follow Time on Lane Change",
-        "desc": "Adjust the Dynamic T Follow L C setting."
+        "desc": "Adjust the Dynamic T Follow L C setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -812,7 +830,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Lead Accel Response setting.",
         "min": -100,
         "max": 100,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -875,7 +893,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Long Actuator Delay setting.",
         "min": 0,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -884,7 +902,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Long Tuning Kf setting.",
         "min": 0,
         "max": 300,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -893,7 +911,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Long Tuning Ki V setting.",
         "min": 0,
         "max": 300,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -902,7 +920,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Long Tuning Kp V setting.",
         "min": 0,
         "max": 300,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -911,7 +929,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Stopping Accel setting.",
         "min": -200,
         "max": 0,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -920,7 +938,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the T Follow Decel Boost setting.",
         "min": 0,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "separator"
@@ -930,46 +948,67 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Acceleration Limits"
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals0",
         "label": "Cruise Max Acceleration 0",
-        "desc": "Adjust the Cruise Max Vals0 setting."
+        "desc": "Adjust the Cruise Max Vals0 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals1",
         "label": "Cruise Max Acceleration 1",
-        "desc": "Adjust the Cruise Max Vals1 setting."
+        "desc": "Adjust the Cruise Max Vals1 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals2",
         "label": "Cruise Max Acceleration 2",
-        "desc": "Adjust the Cruise Max Vals2 setting."
+        "desc": "Adjust the Cruise Max Vals2 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals3",
         "label": "Cruise Max Acceleration 3",
-        "desc": "Adjust the Cruise Max Vals3 setting."
+        "desc": "Adjust the Cruise Max Vals3 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals4",
         "label": "Cruise Max Acceleration 4",
-        "desc": "Adjust the Cruise Max Vals4 setting."
+        "desc": "Adjust the Cruise Max Vals4 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals5",
         "label": "Cruise Max Acceleration 5",
-        "desc": "Adjust the Cruise Max Vals5 setting."
+        "desc": "Adjust the Cruise Max Vals5 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
-        "type": "text",
+        "type": "int",
         "param": "CruiseMaxVals6",
         "label": "Cruise Max Acceleration 6",
-        "desc": "Adjust the Cruise Max Vals6 setting."
+        "desc": "Adjust the Cruise Max Vals6 setting.",
+        "min": 0,
+        "max": 300,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -985,7 +1024,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Carrot Cruise Decel setting.",
         "min": -100,
         "max": 0,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -994,7 +1033,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Carrot Cruise Atc Decel setting.",
         "min": -100,
         "max": 0,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -1003,7 +1042,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the V Ego Stopping setting.",
         "min": 0,
         "max": 500,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -1012,7 +1051,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Apply Model Speed setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
     ],
   },
@@ -1033,7 +1072,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Navi Speed Ctrl Mode setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -1042,7 +1081,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Navi Speed Decel Rate setting.",
         "min": 0,
         "max": 500,
-        "step": 10
+        "step": 10,
       },
       {
         "type": "int",
@@ -1051,7 +1090,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Navi Speed Safety Factor setting.",
         "min": 50,
         "max": 150,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -1060,7 +1099,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Navi Speed Ctrl End setting.",
         "min": 0,
         "max": 30,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -1085,7 +1124,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Stop Distance Carrot setting.",
         "min": 0,
         "max": 2000,
-        "step": 10
+        "step": 10,
       },
       {
         "type": "bool",
@@ -1101,7 +1140,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Haptic Feedback When Speed Camera setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -1110,7 +1149,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Traffic Stop Distance Adjust setting.",
         "min": -500,
         "max": 500,
-        "step": 10
+        "step": 10,
       },
       {
         "type": "int",
@@ -1119,7 +1158,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Traffic Light Detect Mode setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -1135,16 +1174,16 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Road Speed Adjust setting.",
         "min": -50,
         "max": 50,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
         "param": "AutoRoadSpeedLimitOffset",
         "label": "Road Speed Limit Offset",
         "desc": "Adjust the Auto Road Speed Limit Offset setting.",
-        "min": -30,
-        "max": 30,
-        "step": 1
+        "min": -20,
+        "max": 20,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1162,16 +1201,16 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Speed From P C M setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
         "param": "RoadType",
         "label": "Road Type",
         "desc": "Adjust the Road Type setting.",
-        "min": -1,
-        "max": 5,
-        "step": 1
+        "min": 0,
+        "max": 2,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -1218,8 +1257,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "VehicleSpeedCameraDistanceTime",
         "label": "Speed Camera Alert Time",
         "desc": "Adjust the Vehicle Speed Camera Distance Time setting.",
-        "min": 10,
-        "max": 200,
+        "min": 0,
+        "max": 30,
         "step": 1,
         "visible_if": {
           "param": "CarrotEnabled",
@@ -1239,7 +1278,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Speed Bump End Distance",
         "desc": "Adjust the Auto Navi Speed Bump End Distance setting.",
         "min": 0,
-        "max": 5000,
+        "max": 500,
         "step": 10,
         "visible_if": {
           "param": "CarrotEnabled",
@@ -1252,8 +1291,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Countdown Mode",
         "desc": "Adjust the Auto Navi Count Down Mode setting.",
         "min": 0,
-        "max": 3,
-        "step": 1
+        "max": 2,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1262,7 +1301,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Navi Speed Bump Speed setting.",
         "min": 0,
         "max": 100,
-        "step": 5
+        "step": 1,
       },
       {
         "type": "int",
@@ -1270,8 +1309,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Speed Bump Hold Time",
         "desc": "Adjust the Auto Navi Speed Bump Time setting.",
         "min": 0,
-        "max": 10,
-        "step": 1
+        "max": 20,
+        "step": 1,
       },
     ],
   },
@@ -1291,8 +1330,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Turn Control",
         "desc": "Adjust the Auto Turn Control setting.",
         "min": 0,
-        "max": 3,
-        "step": 1
+        "max": 2,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1300,8 +1339,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Turn Speed Threshold",
         "desc": "Adjust the Auto Turn Control Speed Turn setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1309,26 +1348,23 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Turn End Distance",
         "desc": "Adjust the Auto Turn Control Turn End setting.",
         "min": 0,
-        "max": 50,
-        "step": 1
+        "max": 500,
+        "step": 10,
       },
       {
-        "type": "int",
+        "type": "bool",
         "param": "AutoTurnMapChange",
         "label": "Auto Turn on Navi Lane Change",
         "desc": "Adjust the Auto Turn Map Change setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
       },
       {
         "type": "int",
         "param": "AutoTurnDistOffset",
         "label": "Auto Turn Distance Offset",
         "desc": "Adjust the Auto Turn Dist Offset setting.",
-        "min": 0,
-        "max": 1000,
-        "step": 5
+        "min": -200,
+        "max": 200,
+        "step": 10,
       },
       {
         "type": "bool",
@@ -1349,18 +1385,18 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "AutoForkDistOffset",
         "label": "Fork Merge Distance Offset",
         "desc": "Adjust the Auto Fork Dist Offset setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5
+        "min": -200,
+        "max": 200,
+        "step": 10,
       },
       {
         "type": "int",
         "param": "AutoForkDistOffsetH",
         "label": "Fork Merge Distance Offset (Highway)",
         "desc": "Adjust the Auto Fork Dist Offset H setting.",
-        "min": 0,
-        "max": 2000,
-        "step": 10
+        "min": -200,
+        "max": 200,
+        "step": 10,
       },
       {
         "type": "int",
@@ -1368,8 +1404,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Blinker Trigger Distance",
         "desc": "Adjust the Auto Do Fork Blinker Dist setting.",
         "min": 0,
-        "max": 200,
-        "step": 1
+        "max": 500,
+        "step": 10,
       },
       {
         "type": "int",
@@ -1378,7 +1414,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Do Fork Blinker Dist H setting.",
         "min": 0,
         "max": 500,
-        "step": 1
+        "step": 10,
       },
       {
         "type": "int",
@@ -1386,8 +1422,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Navi Trigger Distance",
         "desc": "Adjust the Auto Do Fork Nav Dist setting.",
         "min": 0,
-        "max": 200,
-        "step": 1
+        "max": 500,
+        "step": 10,
       },
       {
         "type": "int",
@@ -1396,7 +1432,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Do Fork Nav Dist H setting.",
         "min": 0,
         "max": 500,
-        "step": 1
+        "step": 10,
       },
       {
         "type": "int",
@@ -1404,8 +1440,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Decel Trigger Distance",
         "desc": "Adjust the Auto Do Fork Decal Dist setting.",
         "min": 0,
-        "max": 300,
-        "step": 1
+        "max": 500,
+        "step": 10,
       },
       {
         "type": "int",
@@ -1414,7 +1450,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Do Fork Decal Dist H setting.",
         "min": 0,
         "max": 500,
-        "step": 1
+        "step": 10,
       },
       {
         "type": "int",
@@ -1422,8 +1458,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Decel Rate",
         "desc": "Adjust the Auto Fork Decal Rate setting.",
         "min": 0,
-        "max": 500,
-        "step": 10
+        "max": 300,
+        "step": 10,
       },
       {
         "type": "int",
@@ -1431,8 +1467,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Decel Rate (Highway)",
         "desc": "Adjust the Auto Fork Decal Rate H setting.",
         "min": 0,
-        "max": 500,
-        "step": 10
+        "max": 300,
+        "step": 10,
       },
       {
         "type": "int",
@@ -1440,8 +1476,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Minimum Speed",
         "desc": "Adjust the Auto Fork Speed Min setting.",
         "min": 0,
-        "max": 120,
-        "step": 5
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1449,8 +1485,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Minimum Speed (Highway)",
         "desc": "Adjust the Auto Fork Speed Min H setting.",
         "min": 0,
-        "max": 120,
-        "step": 5
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1458,8 +1494,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Keep Speed",
         "desc": "Adjust the Auto Keep Fork Speed setting.",
         "min": 0,
-        "max": 60,
-        "step": 1
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1467,8 +1503,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Fork Keep Speed (Highway)",
         "desc": "Adjust the Auto Keep Fork Speed H setting.",
         "min": 0,
-        "max": 60,
-        "step": 1
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -1482,9 +1518,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "MapTurnSpeedFactor",
         "label": "Map Turn Speed Factor",
         "desc": "Adjust the Map Turn Speed Factor setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5
+        "min": 50,
+        "max": 150,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1493,7 +1529,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Turn Speed Control Mode setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -1507,27 +1543,27 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "AutoCurveSpeedFactor",
         "label": "Curve Speed Factor",
         "desc": "Adjust the Auto Curve Speed Factor setting.",
-        "min": 10,
+        "min": 50,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
         "param": "AutoCurveSpeedFactorH",
         "label": "Curve Speed Factor (Highway)",
         "desc": "Adjust the Auto Curve Speed Factor H setting.",
-        "min": 10,
+        "min": 50,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
         "param": "AutoCurveSpeedAggressivenessH",
         "label": "Highway Curve Aggressiveness",
         "desc": "Adjust the Auto Curve Speed Aggressiveness H setting.",
-        "min": 10,
+        "min": 0,
         "max": 200,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -1535,8 +1571,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Curve Speed Lower Limit",
         "desc": "Adjust the Auto Curve Speed Lower Limit setting.",
         "min": 0,
-        "max": 150,
-        "step": 5
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -1594,13 +1630,10 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Mode"
       },
       {
-        "type": "int",
+        "type": "bool",
         "param": "AlwaysLateral",
         "label": "Always Lateral",
         "desc": "Adjust the Always Lateral setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
       },
       {
         "type": "separator"
@@ -1614,9 +1647,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "CustomSR",
         "label": "Custom Steer Ratio",
         "desc": "Adjust the Custom S R setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1
+        "min": 50,
+        "max": 200,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1624,8 +1657,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Max Steer Angle",
         "desc": "Adjust the Custom Steer Max setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1633,8 +1666,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Steer Delta Down",
         "desc": "Adjust the Custom Steer Delta Down setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1642,8 +1675,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Steer Delta Up",
         "desc": "Adjust the Custom Steer Delta Up setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1651,8 +1684,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Steer Delta Down (Lane Change)",
         "desc": "Adjust the Custom Steer Delta Down L C setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1660,8 +1693,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Steer Delta Up (Lane Change)",
         "desc": "Adjust the Custom Steer Delta Up L C setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1669,8 +1702,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Steer Actuator Delay",
         "desc": "Adjust the Steer Actuator Delay setting.",
         "min": 0,
-        "max": 200,
-        "step": 5
+        "max": 100,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1678,8 +1711,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Steer Ratio Rate",
         "desc": "Adjust the Steer Ratio Rate setting.",
         "min": 0,
-        "max": 300,
-        "step": 5
+        "max": 100,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -1695,25 +1728,25 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Path Offset setting.",
         "min": -100,
         "max": 100,
-        "step": 1
+        "step": 5,
       },
       {
         "type": "int",
         "param": "AdjustLaneOffset",
         "label": "Lane Offset Adjust",
         "desc": "Adjust the Adjust Lane Offset setting.",
-        "min": -50,
-        "max": 50,
-        "step": 1
+        "min": -100,
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "int",
         "param": "CameraYawTrimDeg",
         "label": "Camera Yaw Trim",
         "desc": "Adjust the Camera Yaw Trim Deg setting.",
-        "min": -20,
-        "max": 20,
-        "step": 1
+        "min": -10,
+        "max": 10,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -1729,7 +1762,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Lat Mpc Accel Cost setting.",
         "min": 0,
         "max": 500,
-        "step": 5
+        "step": 5,
       },
       {
         "type": "int",
@@ -1737,8 +1770,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Jerk Cost",
         "desc": "Adjust the Lat Mpc Jerk Cost setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1746,8 +1779,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Motion Cost",
         "desc": "Adjust the Lat Mpc Motion Cost setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1755,8 +1788,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Path Cost",
         "desc": "Adjust the Lat Mpc Path Cost setting.",
         "min": 0,
-        "max": 1000,
-        "step": 5
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1764,8 +1797,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Steering Rate Cost",
         "desc": "Adjust the Lat Mpc Steering Rate Cost setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -1775,13 +1808,10 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque"
       },
       {
-        "type": "int",
+        "type": "bool",
         "param": "LateralTorqueCustom",
         "label": "Custom Lateral Torque",
         "desc": "Adjust the Lateral Torque Custom setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
       },
       {
         "type": "int",
@@ -1789,8 +1819,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque Friction",
         "desc": "Adjust the Lateral Torque Friction setting.",
         "min": 0,
-        "max": 300,
-        "step": 5
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1798,8 +1828,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque Derivative",
         "desc": "Adjust the Lateral Torque Kd setting.",
         "min": 0,
-        "max": 300,
-        "step": 5
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1807,8 +1837,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque Feedforward",
         "desc": "Adjust the Lateral Torque Kf setting.",
         "min": 0,
-        "max": 300,
-        "step": 5
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1816,8 +1846,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque Integral Velocity",
         "desc": "Adjust the Lateral Torque Ki V setting.",
         "min": 0,
-        "max": 300,
-        "step": 5
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1825,8 +1855,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque Proportional",
         "desc": "Adjust the Lateral Torque Kp V setting.",
         "min": 0,
-        "max": 300,
-        "step": 5
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1834,8 +1864,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lateral Torque Accel Factor",
         "desc": "Adjust the Lateral Torque Accel Factor setting.",
         "min": 0,
-        "max": 5000,
-        "step": 50
+        "max": 300,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -1849,9 +1879,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "LatMpcInputOffset",
         "label": "Lateral MPC Input Offset",
         "desc": "Adjust the Lat Mpc Input Offset setting.",
-        "min": 0,
-        "max": 20,
-        "step": 1
+        "min": -100,
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1860,7 +1890,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Lat Smooth Sec setting.",
         "min": 0,
         "max": 50,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -1884,8 +1914,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Change Delay",
         "desc": "Adjust the Lane Change Delay setting.",
         "min": 0,
-        "max": 100,
-        "step": 1
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1893,8 +1923,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Change Need Torque",
         "desc": "Adjust the Lane Change Need Torque setting.",
         "min": 0,
-        "max": 2,
-        "step": 1
+        "max": 10,
+        "step": 1,
       },
       {
         "type": "bool",
@@ -1908,9 +1938,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "ContinuousLaneChangeCnt",
         "label": "Continuous Lane Change Count",
         "desc": "Adjust the Continuous Lane Change Cnt setting.",
-        "min": 1,
+        "min": 0,
         "max": 10,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
@@ -1918,8 +1948,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Continuous Lane Change Interval",
         "desc": "Adjust the Continuous Lane Change Interval setting.",
         "min": 0,
-        "max": 30,
-        "step": 1
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1927,8 +1957,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Change Start Cost",
         "desc": "Adjust the A Change Cost Starting setting.",
         "min": 0,
-        "max": 50,
-        "step": 1
+        "max": 500,
+        "step": 5,
       },
       {
         "type": "separator"
@@ -1943,8 +1973,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Stabilization Time",
         "desc": "Adjust the Lane Stab Time setting.",
         "min": 0,
-        "max": 200,
-        "step": 10
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1952,8 +1982,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "New Lane Width Difference",
         "desc": "Adjust the New Lane Width Diff setting.",
         "min": 0,
-        "max": 50,
-        "step": 1
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "int",
@@ -1961,8 +1991,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Enter New Lane Time",
         "desc": "Adjust the Auto En Turn New Lane Time setting.",
         "min": 0,
-        "max": 60,
-        "step": 5
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -1970,8 +2000,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Auto Enter New Lane Time (Highway)",
         "desc": "Adjust the Auto En Turn New Lane Time H setting.",
         "min": 0,
-        "max": 60,
-        "step": 5
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "bool",
@@ -1981,18 +2011,22 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": True
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "StockBlinkerCtrl",
+          "step": 1,
+          "max": 2,
+          "min": 0,
         "label": "Stock Blinker Control",
-        "desc": "Adjust the Stock Blinker Ctrl setting.",
-        "default": False
+        "desc": "Adjust the Stock Blinker Ctrl setting."
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "ExtBlinkerCtrlTest",
+          "step": 1,
+          "max": 2,
+          "min": 0,
         "label": "Extended Blinker Test",
-        "desc": "Adjust the Ext Blinker Ctrl Test setting.",
-        "default": False
+        "desc": "Adjust the Ext Blinker Ctrl Test setting."
       },
       {
         "type": "int",
@@ -2001,7 +2035,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Blinker Mode setting.",
         "min": 0,
         "max": 2,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "separator"
@@ -2023,8 +2057,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Dynamic Blind Spot Range",
         "desc": "Adjust the Dynamic Blind Range setting.",
         "min": 0,
-        "max": 100,
-        "step": 5
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "int",
@@ -2032,8 +2066,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Dynamic Blind Spot Distance",
         "desc": "Adjust the Dynamic Blind Distance setting.",
         "min": 0,
-        "max": 100,
-        "step": 5
+        "max": 200,
+        "step": 5,
       },
       {
         "type": "int",
@@ -2041,8 +2075,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Blind Spot Delay Time",
         "desc": "Adjust the Bsd Delay Time setting.",
         "min": 0,
-        "max": 100,
-        "step": 5
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2050,8 +2084,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Side Blind Spot Delay",
         "desc": "Adjust the Side Bsd Delay Time setting.",
         "min": 0,
-        "max": 100,
-        "step": 5
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2059,8 +2093,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Side Relative Distance Time",
         "desc": "Adjust the Side Rel Dist Time setting.",
         "min": 0,
-        "max": 100,
-        "step": 5
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2068,8 +2102,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Side vRel Distance Time",
         "desc": "Adjust the Sidev Rel Dist Time setting.",
         "min": 0,
-        "max": 100,
-        "step": 5
+        "max": 50,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2077,8 +2111,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Side Radar Min Distance",
         "desc": "Adjust the Side Radar Min Dist setting.",
         "min": 0,
-        "max": 50,
-        "step": 1
+        "max": 100,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -2101,9 +2135,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "OnnxBsdIntervalMs",
         "label": "ONNX BSD Interval",
         "desc": "Adjust the Onnx Bsd Interval Ms setting.",
-        "min": 50,
+        "min": 0,
         "max": 1000,
-        "step": 10
+        "step": 10,
       },
       {
         "type": "int",
@@ -2112,7 +2146,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Onnx Bsd Smoothing Ms setting.",
         "min": 0,
         "max": 1000,
-        "step": 10
+        "step": 10,
       },
       {
         "type": "int",
@@ -2121,16 +2155,16 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Onnx Bsd Threshold setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "int",
         "param": "OnnxLaneIntervalMs",
         "label": "ONNX Lane Interval",
         "desc": "Adjust the Onnx Lane Interval Ms setting.",
-        "min": 50,
+        "min": 0,
         "max": 1000,
-        "step": 10
+        "step": 10,
       },
       {
         "type": "int",
@@ -2139,7 +2173,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Onnx Lane Threshold setting.",
         "min": 0,
         "max": 100,
-        "step": 1
+        "step": 1,
       },
     ],
   },
@@ -2158,9 +2192,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "LatSuspendAngleDeg",
         "label": "Lateral Suspend Angle",
         "desc": "Adjust the Lat Suspend Angle Deg setting.",
-        "min": 45,
-        "max": 300,
-        "step": 10
+        "min": 0,
+        "max": 90,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -2203,10 +2237,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         }
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "CarrotNaviHudMapProfile",
         "label": "Carrot Navi HUD Profile",
         "desc": "Adjust the Carrot Navi Hud Map Profile setting.",
+        "min": 0,
+        "max": 5,
+        "step": 1,
         "visible_if": {
           "param": "CarrotEnabled",
           "eq": "1"
@@ -2234,7 +2271,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cluster Hud Brightness setting.",
         "min": 0,
         "max": 100,
-        "step": 5
+        "step": 1,
       },
       {
         "type": "int",
@@ -2262,8 +2299,11 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": 0
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "ClusterHudEncoder",
+          "step": 1,
+          "max": 3,
+          "min": 0,
         "label": "Cluster HUD Encoder",
         "desc": "Adjust the Cluster Hud Encoder setting.",
         "default": 0
@@ -2275,7 +2315,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Cluster Hud Live Fps setting.",
         "min": 1,
         "max": 60,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "bool",
@@ -2299,7 +2339,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Cluster HUD Panel Layout",
         "desc": "Adjust the Cluster Hud Panel Layout setting.",
         "min": 0,
-        "max": 3,
+        "max": 1,
         "step": 1
       },
       {
@@ -2308,8 +2348,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Cluster HUD Priority",
         "desc": "Adjust the Cluster Hud Priority setting.",
         "min": 0,
-        "max": 20,
-        "step": 1
+        "max": 3,
+        "step": 1,
       },
       {
         "type": "bool",
@@ -2324,12 +2364,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Cluster HUD Radar Info",
         "desc": "Adjust the Cluster Hud Radar Info setting.",
         "min": 0,
-        "max": 10,
-        "step": 1
+        "max": 3,
+        "step": 1,
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "ClusterHudRadarSourceColor",
+          "step": 1,
+          "max": 1,
+          "min": 0,
         "label": "Cluster HUD Radar Source Color",
         "desc": "Adjust the Cluster Hud Radar Source Color setting.",
         "default": 0
@@ -2349,7 +2392,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Cluster HUD Theme",
         "desc": "Adjust the Cluster Hud Theme setting.",
         "min": 0,
-        "max": 3,
+        "max": 2,
         "step": 1
       },
       {
@@ -2373,7 +2416,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Show Custom Brightness setting.",
         "min": 0,
         "max": 100,
-        "step": 5
+        "step": 1,
       },
       {
         "type": "bool",
@@ -2411,8 +2454,11 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": 0
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "ShowPlotMode",
+          "step": 1,
+          "max": 8,
+          "min": 0,
         "label": "Show Plot Mode",
         "desc": "Adjust the Show Plot Mode setting.",
         "default": 0
@@ -2457,18 +2503,18 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "SoundVolumeAdjust",
         "label": "Sound Volume Adjust",
         "desc": "Adjust the Sound Volume Adjust setting.",
-        "min": 0,
-        "max": 200,
-        "step": 10
+        "min": -100,
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "int",
         "param": "SoundVolumeAdjustEngage",
         "label": "Sound Volume Adjust Engage",
         "desc": "Adjust the Sound Volume Adjust Engage setting.",
-        "min": 0,
-        "max": 200,
-        "step": 10
+        "min": -100,
+        "max": 100,
+        "step": 5,
       },
       {
         "type": "text",
@@ -2482,8 +2528,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Mapbox Style",
         "desc": "Adjust the Mapbox Style setting.",
         "min": 0,
-        "max": 3,
-        "step": 1
+        "max": 5,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -2506,7 +2552,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Carrot You Tube Quality setting.",
         "min": 0,
         "max": 3,
-        "step": 1
+        "step": 1,
       },
       {
         "type": "bool",
@@ -2533,8 +2579,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Path Color",
         "desc": "Adjust the Show Path Color setting.",
         "min": 0,
-        "max": 20,
-        "step": 1
+        "max": 10,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2542,7 +2588,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Path Color Cruise Off",
         "desc": "Adjust the Show Path Color Cruise Off setting.",
         "min": 0,
-        "max": 20,
+        "max": 19,
         "step": 1
       },
       {
@@ -2551,8 +2597,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Path Color Lane",
         "desc": "Adjust the Show Path Color Lane setting.",
         "min": 0,
-        "max": 20,
-        "step": 1
+        "max": 10,
+        "step": 1,
       },
       {
         "type": "bool",
@@ -2567,8 +2613,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Path Display Mode",
         "desc": "Adjust the Show Path Mode setting.",
         "min": 0,
-        "max": 20,
-        "step": 1
+        "max": 5,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2576,8 +2622,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Path Display Mode Lane",
         "desc": "Adjust the Show Path Mode Lane setting.",
         "min": 0,
-        "max": 20,
-        "step": 1
+        "max": 5,
+        "step": 1,
       },
       {
         "type": "separator"
@@ -2631,8 +2677,11 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": 0
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "DisableMinSteerSpeed",
+          "step": 1,
+          "max": 1,
+          "min": 0,
         "label": "Disable Min Steer Speed",
         "desc": "Adjust the Disable Min Steer Speed setting.",
         "default": 0
@@ -2762,8 +2811,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Max Angle Frames",
         "desc": "Adjust the Max Angle Frames setting.",
         "min": 0,
-        "max": 200,
-        "step": 1
+        "max": 100,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2787,8 +2836,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "My Driving Mode",
         "desc": "Adjust the My Driving Mode setting.",
         "min": 0,
-        "max": 3,
-        "step": 1
+        "max": 5,
+        "step": 1,
       },
       {
         "type": "int",
@@ -2847,22 +2896,31 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": 0
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "CruiseButtonTest1",
+          "step": 1,
+          "max": 20,
+          "min": 1,
         "label": "Cruise Button Test 1",
         "desc": "Adjust the Cruise Button Test1 setting.",
         "default": 0
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "CruiseButtonTest2",
+          "step": 1,
+          "max": 200,
+          "min": 1,
         "label": "Cruise Button Test 2",
         "desc": "Adjust the Cruise Button Test2 setting.",
         "default": 0
       },
       {
-        "type": "bool",
+        "type": "int",
         "param": "CruiseButtonTest3",
+          "step": 1,
+          "max": 20,
+          "min": 1,
         "label": "Cruise Button Test 3",
         "desc": "Adjust the Cruise Button Test3 setting.",
         "default": 0
