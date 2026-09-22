@@ -355,6 +355,21 @@ def _mock_carrot_nav(s: dict[str, Any]) -> dict[str, Any]:
     "goal_name": "上海",
     "sdi_descr": "",
     "road_cate": 1,
+    # Service area / toll gate hint (App §2.3).
+    "sapa_name": "阳澄湖服务区",
+    "sapa_dist": 1800,
+    "sapa_type": 0,
+    "sapa_cnt": 2,
+    # TMC congestion (App §2.5): mixed segments so the bar shows every colour.
+    "tmc_overall_status": 3,
+    "tmc_total_distance": 20000,
+    "tmc_residual_distance": 12500,
+    "tmc_segment_count": 5,
+    "tmc_segment_statuses": "[1,2,3,4,5]",
+    "tmc_segment_distances": "[3000,2500,4000,1500,6000]",
+    # Guided-lane arrow codes (App §2.2).
+    "nav_lane_guide": "L,SL",
+    "nav_lane_guide_cnt": 2,
     "panel_side": int(s.get("carrot_panel_side", 0)),
     "panel_opacity": int(s.get("carrot_panel_opacity", 100)),
   }

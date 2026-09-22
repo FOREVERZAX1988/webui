@@ -261,6 +261,10 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "LeadAccelResponseTF3": ("int", -1),
   "LeadAccelResponseTF4": ("int", -1),
   "AutoNaviRearCameraHoldDistance": ("int", 100),
+  # --- unified-control killswitches (default OFF; surfaced in the Developer
+  # page). Listed here so the webui read/write whitelist accepts them. ---
+  "CarrotTrafficCongestionEnabled": ("bool", 0),
+  "CarrotNavLaneGuideBlockEnabled": ("bool", 0),
 }
 
 _PARAM_TYPE_NAMES = {"bool": "BOOL", "int": "INT", "float": "FLOAT", "str": "STRING"}

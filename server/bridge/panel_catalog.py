@@ -1472,6 +1472,23 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Show Debug Log",
         "desc": "Adjust the Show Debug Log setting.",
         "default": False
+      },{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Navigation Control (advanced)"
+      },{
+        "type": "bool",
+        "param": "CarrotTrafficCongestionEnabled",
+        "label": "Traffic Congestion Slowdown",
+        "desc": "Fold the phone app traffic congestion report into map-based cruise control. Only ever lowers the target speed.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "CarrotNavLaneGuideBlockEnabled",
+        "label": "Lane Guide Blocking",
+        "desc": "Let the phone app guided-lane arrows block lane changes toward non-guided lanes. Only ever adds blocking.",
+        "default": False
       }],
   },
 

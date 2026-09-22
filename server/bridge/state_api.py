@@ -743,6 +743,23 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         "goal_name": _txt("szGoalName"),
         "sdi_descr": _txt("szSdiDescr"),
         "road_cate": _num("roadCate"),
+        # Service area / toll gate hint (App §2.3 SAPA_* group).
+        "sapa_name": _txt("sapaName"),
+        "sapa_dist": _num("sapaDist"),
+        "sapa_type": _num("sapaType"),
+        "sapa_cnt": _num("sapaCnt"),
+        # TMC congestion summary (App §2.5). The per-segment arrays ride as JSON
+        # strings on carrotManSP; expose them verbatim so the HUD can render the
+        # congestion bar without a second schema change.
+        "tmc_overall_status": _num("tmcOverallStatus"),
+        "tmc_total_distance": _num("tmcTotalDistance"),
+        "tmc_residual_distance": _num("tmcResidualDistance"),
+        "tmc_segment_count": _num("tmcSegmentCount"),
+        "tmc_segment_statuses": _txt("tmcSegmentStatuses"),
+        "tmc_segment_distances": _txt("tmcSegmentDistances"),
+        # Guided-lane arrow codes (App §2.2).
+        "nav_lane_guide": _txt("navLaneGuide"),
+        "nav_lane_guide_cnt": _num("navLaneGuideCnt"),
         "panel_side": carrot_panel_side,
         "panel_opacity": max(0, min(100, carrot_panel_opacity)),
       }

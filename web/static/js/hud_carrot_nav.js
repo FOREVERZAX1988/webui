@@ -45,6 +45,31 @@ const TRAFFIC = {
   2: { c: "#4ade80", t: () => tr("Green light") },
   3: { c: "#34d399", t: () => tr("Left-turn green") },
 };
+// TMC congestion colouring (App §2.5): very-free -> free -> slow -> congested
+// -> severe -> unknown/current. 0 and 10 are "no data"/"current position".
+const TMC_COLORS = {
+  5: "#15803d",
+  1: "#4ade80",
+  2: "#f59e0b",
+  3: "#ef4444",
+  4: "#991b1b",
+  0: "#6b7280",
+  10: "#6b7280",
+};
+const TMC_LABELS = {
+  5: () => tr("Very free"),
+  1: () => tr("Free"),
+  2: () => tr("Slow"),
+  3: () => tr("Congested"),
+  4: () => tr("Severe"),
+  0: () => tr("No data"),
+  10: () => tr("Current"),
+};
+const SAPA_TYPES = {
+  0: () => tr("Service area"),
+  1: () => tr("Toll gate"),
+  2: () => tr("Checkpoint"),
+};
 
 let lastNavSig = "";
 let styleInjected = false;
@@ -120,6 +145,10 @@ function injectStyle() {
 .cn-badge.cn-badge--vturn { background: rgba(255, 200, 50, 0.18); color: #ffc832; border: 1px solid rgba(255, 200, 50, 0.45); }
 .cn-badge.cn-tlight { background: rgba(255, 255, 255, 0.10); }
 .cn-badge.cn-tlight i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.cn-badge.cn-badge--sapa { background: rgba(56, 132, 255, 0.22); color: #bcd8ff; border: 1px solid rgba(56, 132, 255, 0.45); }
+.cn-badge.cn-badge--tmc { background: rgba(255, 255, 255, 0.10); }
+.cn-badge .cn-tmc-bar { display: inline-flex; width: 90px; height: 12px; border-radius: 3px; overflow: hidden; }
+.cn-badge .cn-tmc-bar i { display: block; height: 100%; }
 
 /* amap lane edge bars (unchanged behavior) */
 .opui-amapbar {
@@ -266,7 +295,56 @@ function badgesHtml(nav, speedKph) {
   if (nav.v_turn_speed > 0 && nav.v_turn_speed < 120) {
     badges.push(`<span class="cn-badge cn-badge--vturn">${tr("Curve")} ${nav.v_turn_speed}km/h</span>`);
   }
+  if (nav.sapa_name && nav.sapa_dist > 0) {
+    const kind = SAPA_TYPES[nav.sapa_type] ? SAPA_TYPES[nav.sapa_type]() : tr("Service area");
+    badges.push(`<span class="cn-badge cn-badge--sapa">P ${esc(kind)} · ${esc(fmtDist(nav.sapa_dist, true))} · ${esc(nav.sapa_name)}</span>`);
+  }
+  const tmc = tmcBarHtml(nav);
+  if (tmc) badges.push(tmc);
   return badges.length ? `<div class="cn-badges">${badges.join("")}</div>` : "";
+}
+
+/**
+ * Congestion bar from the App §2.5 TMC arrays. Segment widths are proportional
+ * to tmc_segment_distances; colours come from TMC_COLORS. Renders nothing when
+ * the arrays are absent or unparseable, so the card is unchanged without data.
+ */
+function tmcBarHtml(nav) {
+  const statuses = parseJsonIntArray(nav.tmc_segment_statuses);
+  if (!statuses.length) return "";
+  const distances = parseJsonIntArray(nav.tmc_segment_distances);
+
+  const cells = statuses.map((status, i) => {
+    const dist = i < distances.length ? Math.max(0, distances[i]) : 0;
+    const colour = TMC_COLORS[status] || TMC_COLORS[0];
+    const label = TMC_LABELS[status] ? TMC_LABELS[status]() : tr("No data");
+    // flex-grow carries the proportional width; a minimum keeps tiny segments visible.
+    return `<i style="flex:${dist > 0 ? dist : 1} 1 0;background:${colour}" title="${esc(label)}"></i>`;
+  }).join("");
+
+  const overall = Number(nav.tmc_overall_status) || 0;
+  const overallLabel = TMC_LABELS[overall] ? TMC_LABELS[overall]() : "";
+  const residual = nav.tmc_residual_distance > 0 ? ` · ${esc(fmtDist(nav.tmc_residual_distance, true))}` : "";
+  return `<span class="cn-badge cn-badge--tmc"><b class="cn-tmc-bar">${cells}</b>${overallLabel ? esc(overallLabel) : ""}${residual}</span>`;
+}
+
+function parseJsonIntArray(raw) {
+  if (raw === null || raw === undefined) return [];
+  let value = raw;
+  if (typeof value === "string") {
+    const text = value.trim();
+    if (!text) return [];
+    try {
+      value = JSON.parse(text);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(value)) return [];
+  return value.map((v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  });
 }
 
 function renderPanel(nav, isMetric, speedKph) {
