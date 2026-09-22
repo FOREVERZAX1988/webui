@@ -1481,7 +1481,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "bool",
         "param": "CarrotTrafficCongestionEnabled",
         "label": "Traffic Congestion Slowdown",
-        "desc": "Fold the phone app traffic congestion report into map-based cruise control. Only ever lowers the target speed.",
+        "desc": "Fold the phone app traffic congestion report into map-based cruise control. Only ever lowers the target speed. Needs Smart Cruise Control - Map to be on as well.",
         "default": False
       },{
         "type": "bool",
