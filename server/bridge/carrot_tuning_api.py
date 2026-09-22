@@ -73,12 +73,11 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "CruiseMaxVals5": ("int", 70),
   "CruiseMaxVals6": ("int", 60),
   # Navi speed / sound
-  "StopDistanceCarrot": ("int", 600),
   "AutoNaviSpeedCtrlMode": ("int", 2),
   "AutoNaviSpeedDecelRate": ("int", 200),
   "AutoNaviSpeedSafetyFactor": ("int", 105),
-  "SoundVolumeAdjust": ("int", 0),
-  "SoundVolumeAdjustEngage": ("int", 0),
+  "SoundVolumeAdjust": ("int", 100),
+  "SoundVolumeAdjustEngage": ("int", 100),
   # Vehicle CAN / cluster / planner control surface (P3 exposure).
   # Kinds and defaults mirror common/params_keys.h and
   # sunnypilot/carrot/config.py::_DEFAULT_NAV_PARAMS so the webui can
@@ -94,14 +93,12 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # Diagnostic sink (not exposed in the panel)
   "CarrotException": ("str", ""),
   # --- Carrot longitudinal / t_follow (webui exposure) ---
-  "DynamicTFollow": ("float", 0.0),
   "DynamicTFollowLC": ("float", 100.0),
   "LeadAccelResponse": ("int", 0),
   "LongActuatorDelay": ("int", 20),
   "LongTuningKf": ("int", 100),
   "LongTuningKiV": ("int", 0),
   "LongTuningKpV": ("int", 100),
-  "StoppingAccel": ("int", -50),
   "TFollowDecelBoost": ("int", 0),
   # --- Carrot cruise / acceleration (webui exposure) ---
   "AutoCruiseControl": ("int", 0),
@@ -170,9 +167,9 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "VEgoStopping": ("int", 50),
 
   # --- full alignment: remaining carrot tuning params (config 226 keys) ---
-  "AChangeCostStarting": ("int", 10),
   "AdjustLaneOffset": ("int", 0),
   "AutoCurveSpeedFactor": ("int", 100),
+  "AutoCurveSpeedAggressiveness": ("int", 100),
   "AutoCurveSpeedLowerLimit": ("int", 30),
   "AutoNaviCountDownMode": ("int", 2),
   "AutoNaviSpeedBumpEndDistance": ("int", 200),
@@ -213,7 +210,7 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "DisableMinSteerSpeed": ("bool", 0),
   "EnableCornerRadar": ("bool", 0),
   "EnableRadarTracks": ("bool", 0),
-  "EnableSpeedTF": ("bool", 0),
+  "EnableSpeedTF": ("int", 0),
   "HDPuse": ("bool", 0),
   "HardwareC3xLite": ("bool", 0),
   "HotspotOnBoot": ("bool", 0),
@@ -263,7 +260,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "LeadAccelResponseTF2": ("int", -1),
   "LeadAccelResponseTF3": ("int", -1),
   "LeadAccelResponseTF4": ("int", -1),
-  "SpeedTFFactor": ("int", 10),
   "AutoNaviRearCameraHoldDistance": ("int", 100),
 }
 

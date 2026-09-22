@@ -17,6 +17,13 @@ from typing import Any
 #     (torque override, lagd, camera offset, longitudinal MPC tuning, lane change)
 #   - CarrotPilot has no equivalent at all
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
+  "CruiseMaxVals6",
+  "CruiseMaxVals5",
+  "CruiseMaxVals4",
+  "CruiseMaxVals3",
+  "CruiseMaxVals2",
+  "CruiseMaxVals1",
+  "CruiseMaxVals0",
   "AdjustLaneOffset", "AlwaysLateral", "ApplyModelSpeed", "AutoCruiseControl",
   "AutoEngage", "AutoGasCancelSpeed",
   "AutoGasTokSpeed", "AutoNaviRearCameraHoldDistance", "AutoTurnInNotRoadEdge",
@@ -44,8 +51,8 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "ShowPathColor", "ShowPathColorCruiseOff", "ShowPathColorLane", "ShowPathEnd",
   "ShowPathMode", "ShowPathModeLane", "ShowPlotMode", "ShowRadarInfo",
   "ShowRouteInfo", "ShowTpms", "SideRadarMinDist", "SoftHoldOnCancel",
-  "SoftwareMenu", "SoundLanguageSetting", "SoundVolumeAdjust", "SoundVolumeAdjustEngage",
-  "SpeedTFFactor", "SteerActuatorDelay", "SteerRatioRate",
+  "SoftwareMenu", "SoundLanguageSetting",
+  "SteerActuatorDelay", "SteerRatioRate",
   "StockBlinkerCtrl", "UseLaneLineCurveSpeed", "UseLaneLineSpeed", "UseWideCamera",
   "VEgoStopping",})
 
@@ -605,15 +612,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "max": 300,
         "step": 5,
       },
-      {
-        "type": "int",
-        "param": "DynamicTFollow",
-        "label": "Dynamic Follow Time",
-        "desc": "Adjust the Dynamic T Follow setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5,
-      },
+      
       {
         "type": "int",
         "param": "DynamicTFollowLC",
@@ -639,15 +638,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "max": 100,
         "step": 5,
       },
-      {
-        "type": "int",
-        "param": "StoppingAccel",
-        "label": "Stopping Acceleration",
-        "desc": "Adjust the Stopping Accel setting.",
-        "min": -200,
-        "max": 0,
-        "step": 5,
-      },
+      
       {
         "type": "int",
         "param": "TFollowDecelBoost",
@@ -660,73 +651,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {
         "type": "separator"
       },
-      {
-        "type": "section",
-        "label": "Acceleration Limits (not applied yet)"
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals0",
-        "label": "Cruise Max Acceleration 0",
-        "desc": "Adjust the Cruise Max Vals0 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals1",
-        "label": "Cruise Max Acceleration 1",
-        "desc": "Adjust the Cruise Max Vals1 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals2",
-        "label": "Cruise Max Acceleration 2",
-        "desc": "Adjust the Cruise Max Vals2 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals3",
-        "label": "Cruise Max Acceleration 3",
-        "desc": "Adjust the Cruise Max Vals3 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals4",
-        "label": "Cruise Max Acceleration 4",
-        "desc": "Adjust the Cruise Max Vals4 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals5",
-        "label": "Cruise Max Acceleration 5",
-        "desc": "Adjust the Cruise Max Vals5 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CruiseMaxVals6",
-        "label": "Cruise Max Acceleration 6",
-        "desc": "Adjust the Cruise Max Vals6 setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
+      
+      
+      
+      
+      
+      
+      
+      
       ],
   },
 
@@ -782,15 +714,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "section",
         "label": "Stop / Speed Camera"
       },
-      {
-        "type": "int",
-        "param": "StopDistanceCarrot",
-        "label": "Stop Target Distance",
-        "desc": "Adjust the Stop Distance Carrot setting.",
-        "min": 0,
-        "max": 2000,
-        "step": 10,
-      },
+      
       {
         "type": "bool",
         "param": "SameSpiCamFilter",
@@ -1179,6 +1103,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },
       {
         "type": "int",
+        "param": "AutoCurveSpeedAggressiveness",
+        "label": "Normal Road Curve Aggressiveness",
+        "desc": "How aggressively curve speed is reduced on normal roads. Was read by the planner but never registered, so it had no effect.",
+        "min": 0,
+        "max": 200,
+        "step": 5
+      },
+      {
+        "type": "int",
         "param": "AutoCurveSpeedLowerLimit",
         "label": "Curve Speed Lower Limit",
         "desc": "Adjust the Auto Curve Speed Lower Limit setting.",
@@ -1232,17 +1165,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "title": "Lateral Tuning",
     "parent": "navigation__carrot_tuning",
     "widgets": [{
-        "type": "section",
-        "label": "Lane Change"
-      },{
-        "type": "int",
-        "param": "AChangeCostStarting",
-        "label": "Lane Change Start Cost",
-        "desc": "Adjust the A Change Cost Starting setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },{
         "type": "separator"
       },{
         "type": "section",
@@ -1307,7 +1229,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "int",
         "param": "LatSuspendAngleDeg",
         "label": "Lateral Suspend Angle",
-        "desc": "Adjust the Lat Suspend Angle Deg setting.",
+        "desc": "Steering angle at which lateral control pauses while you steer. 300 effectively disables it. CarrotPilot declares 0.1-degree units for this parameter, but its code - like this port - compares the raw value against the steering angle, so the number reads as degrees here.",
         "min": 45,
         "max": 300,
         "step": 1,
@@ -1499,12 +1421,20 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "section",
         "label": "Radar / Tracks"
       },    {"type": "bool", "param": "EnableRadarTracks", "label": "Enable Radar Tracks",
-    "desc": "BYD only: feed corner-radar tracks into the radar interface.", "default": 0},{
-        "type": "bool",
+    "desc": "BYD only: feed corner-radar tracks into the radar interface.", "default": 0},
+      {"type": "int", "param": "SoundVolumeAdjust", "label": "Alert Volume",
+       "desc": "Scale every alert sound, in percent. 100 keeps the current loudness.",
+       "min": 5, "max": 200, "step": 5},
+      {"type": "int", "param": "SoundVolumeAdjustEngage", "label": "Engage Chime Volume",
+       "desc": "Scale the engage / disengage / reverse chimes, in percent.",
+       "min": 5, "max": 200, "step": 5},{
+        "type": "int",
         "param": "EnableSpeedTF",
-        "label": "Enable Speed TF",
-        "desc": "Adjust the Enable Speed T F setting.",
-        "default": 0
+        "label": "Speed-dependent Follow Time",
+        "desc": "Shrink the follow distance as speed rises. 0 disables it, 1 scales linearly, and -1/-2/-3 select speed breakpoint profiles at 30/60/90, 40/80/120 and 50/100/150 km/h. The code reads all four modes; the control used to be a toggle, which could only write 0 or 1 and made the profiles unreachable.",
+        "min": -3,
+        "max": 1,
+        "step": 1
       },{
         "type": "separator"
       },{
