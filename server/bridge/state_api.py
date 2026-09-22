@@ -608,7 +608,11 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     screensaver_enabled = p.get_bool("ScreenSaverEnabled")
     screensaver_timeout_sec = int(p.get("ScreenSaverTimeout", return_default=True) or 300)
     speed_limit_mode = int(p.get("SpeedLimitMode", return_default=True) or 0)
-    amap_enabled = bool(p.get_bool("AmapEnabled"))
+    # AmapMapDataEnabled is what the UI actually toggles; AmapEnabled is the deprecated
+    # param that mapd_mode migrates from, kept as a fallback for installs that have not
+    # run the migration. Reading only AmapEnabled made the panel report "OSM" while Amap
+    # was in fact the active provider.
+    amap_enabled = bool(p.get_bool("AmapMapDataEnabled") or p.get_bool("AmapEnabled"))
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
   except Exception:
