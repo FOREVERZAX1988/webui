@@ -74,7 +74,7 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "CruiseMaxVals6": ("int", 60),
   # Navi speed / sound
   "AutoNaviSpeedCtrlMode": ("int", 2),
-  "AutoNaviSpeedDecelRate": ("int", 200),
+  "AutoNaviSpeedDecelRate": ("int", 120),
   "AutoNaviSpeedSafetyFactor": ("int", 105),
   "SoundVolumeAdjust": ("int", 100),
   "SoundVolumeAdjustEngage": ("int", 100),

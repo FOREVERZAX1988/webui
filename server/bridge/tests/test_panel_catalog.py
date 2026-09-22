@@ -45,16 +45,24 @@ class PanelCatalogParamTests(unittest.TestCase):
     "VehicleSpeedCameraControlMode",
     "AutoNaviSpeedBumpEndDistance",
     "LatSuspendAngleDeg",
-    "ClusterNaviMapTheme",
-    "ClusterNaviMapType",
-    "ClusterNaviMapFps",
-    "CarrotNaviHudMapProfile",
+  }
+
+  # Removed from the panel: sp has no cluster subsystem, so these were registered,
+  # exposed in both UIs, and read by nothing.
+  _CLUSTER_HIDDEN = {
+    "ClusterNaviMapTheme", "ClusterNaviMapType", "ClusterNaviMapFps",
+    "CarrotNaviHudMapProfile", "ClusterHud", "ClusterHudTheme",
   }
 
   def test_carrot_tuning_exposes_p1_params(self):
     keys = set(panel_param_keys("navigation__carrot_tuning"))
     missing = self._P1_PARAMS - keys
     self.assertFalse(missing, f"navigation__carrot_tuning missing params: {sorted(missing)}")
+
+  def test_carrot_tuning_hides_cluster_params(self):
+    keys = set(panel_param_keys("navigation__carrot_tuning"))
+    leaked = self._CLUSTER_HIDDEN & keys
+    self.assertFalse(leaked, f"cluster params are exposed again: {sorted(leaked)}")
 
 
 class CarrotTuningFullCoverageTests(unittest.TestCase):

@@ -17,6 +17,26 @@ from typing import Any
 #     (torque override, lagd, camera offset, longitudinal MPC tuning, lane change)
 #   - CarrotPilot has no equivalent at all
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
+  "ClusterNaviMapTheme",
+  "ClusterNaviMapType",
+  "ClusterNaviMapFps",
+  "CarrotNaviHudMapProfile",
+  "ClusterHud",
+  "ClusterHudBrightness",
+  "ClusterHudCameraViewMode",
+  "ClusterHudCoreMode",
+  "ClusterHudDebug",
+  "ClusterHudEncoder",
+  "ClusterHudLiveFps",
+  "ClusterHudMirror",
+  "ClusterHudOrientation",
+  "ClusterHudPanelLayout",
+  "ClusterHudPriority",
+  "ClusterHudRadarDisplay",
+  "ClusterHudRadarInfo",
+  "ClusterHudRadarSourceColor",
+  "ClusterHudScreenMode",
+  "ClusterHudTheme",
   "CruiseMaxVals6",
   "CruiseMaxVals5",
   "CruiseMaxVals4",
@@ -1243,175 +1263,10 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "section",
         "label": "Cluster Map"
       },{
-        "type": "multiple_button",
-        "param": "ClusterNaviMapTheme",
-        "label": "Cluster Navigation Map Theme",
-        "desc": "Adjust the Cluster Navi Map Theme setting.",
-        "buttons": ["Auto", "Dark", "Light"],
-        "visible_if": {
-          "param": "CarrotEnabled",
-          "eq": "1"
-        }
-      },{
-        "type": "multiple_button",
-        "param": "ClusterNaviMapType",
-        "label": "Cluster Navigation Map Type",
-        "desc": "Adjust the Cluster Navi Map Type setting.",
-        "buttons": ["Normal", "Satellite"],
-        "visible_if": {
-          "param": "CarrotEnabled",
-          "eq": "1"
-        }
-      },{
-        "type": "multiple_button",
-        "param": "ClusterNaviMapFps",
-        "label": "Cluster Navigation Map FPS",
-        "desc": "Adjust the Cluster Navi Map Fps setting.",
-        "buttons": ["5 FPS", "10 FPS", "20 FPS", "30 FPS"],
-        "visible_if": {
-          "param": "CarrotEnabled",
-          "eq": "1"
-        }
-      },{
-        "type": "int",
-        "param": "CarrotNaviHudMapProfile",
-        "label": "Carrot Navi HUD Profile",
-        "desc": "Adjust the Carrot Navi Hud Map Profile setting.",
-        "min": 0,
-        "max": 5,
-        "step": 1,
-        "visible_if": {
-          "param": "CarrotEnabled",
-          "eq": "1"
-        },
-        "default": False
-      },{
         "type": "separator"
       },{
         "type": "section",
         "label": "Cluster HUD (external display required)"
-      },{
-        "type": "bool",
-        "param": "ClusterHud",
-        "label": "Cluster HUD",
-        "desc": "Requires a TURZX USB cluster display, which is not supported in this build yet. These settings are stored but have no effect until the display is added.",
-        "default": 0
-      },{
-        "type": "int",
-        "param": "ClusterHudBrightness",
-        "label": "Cluster HUD Brightness",
-        "desc": "Adjust the Cluster Hud Brightness setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },{
-        "type": "int",
-        "param": "ClusterHudCameraViewMode",
-        "label": "Cluster HUD Camera View Mode",
-        "desc": "Adjust the Cluster Hud Camera View Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1
-      },{
-        "type": "int",
-        "param": "ClusterHudCoreMode",
-        "label": "Cluster HUD Core Mode",
-        "desc": "Adjust the Cluster Hud Core Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1
-      },{
-        "type": "bool",
-        "param": "ClusterHudDebug",
-        "label": "Cluster HUD Debug",
-        "desc": "Adjust the Cluster Hud Debug setting.",
-        "default": 0
-      },{
-        "type": "int",
-        "param": "ClusterHudEncoder",
-          "step": 1,
-          "max": 3,
-          "min": 0,
-        "label": "Cluster HUD Encoder",
-        "desc": "Adjust the Cluster Hud Encoder setting.",
-        "default": 0
-      },{
-        "type": "int",
-        "param": "ClusterHudLiveFps",
-        "label": "Cluster HUD Live FPS",
-        "desc": "Adjust the Cluster Hud Live Fps setting.",
-        "min": 1,
-        "max": 60,
-        "step": 1,
-      },{
-        "type": "bool",
-        "param": "ClusterHudMirror",
-        "label": "Cluster HUD Mirror",
-        "desc": "Adjust the Cluster Hud Mirror setting.",
-        "default": 0
-      },{
-        "type": "int",
-        "param": "ClusterHudOrientation",
-        "label": "Cluster HUD Orientation",
-        "desc": "Adjust the Cluster Hud Orientation setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1
-      },{
-        "type": "int",
-        "param": "ClusterHudPanelLayout",
-        "label": "Cluster HUD Panel Layout",
-        "desc": "Adjust the Cluster Hud Panel Layout setting.",
-        "min": 0,
-        "max": 1,
-        "step": 1
-      },{
-        "type": "int",
-        "param": "ClusterHudPriority",
-        "label": "Cluster HUD Priority",
-        "desc": "Adjust the Cluster Hud Priority setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },{
-        "type": "bool",
-        "param": "ClusterHudRadarDisplay",
-        "label": "Cluster HUD Radar Display",
-        "desc": "Adjust the Cluster Hud Radar Display setting.",
-        "default": 0
-      },{
-        "type": "int",
-        "param": "ClusterHudRadarInfo",
-        "label": "Cluster HUD Radar Info",
-        "desc": "Adjust the Cluster Hud Radar Info setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },{
-        "type": "int",
-        "param": "ClusterHudRadarSourceColor",
-          "step": 1,
-          "max": 1,
-          "min": 0,
-        "label": "Cluster HUD Radar Source Color",
-        "desc": "Adjust the Cluster Hud Radar Source Color setting.",
-        "default": 0
-      },{
-        "type": "int",
-        "param": "ClusterHudScreenMode",
-        "label": "Cluster HUD Screen Mode",
-        "desc": "Adjust the Cluster Hud Screen Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1
-      },{
-        "type": "int",
-        "param": "ClusterHudTheme",
-        "label": "Cluster HUD Theme",
-        "desc": "Adjust the Cluster Hud Theme setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
       }],
   },
 
