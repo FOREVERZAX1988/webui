@@ -6,11 +6,13 @@ import ast
 import unittest
 
 from webui.server.bridge import carrot_tuning_api
-from webui.server.bridge.panel_catalog import SUBPANELS, get_panel, panel_param_keys
+from webui.server.bridge.panel_catalog import (CARROT_TUNING_UNAVAILABLE, SUBPANELS,
+                                                    get_panel, panel_param_keys)
 
-# Carrot tuning keys that are intentionally NOT rendered as user-tunable
-# widgets (e.g. a cross-process diagnostic sink written by the carrot daemon).
-_PANEL_EXCLUDED = {"CarrotException"}
+# Carrot tuning keys that are intentionally NOT rendered as user-tunable widgets:
+# a cross-process diagnostic sink written by the carrot daemon, plus every param
+# that no code in this tree consumes (see CARROT_TUNING_UNAVAILABLE for the reasons).
+_PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE)
 
 
 def _config_nav_param_keys() -> set[str]:
@@ -28,13 +30,18 @@ def _config_nav_param_keys() -> set[str]:
 
 
 class PanelCatalogParamTests(unittest.TestCase):
-  """Verify P1 carrot params are exposed in the webui."""
+  """Verify the P1 carrot params that are actually wired are exposed in the webui.
+
+  VehicleSpeedCameraDistanceTime was in this list but no code reads it, so it is now
+  hidden like the rest of the inert params - exposing it would advertise a control
+  that cannot do anything. It stays registered, so re-adding it here is all that is
+  needed once a reader exists.
+  """
 
   _P1_PARAMS = {
     "VehicleNaviCanControl",
     "VehicleNaviSchoolZoneControl",
     "VehicleSpeedCameraControlMode",
-    "VehicleSpeedCameraDistanceTime",
     "AutoNaviSpeedBumpEndDistance",
     "LatSuspendAngleDeg",
     "ClusterNaviMapTheme",
@@ -91,7 +98,9 @@ class CarrotTuningLayoutTests(unittest.TestCase):
   def test_every_subpanel_row_targets_a_real_panel(self):
     widgets = get_panel(self.ROOT)["widgets"]
     rows = [w for w in widgets if w.get("type") == "subpanel"]
-    self.assertEqual(len(rows), 9, f"expected 9 group rows, got {len(rows)}")
+    # 8 groups: "Path Rendering" lost every item when the params with no reader
+    # were hidden, so the group and its row were removed rather than left empty.
+    self.assertEqual(len(rows), 8, f"expected 8 group rows, got {len(rows)}")
     for w in rows:
       target = w["target"]
       self.assertIn(target, SUBPANELS, f"{target} is not a registered subpanel")

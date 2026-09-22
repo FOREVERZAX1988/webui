@@ -4,6 +4,54 @@ from __future__ import annotations
 
 from typing import Any
 
+# Carrot tuning params that stay registered (params_keys.h + carrot/config.py +
+# carrot_tuning_api.py) but are deliberately NOT rendered as UI widgets, because no
+# code in this tree reads them. Hiding them keeps the settings page honest; keeping
+# them registered keeps profile/backup/restore working and lets a future port
+# re-expose them without a migration.
+#
+# Grouped by why they are inert:
+#   - the subsystem they configure was never ported (lateral control, ONNX lane
+#     lines, cluster HUD, path renderer, YouTube/sound, radar tracks)
+#   - the behaviour is already owned by a sunnypilot module with its own params
+#     (torque override, lagd, camera offset, longitudinal MPC tuning, lane change)
+#   - CarrotPilot has no equivalent at all
+CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
+  "AdjustLaneOffset", "AlwaysLateral", "ApplyModelSpeed", "AutoCruiseControl",
+  "AutoEngage", "AutoGasCancelSpeed",
+  "AutoGasSyncSpeed", "AutoGasTokSpeed", "AutoNaviRearCameraHoldDistance", "AutoTurnInNotRoadEdge",
+  "BsdDelayTime", "CameraYawTrimDeg",
+  "CancelButtonMode", "CanfdDebug", "CanfdHDA2", "CanfdStopRetry",
+  "CarrotCruiseAtcDecel", "CarrotCruiseDecel", "CarrotTireTrajectory", "CarrotYouTubeLive",
+  "CarrotYouTubeQuality", "CarrotYouTubeTimestamp", "ContinuousLaneChange",  "CruiseButtonLongDelay", "CruiseButtonMode", "CruiseButtonTest1",
+  "CruiseButtonTest2", "CruiseButtonTest3", "CruiseGapLevels", "CruiseOnDist",
+  "CruiseSpeed1", "CruiseSpeed2", "CruiseSpeed3", "CruiseSpeed4",
+  "CruiseSpeed5", "CruiseSpeedUnit", "CruiseSpeedUnitBasic", "CustomSR",
+  "CustomSteerDeltaDown", "CustomSteerDeltaDownLC", "CustomSteerDeltaUp", "CustomSteerDeltaUpLC",
+  "CustomSteerMax", "DisableMinSteerSpeed", "EnableCornerRadar", "EnableRadarTracks",
+  "HDPuse", "HapticFeedbackWhenSpeedCamera", "HardwareC3xLite",
+  "HotspotOnBoot", "HyundaiCameraSCC", "IsLdwsCar", "LaneChangeBsd",
+  "LaneChangeDelay", "LaneChangeNeedTorque", "LaneLineCheck",  "LatMpcAccelCost", "LatMpcInputOffset", "LatMpcJerkCost", "LatMpcMotionCost",
+  "LatMpcPathCost", "LatMpcSteeringRateCost", "LatSmoothSec", "LateralTorqueAccelFactor",
+  "LateralTorqueCustom", "LateralTorqueFriction", "LateralTorqueKd", "LateralTorqueKf",
+  "LateralTorqueKiV", "LateralTorqueKpV", "LeadAccelResponseTF1", "LeadAccelResponseTF2",
+  "LeadAccelResponseTF3", "LeadAccelResponseTF4", "LfaButtonMode", "LongActuatorDelay",
+  "LongTuningKf", "LongTuningKiV", "LongTuningKpV", "MapboxStyle",
+  "MaxAngleFrames", "MuteDoor", "MuteSeatbelt", "NewLaneWidthDiff",
+  "OnnxBsdIntervalMs", "OnnxBsdSmoothingMs", "OnnxBsdThreshold", "OnnxLaneIntervalMs",
+  "OnnxLaneThreshold", "PaddleMode", "PathOffset", "RecordRoadCam",
+  "ShareData", "ShowCameraWithCluster", "ShowCustomBrightness", "ShowDateTime",
+  "ShowDebugUI", "ShowDeviceState", "ShowLaneInfo", "ShowModelView",
+  "ShowPathColor", "ShowPathColorCruiseOff", "ShowPathColorLane", "ShowPathEnd",
+  "ShowPathMode", "ShowPathModeLane", "ShowPlotMode", "ShowRadarInfo",
+  "ShowRouteInfo", "ShowTpms", "SideRadarMinDist", "SoftHoldOnCancel",
+  "SoftwareMenu", "SoundLanguageSetting", "SoundVolumeAdjust", "SoundVolumeAdjustEngage",
+  "SpeedFromPCM", "SpeedTFFactor", "SteerActuatorDelay", "SteerRatioRate",
+  "StockBlinkerCtrl", "UseLaneLineCurveSpeed", "UseLaneLineSpeed", "UseWideCamera",
+  "VEgoStopping", "VehicleSpeedCameraDistanceTime",
+})
+
+
 # Widget types: bool, int, choice, readonly, action, section, html, subpanel_ref
 
 PANELS: list[dict[str, Any]] = [
@@ -494,16 +542,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },
       {
         "type": "subpanel",
-        "target": "navigation__carrot_tuning__path",
-        "label": "Path Rendering",
-        "desc": "Colors and display modes for the planned driving path.",
-        "button": "CUSTOMIZE"
-      },
-      {
-        "type": "separator"
-      },
-      {
-        "type": "subpanel",
         "target": "navigation__carrot_tuning__vehicle",
         "label": "Vehicle",
         "desc": "Vehicle-specific overrides and convenience options.",
@@ -537,39 +575,10 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "id": "navigation__carrot_tuning__start",
     "title": "Start / Engage",
     "parent": "navigation__carrot_tuning",
-    "widgets": [
-      {
+    "widgets": [{
         "type": "section",
         "label": "Auto Start / Cruise"
-      },
-      {
-        "type": "int",
-        "param": "AutoEngage",
-        "label": "Auto Engage",
-        "desc": "Adjust the Auto Engage setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "AutoCruiseControl",
-        "label": "Auto Cruise Speed",
-        "desc": "Adjust the Auto Cruise Control setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseOnDist",
-        "label": "Cruise On Distance",
-        "desc": "Adjust the Cruise On Dist setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
+      },{
         "type": "int",
         "param": "CruiseEcoControl",
         "label": "Eco Cruise Control",
@@ -577,180 +586,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Button Behavior"
-      },
-      {
-        "type": "int",
-        "param": "CruiseButtonMode",
-        "label": "Cruise Button Mode",
-        "desc": "Adjust the Cruise Button Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CancelButtonMode",
-        "label": "Cancel Button Mode",
-        "desc": "Adjust the Cancel Button Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "SoftHoldOnCancel",
-        "label": "Soft Hold on Cancel",
-        "desc": "Adjust the Soft Hold On Cancel setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "CruiseButtonLongDelay",
-        "label": "Cruise Button Long Press Delay",
-        "desc": "Adjust the Cruise Button Long Delay setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Speed Presets"
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeed1",
-        "label": "Cruise Preset Speed 1",
-        "desc": "Adjust the Cruise Speed1 setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeed2",
-        "label": "Cruise Preset Speed 2",
-        "desc": "Adjust the Cruise Speed2 setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeed3",
-        "label": "Cruise Preset Speed 3",
-        "desc": "Adjust the Cruise Speed3 setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeed4",
-        "label": "Cruise Preset Speed 4",
-        "desc": "Adjust the Cruise Speed4 setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeed5",
-        "label": "Cruise Preset Speed 5",
-        "desc": "Adjust the Cruise Speed5 setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeedUnit",
-        "label": "Cruise Preset Speed Unit",
-        "desc": "Adjust the Cruise Speed Unit setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CruiseSpeedUnitBasic",
-        "label": "Basic Cruise Preset Speed Unit",
-        "desc": "Adjust the Cruise Speed Unit Basic setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Steering Wheel Buttons"
-      },
-      {
-        "type": "int",
-        "param": "LfaButtonMode",
-        "label": "LFA Button Mode",
-        "desc": "Adjust the Lfa Button Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "PaddleMode",
-        "label": "Paddle Mode",
-        "desc": "Adjust the Paddle Mode setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Auto Gas"
-      },
-      {
-        "type": "int",
-        "param": "AutoGasCancelSpeed",
-        "label": "Auto Gas Cancel Speed",
-        "desc": "Adjust the Auto Gas Cancel Speed setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "AutoGasSyncSpeed",
-        "label": "Auto Gas Sync Speed",
-        "desc": "Adjust the Auto Gas Sync Speed setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5
-      },
-      {
-        "type": "int",
-        "param": "AutoGasTokSpeed",
-        "label": "Auto Gas Takeover Speed",
-        "desc": "Adjust the Auto Gas Tok Speed setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5,
-      },
-    ],
+      }],
   },
 
   "navigation__carrot_tuning__cruise": {
@@ -830,96 +674,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Lead Accel Response setting.",
         "min": -100,
         "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LeadAccelResponseTF1",
-        "label": "Lead Accel Response (Gap 1)",
-        "desc": "Lead accel response for follow-gap level 1 (cp default -1).",
-        "min": -1,
-        "max": 5,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "LeadAccelResponseTF2",
-        "label": "Lead Accel Response (Gap 2)",
-        "desc": "Lead accel response for follow-gap level 2 (cp default -1).",
-        "min": -1,
-        "max": 5,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "LeadAccelResponseTF3",
-        "label": "Lead Accel Response (Gap 3)",
-        "desc": "Lead accel response for follow-gap level 3 (cp default -1).",
-        "min": -1,
-        "max": 5,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "LeadAccelResponseTF4",
-        "label": "Lead Accel Response (Gap 4)",
-        "desc": "Lead accel response for follow-gap level 4 (cp default -1).",
-        "min": -1,
-        "max": 5,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "SpeedTFFactor",
-        "label": "Speed Time-Gap Factor",
-        "desc": "Speed-dependent time-gap factor (cp default 10).",
-        "min": 10,
-        "max": 30,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "CruiseGapLevels",
-        "label": "Follow-Gap Levels",
-        "desc": "Number of follow-gap levels (cp default 4).",
-        "min": 2,
-        "max": 4,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "LongActuatorDelay",
-        "label": "Longitudinal Actuator Delay",
-        "desc": "Adjust the Long Actuator Delay setting.",
-        "min": 0,
-        "max": 200,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LongTuningKf",
-        "label": "Longitudinal Feedforward",
-        "desc": "Adjust the Long Tuning Kf setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LongTuningKiV",
-        "label": "Longitudinal Integral Velocity",
-        "desc": "Adjust the Long Tuning Ki V setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LongTuningKpV",
-        "label": "Longitudinal Proportional Velocity",
-        "desc": "Adjust the Long Tuning Kp V setting.",
-        "min": 0,
-        "max": 300,
         "step": 5,
       },
       {
@@ -1012,48 +766,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },
       {
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Cruise Behavior"
-      },
-      {
-        "type": "int",
-        "param": "CarrotCruiseDecel",
-        "label": "Carrot Cruise Decel",
-        "desc": "Adjust the Carrot Cruise Decel setting.",
-        "min": -100,
-        "max": 0,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CarrotCruiseAtcDecel",
-        "label": "Carrot Cruise ATC Decel",
-        "desc": "Adjust the Carrot Cruise Atc Decel setting.",
-        "min": -100,
-        "max": 0,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "VEgoStopping",
-        "label": "Stop Speed Threshold",
-        "desc": "Adjust the V Ego Stopping setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "ApplyModelSpeed",
-        "label": "Model Speed Compensation",
-        "desc": "Adjust the Apply Model Speed setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1,
-      },
-    ],
+      }],
   },
 
   "navigation__carrot_tuning__navi": {
@@ -1102,15 +815,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "step": 1,
       },
       {
-        "type": "int",
-        "param": "AutoNaviRearCameraHoldDistance",
-        "label": "Navi Rear-Camera Hold Distance",
-        "desc": "Navi rear-camera hold distance in cm (cp default 100).",
-        "min": 0,
-        "max": 300,
-        "step": 10
-      },
-      {
         "type": "separator"
       },
       {
@@ -1132,15 +836,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Same Direction Speed Cam Filter",
         "desc": "Adjust the Same Spi Cam Filter setting.",
         "default": True
-      },
-      {
-        "type": "int",
-        "param": "HapticFeedbackWhenSpeedCamera",
-        "label": "Speed Camera Haptic Alert",
-        "desc": "Adjust the Haptic Feedback When Speed Camera setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1,
       },
       {
         "type": "int",
@@ -1174,15 +869,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Auto Road Speed Limit Offset setting.",
         "min": -20,
         "max": 20,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "SpeedFromPCM",
-        "label": "Speed Source PCM",
-        "desc": "Adjust the Speed From P C M setting.",
-        "min": 0,
-        "max": 2,
         "step": 1,
       },
       {
@@ -1235,19 +921,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         }
       },
       {
-        "type": "int",
-        "param": "VehicleSpeedCameraDistanceTime",
-        "label": "Speed Camera Alert Time",
-        "desc": "Adjust the Vehicle Speed Camera Distance Time setting.",
-        "min": 0,
-        "max": 30,
-        "step": 1,
-        "visible_if": {
-          "param": "CarrotEnabled",
-          "eq": "1"
-        }
-      },
-      {
         "type": "separator"
       },
       {
@@ -1293,8 +966,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 20,
         "step": 1,
-      },
-    ],
+      }],
   },
 
   "navigation__carrot_tuning__speed": {
@@ -1347,13 +1019,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": -200,
         "max": 200,
         "step": 10,
-      },
-      {
-        "type": "bool",
-        "param": "AutoTurnInNotRoadEdge",
-        "label": "Auto Turn Outside Road Edge",
-        "desc": "Adjust the Auto Turn In Not Road Edge setting.",
-        "default": True
       },
       {
         "type": "separator"
@@ -1594,342 +1259,29 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 60,
         "step": 5
-      },
-    ],
+      }],
   },
 
   "navigation__carrot_tuning__tuning": {
     "id": "navigation__carrot_tuning__tuning",
     "title": "Lateral Tuning",
     "parent": "navigation__carrot_tuning",
-    "widgets": [
-      {
-        "type": "section",
-        "label": "Lateral Mode"
-      },
-      {
-        "type": "bool",
-        "param": "AlwaysLateral",
-        "label": "Always Lateral",
-        "desc": "Adjust the Always Lateral setting.",
-      },
-      {
+    "widgets": [{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Steering Limits"
-      },
-      {
-        "type": "int",
-        "param": "CustomSR",
-        "label": "Custom Steer Ratio",
-        "desc": "Adjust the Custom S R setting.",
-        "min": 50,
-        "max": 200,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CustomSteerMax",
-        "label": "Max Steer Angle",
-        "desc": "Adjust the Custom Steer Max setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CustomSteerDeltaDown",
-        "label": "Steer Delta Down",
-        "desc": "Adjust the Custom Steer Delta Down setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CustomSteerDeltaUp",
-        "label": "Steer Delta Up",
-        "desc": "Adjust the Custom Steer Delta Up setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CustomSteerDeltaDownLC",
-        "label": "Steer Delta Down (Lane Change)",
-        "desc": "Adjust the Custom Steer Delta Down L C setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "CustomSteerDeltaUpLC",
-        "label": "Steer Delta Up (Lane Change)",
-        "desc": "Adjust the Custom Steer Delta Up L C setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "SteerActuatorDelay",
-        "label": "Steer Actuator Delay",
-        "desc": "Adjust the Steer Actuator Delay setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "SteerRatioRate",
-        "label": "Steer Ratio Rate",
-        "desc": "Adjust the Steer Ratio Rate setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Path Offset"
-      },
-      {
-        "type": "int",
-        "param": "PathOffset",
-        "label": "Path Offset",
-        "desc": "Adjust the Path Offset setting.",
-        "min": -100,
-        "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "AdjustLaneOffset",
-        "label": "Lane Offset Adjust",
-        "desc": "Adjust the Adjust Lane Offset setting.",
-        "min": -100,
-        "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "CameraYawTrimDeg",
-        "label": "Camera Yaw Trim",
-        "desc": "Adjust the Camera Yaw Trim Deg setting.",
-        "min": -10,
-        "max": 10,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Lateral MPC Costs"
-      },
-      {
-        "type": "int",
-        "param": "LatMpcAccelCost",
-        "label": "Lateral Acceleration Cost",
-        "desc": "Adjust the Lat Mpc Accel Cost setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LatMpcJerkCost",
-        "label": "Lateral Jerk Cost",
-        "desc": "Adjust the Lat Mpc Jerk Cost setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LatMpcMotionCost",
-        "label": "Lateral Motion Cost",
-        "desc": "Adjust the Lat Mpc Motion Cost setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LatMpcPathCost",
-        "label": "Lateral Path Cost",
-        "desc": "Adjust the Lat Mpc Path Cost setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LatMpcSteeringRateCost",
-        "label": "Lateral Steering Rate Cost",
-        "desc": "Adjust the Lat Mpc Steering Rate Cost setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Lateral Torque"
-      },
-      {
-        "type": "bool",
-        "param": "LateralTorqueCustom",
-        "label": "Custom Lateral Torque",
-        "desc": "Adjust the Lateral Torque Custom setting.",
-      },
-      {
-        "type": "int",
-        "param": "LateralTorqueFriction",
-        "label": "Lateral Torque Friction",
-        "desc": "Adjust the Lateral Torque Friction setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LateralTorqueKd",
-        "label": "Lateral Torque Derivative",
-        "desc": "Adjust the Lateral Torque Kd setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LateralTorqueKf",
-        "label": "Lateral Torque Feedforward",
-        "desc": "Adjust the Lateral Torque Kf setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LateralTorqueKiV",
-        "label": "Lateral Torque Integral Velocity",
-        "desc": "Adjust the Lateral Torque Ki V setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LateralTorqueKpV",
-        "label": "Lateral Torque Proportional",
-        "desc": "Adjust the Lateral Torque Kp V setting.",
-        "min": 0,
-        "max": 500,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LateralTorqueAccelFactor",
-        "label": "Lateral Torque Accel Factor",
-        "desc": "Adjust the Lateral Torque Accel Factor setting.",
-        "min": 0,
-        "max": 300,
-        "step": 5,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Lateral Smoothing"
-      },
-      {
-        "type": "int",
-        "param": "LatMpcInputOffset",
-        "label": "Lateral MPC Input Offset",
-        "desc": "Adjust the Lat Mpc Input Offset setting.",
-        "min": -100,
-        "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "LatSmoothSec",
-        "label": "Lateral Smooth Seconds",
-        "desc": "Adjust the Lat Smooth Sec setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Lane Change"
-      },
-      {
-        "type": "int",
-        "param": "LaneChangeBsd",
-        "label": "Lane Change BSD",
-        "desc": "Adjust the Lane Change Bsd setting.",
-        "min": -1,
-        "max": 1,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "LaneChangeDelay",
-        "label": "Lane Change Delay",
-        "desc": "Adjust the Lane Change Delay setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "LaneChangeNeedTorque",
-        "label": "Lane Change Need Torque",
-        "desc": "Adjust the Lane Change Need Torque setting.",
-        "min": 0,
-        "max": 10,
-        "step": 1,
-      },
-      {
-        "type": "bool",
-        "param": "ContinuousLaneChange",
-        "label": "Continuous Lane Change",
-        "desc": "Adjust the Continuous Lane Change setting.",
-        "default": True
-      },
-      {
-        "type": "int",
-        "param": "ContinuousLaneChangeCnt",
-        "label": "Continuous Lane Change Count",
-        "desc": "Adjust the Continuous Lane Change Cnt setting.",
-        "min": 0,
-        "max": 10,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "ContinuousLaneChangeInterval",
-        "label": "Continuous Lane Change Interval",
-        "desc": "Adjust the Continuous Lane Change Interval setting.",
-        "min": 0,
-        "max": 100,
-        "step": 5,
-      },
-      {
+      },{
         "type": "int",
         "param": "AChangeCostStarting",
         "label": "Lane Change Start Cost",
@@ -1937,99 +1289,20 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 500,
         "step": 5,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Auto Turn / New Lane"
-      },
-      {
-        "type": "int",
-        "param": "LaneStabTime",
-        "label": "Lane Stabilization Time",
-        "desc": "Adjust the Lane Stab Time setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "NewLaneWidthDiff",
-        "label": "New Lane Width Difference",
-        "desc": "Adjust the New Lane Width Diff setting.",
-        "min": 0,
-        "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "AutoEnTurnNewLaneTime",
-        "label": "Auto Enter New Lane Time",
-        "desc": "Adjust the Auto En Turn New Lane Time setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "AutoEnTurnNewLaneTimeH",
-        "label": "Auto Enter New Lane Time (Highway)",
-        "desc": "Adjust the Auto En Turn New Lane Time H setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
-        "type": "bool",
-        "param": "AutoTurnLeft",
-        "label": "Auto Turn Left",
-        "desc": "Adjust the Auto Turn Left setting.",
-        "default": True
-      },
-      {
-        "type": "int",
-        "param": "StockBlinkerCtrl",
-          "step": 1,
-          "max": 2,
-          "min": 0,
-        "label": "Stock Blinker Control",
-        "desc": "Adjust the Stock Blinker Ctrl setting."
-      },
-      {
-        "type": "int",
-        "param": "ExtBlinkerCtrlTest",
-          "step": 1,
-          "max": 2,
-          "min": 0,
-        "label": "Extended Blinker Test",
-        "desc": "Adjust the Ext Blinker Ctrl Test setting."
-      },
-      {
-        "type": "int",
-        "param": "BlinkerMode",
-        "label": "Blinker Mode",
-        "desc": "Adjust the Blinker Mode setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Blind Spot"
-      },
-      {
+      },{
         "type": "bool",
         "param": "DisableBlindSpot",
         "label": "Disable Blind Spot",
         "desc": "Adjust the Disable Blind Spot setting.",
         "default": False
-      },
-      {
+      },{
         "type": "int",
         "param": "DynamicBlindRange",
         "label": "Dynamic Blind Spot Range",
@@ -2037,8 +1310,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 200,
         "step": 5,
-      },
-      {
+      },{
         "type": "int",
         "param": "DynamicBlindDistance",
         "label": "Dynamic Blind Spot Distance",
@@ -2046,17 +1318,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 200,
         "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "BsdDelayTime",
-        "label": "Blind Spot Delay Time",
-        "desc": "Adjust the Bsd Delay Time setting.",
-        "min": 0,
-        "max": 50,
-        "step": 1,
-      },
-      {
+      },{
         "type": "int",
         "param": "SideBsdDelayTime",
         "label": "Side Blind Spot Delay",
@@ -2064,8 +1326,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 50,
         "step": 1,
-      },
-      {
+      },{
         "type": "int",
         "param": "SideRelDistTime",
         "label": "Side Relative Distance Time",
@@ -2073,8 +1334,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 50,
         "step": 1,
-      },
-      {
+      },{
         "type": "int",
         "param": "SidevRelDistTime",
         "label": "Side vRel Distance Time",
@@ -2082,90 +1342,19 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 50,
         "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "SideRadarMinDist",
-        "label": "Side Radar Min Distance",
-        "desc": "Adjust the Side Radar Min Dist setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Lane Line / ONNX"
-      },
-      {
-        "type": "int",
-        "param": "LaneLineCheck",
-        "label": "Lane Line Check",
-        "desc": "Adjust the Lane Line Check setting.",
-        "min": 0,
-        "max": 2,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "OnnxBsdIntervalMs",
-        "label": "ONNX BSD Interval",
-        "desc": "Adjust the Onnx Bsd Interval Ms setting.",
-        "min": 0,
-        "max": 1000,
-        "step": 10,
-      },
-      {
-        "type": "int",
-        "param": "OnnxBsdSmoothingMs",
-        "label": "ONNX BSD Smoothing",
-        "desc": "Adjust the Onnx Bsd Smoothing Ms setting.",
-        "min": 0,
-        "max": 1000,
-        "step": 10,
-      },
-      {
-        "type": "int",
-        "param": "OnnxBsdThreshold",
-        "label": "ONNX BSD Threshold",
-        "desc": "Adjust the Onnx Bsd Threshold setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "OnnxLaneIntervalMs",
-        "label": "ONNX Lane Interval",
-        "desc": "Adjust the Onnx Lane Interval Ms setting.",
-        "min": 0,
-        "max": 1000,
-        "step": 10,
-      },
-      {
-        "type": "int",
-        "param": "OnnxLaneThreshold",
-        "label": "ONNX Lane Threshold",
-        "desc": "Adjust the Onnx Lane Threshold setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-    ],
+      }],
   },
 
   "navigation__carrot_tuning__display": {
     "id": "navigation__carrot_tuning__display",
     "title": "Display & Sound",
     "parent": "navigation__carrot_tuning",
-    "widgets": [
-      {
+    "widgets": [{
         "type": "section",
         "label": "Steering Suspend"
-      },
-      {
+      },{
         "type": "int",
         "param": "LatSuspendAngleDeg",
         "label": "Lateral Suspend Angle",
@@ -2173,15 +1362,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 45,
         "max": 300,
         "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Cluster Map"
-      },
-      {
+      },{
         "type": "multiple_button",
         "param": "ClusterNaviMapTheme",
         "label": "Cluster Navigation Map Theme",
@@ -2191,8 +1377,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "param": "CarrotEnabled",
           "eq": "1"
         }
-      },
-      {
+      },{
         "type": "multiple_button",
         "param": "ClusterNaviMapType",
         "label": "Cluster Navigation Map Type",
@@ -2202,8 +1387,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "param": "CarrotEnabled",
           "eq": "1"
         }
-      },
-      {
+      },{
         "type": "multiple_button",
         "param": "ClusterNaviMapFps",
         "label": "Cluster Navigation Map FPS",
@@ -2213,8 +1397,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "param": "CarrotEnabled",
           "eq": "1"
         }
-      },
-      {
+      },{
         "type": "int",
         "param": "CarrotNaviHudMapProfile",
         "label": "Carrot Navi HUD Profile",
@@ -2227,22 +1410,18 @@ SUBPANELS: dict[str, dict[str, Any]] = {
           "eq": "1"
         },
         "default": False
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Cluster HUD (external display required)"
-      },
-      {
+      },{
         "type": "bool",
         "param": "ClusterHud",
         "label": "Cluster HUD",
         "desc": "Requires a TURZX USB cluster display, which is not supported in this build yet. These settings are stored but have no effect until the display is added.",
         "default": 0
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudBrightness",
         "label": "Cluster HUD Brightness",
@@ -2250,8 +1429,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 100,
         "step": 1,
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudCameraViewMode",
         "label": "Cluster HUD Camera View Mode",
@@ -2259,8 +1437,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudCoreMode",
         "label": "Cluster HUD Core Mode",
@@ -2268,15 +1445,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1
-      },
-      {
+      },{
         "type": "bool",
         "param": "ClusterHudDebug",
         "label": "Cluster HUD Debug",
         "desc": "Adjust the Cluster Hud Debug setting.",
         "default": 0
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudEncoder",
           "step": 1,
@@ -2285,8 +1460,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Cluster HUD Encoder",
         "desc": "Adjust the Cluster Hud Encoder setting.",
         "default": 0
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudLiveFps",
         "label": "Cluster HUD Live FPS",
@@ -2294,15 +1468,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 1,
         "max": 60,
         "step": 1,
-      },
-      {
+      },{
         "type": "bool",
         "param": "ClusterHudMirror",
         "label": "Cluster HUD Mirror",
         "desc": "Adjust the Cluster Hud Mirror setting.",
         "default": 0
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudOrientation",
         "label": "Cluster HUD Orientation",
@@ -2310,8 +1482,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudPanelLayout",
         "label": "Cluster HUD Panel Layout",
@@ -2319,8 +1490,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 1,
         "step": 1
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudPriority",
         "label": "Cluster HUD Priority",
@@ -2328,15 +1498,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1,
-      },
-      {
+      },{
         "type": "bool",
         "param": "ClusterHudRadarDisplay",
         "label": "Cluster HUD Radar Display",
         "desc": "Adjust the Cluster Hud Radar Display setting.",
         "default": 0
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudRadarInfo",
         "label": "Cluster HUD Radar Info",
@@ -2344,8 +1512,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1,
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudRadarSourceColor",
           "step": 1,
@@ -2354,8 +1521,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Cluster HUD Radar Source Color",
         "desc": "Adjust the Cluster Hud Radar Source Color setting.",
         "default": 0
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudScreenMode",
         "label": "Cluster HUD Screen Mode",
@@ -2363,8 +1529,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 3,
         "step": 1
-      },
-      {
+      },{
         "type": "int",
         "param": "ClusterHudTheme",
         "label": "Cluster HUD Theme",
@@ -2372,427 +1537,46 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 2,
         "step": 1
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "On-Screen Info"
-      },
-      {
-        "type": "bool",
-        "param": "ShowCameraWithCluster",
-        "label": "Show Camera with Cluster",
-        "desc": "Adjust the Show Camera With Cluster setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "ShowCustomBrightness",
-        "label": "Show Custom Brightness",
-        "desc": "Adjust the Show Custom Brightness setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
-        "type": "bool",
-        "param": "ShowDateTime",
-        "label": "Show Date Time",
-        "desc": "Adjust the Show Date Time setting.",
-        "default": 1
-      },
-      {
-        "type": "bool",
-        "param": "ShowDebugUI",
-        "label": "Show Debug UI",
-        "desc": "Adjust the Show Debug U I setting.",
-        "default": 1
-      },
-      {
-        "type": "bool",
-        "param": "ShowDeviceState",
-        "label": "Show Device State",
-        "desc": "Adjust the Show Device State setting.",
-        "default": 1
-      },
-      {
-        "type": "bool",
-        "param": "ShowLaneInfo",
-        "label": "Show Lane Info",
-        "desc": "Adjust the Show Lane Info setting.",
-        "default": 1
-      },
-      {
-        "type": "bool",
-        "param": "ShowModelView",
-        "label": "Show Model View",
-        "desc": "Adjust the Show Model View setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "ShowPlotMode",
-          "step": 1,
-          "max": 8,
-          "min": 0,
-        "label": "Show Plot Mode",
-        "desc": "Adjust the Show Plot Mode setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "ShowRadarInfo",
-        "label": "Show Radar Info",
-        "desc": "Adjust the Show Radar Info setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "ShowRouteInfo",
-        "label": "Show Route Info",
-        "desc": "Adjust the Show Route Info setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "ShowTpms",
-        "label": "Show TPMS",
-        "desc": "Adjust the Show Tpms setting.",
-        "default": 1
-      },
-      {
-        "type": "bool",
-        "param": "SoftwareMenu",
-        "label": "Software Menu",
-        "desc": "Adjust the Software Menu setting.",
-        "default": 0
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Sound / Map"
-      },
-      {
-        "type": "int",
-        "param": "SoundVolumeAdjust",
-        "label": "Sound Volume Adjust",
-        "desc": "Adjust the Sound Volume Adjust setting.",
-        "min": -100,
-        "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "int",
-        "param": "SoundVolumeAdjustEngage",
-        "label": "Sound Volume Adjust Engage",
-        "desc": "Adjust the Sound Volume Adjust Engage setting.",
-        "min": -100,
-        "max": 100,
-        "step": 5,
-      },
-      {
-        "type": "text",
-        "param": "SoundLanguageSetting",
-        "label": "Sound Language",
-        "desc": "Adjust the Sound Language Setting setting."
-      },
-      {
-        "type": "int",
-        "param": "MapboxStyle",
-        "label": "Mapbox Style",
-        "desc": "Adjust the Mapbox Style setting.",
-        "min": 0,
-        "max": 5,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "YouTube Live"
-      },
-      {
-        "type": "bool",
-        "param": "CarrotYouTubeLive",
-        "label": "Carrot YouTube Live",
-        "desc": "Adjust the Carrot You Tube Live setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "CarrotYouTubeQuality",
-        "label": "Carrot YouTube Quality",
-        "desc": "Adjust the Carrot You Tube Quality setting.",
-        "min": 0,
-        "max": 3,
-        "step": 1,
-      },
-      {
-        "type": "bool",
-        "param": "CarrotYouTubeTimestamp",
-        "label": "Carrot YouTube Timestamp",
-        "desc": "Adjust the Carrot You Tube Timestamp setting.",
-        "default": 0
-      },
-    ],
+      }],
   },
 
-  "navigation__carrot_tuning__path": {
-    "id": "navigation__carrot_tuning__path",
-    "title": "Path Rendering",
-    "parent": "navigation__carrot_tuning",
-    "widgets": [
-      {
-        "type": "section",
-        "label": "Path Appearance"
-      },
-      {
-        "type": "int",
-        "param": "ShowPathColor",
-        "label": "Path Color",
-        "desc": "Adjust the Show Path Color setting.",
-        "min": 0,
-        "max": 10,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "ShowPathColorCruiseOff",
-        "label": "Path Color Cruise Off",
-        "desc": "Adjust the Show Path Color Cruise Off setting.",
-        "min": 0,
-        "max": 19,
-        "step": 1
-      },
-      {
-        "type": "int",
-        "param": "ShowPathColorLane",
-        "label": "Path Color Lane",
-        "desc": "Adjust the Show Path Color Lane setting.",
-        "min": 0,
-        "max": 10,
-        "step": 1,
-      },
-      {
-        "type": "bool",
-        "param": "ShowPathEnd",
-        "label": "Show Path End",
-        "desc": "Adjust the Show Path End setting.",
-        "default": 1
-      },
-      {
-        "type": "int",
-        "param": "ShowPathMode",
-        "label": "Path Display Mode",
-        "desc": "Adjust the Show Path Mode setting.",
-        "min": 0,
-        "max": 5,
-        "step": 1,
-      },
-      {
-        "type": "int",
-        "param": "ShowPathModeLane",
-        "label": "Path Display Mode Lane",
-        "desc": "Adjust the Show Path Mode Lane setting.",
-        "min": 0,
-        "max": 5,
-        "step": 1,
-      },
-      {
-        "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Trajectory / Lane Line"
-      },
-      {
-        "type": "bool",
-        "param": "CarrotTireTrajectory",
-        "label": "Tire Trajectory",
-        "desc": "Adjust the Carrot Tire Trajectory setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "UseLaneLineCurveSpeed",
-        "label": "Use Lane Line Curve Speed",
-        "desc": "Adjust the Use Lane Line Curve Speed setting.",
-        "min": 0,
-        "max": 200,
-        "step": 10
-      },
-      {
-        "type": "int",
-        "param": "UseLaneLineSpeed",
-        "label": "Use Lane Line Speed",
-        "desc": "Adjust the Use Lane Line Speed setting.",
-        "min": 0,
-        "max": 200,
-        "step": 1
-      },
-    ],
-  },
+
 
   "navigation__carrot_tuning__vehicle": {
     "id": "navigation__carrot_tuning__vehicle",
     "title": "Vehicle",
     "parent": "navigation__carrot_tuning",
-    "widgets": [
-      {
-        "type": "section",
-        "label": "Driver / Safety"
-      },
-      {
-        "type": "int",
-        "param": "DisableMinSteerSpeed",
-          "step": 1,
-          "max": 1,
-          "min": 0,
-        "label": "Disable Min Steer Speed",
-        "desc": "Adjust the Disable Min Steer Speed setting.",
-        "default": 0
-      },
-      {
+    "widgets": [{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Vehicle Features"
-      },
-      {
-        "type": "bool",
-        "param": "HyundaiCameraSCC",
-        "label": "Hyundai Camera SCC",
-        "desc": "Adjust the Hyundai Camera S C C setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "IsLdwsCar",
-        "label": "LDWS Vehicle",
-        "desc": "Adjust the Is Ldws Car setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "HDPuse",
-        "label": "HDP Use",
-        "desc": "Adjust the H D Puse setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "HotspotOnBoot",
-        "label": "Hotspot on Boot",
-        "desc": "Adjust the Hotspot On Boot setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "UseWideCamera",
-        "label": "Use Wide Camera",
-        "desc": "Adjust the Use Wide Camera setting.",
-        "default": 1
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Radar / Tracks"
-      },
-      {
-        "type": "bool",
-        "param": "EnableCornerRadar",
-        "label": "Enable Corner Radar",
-        "desc": "Adjust the Enable Corner Radar setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "EnableRadarTracks",
-        "label": "Enable Radar Tracks",
-        "desc": "Adjust the Enable Radar Tracks setting.",
-        "default": 0
-      },
-      {
+      },{
         "type": "bool",
         "param": "EnableSpeedTF",
         "label": "Enable Speed TF",
         "desc": "Adjust the Enable Speed T F setting.",
         "default": 0
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Comfort"
-      },
-      {
-        "type": "bool",
-        "param": "MuteDoor",
-        "label": "Mute Door",
-        "desc": "Adjust the Mute Door setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "MuteSeatbelt",
-        "label": "Mute Seatbelt",
-        "desc": "Adjust the Mute Seatbelt setting.",
-        "default": 0
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Driving Data"
-      },
-      {
-        "type": "bool",
-        "param": "RecordRoadCam",
-        "label": "Record Road Camera",
-        "desc": "Adjust the Record Road Cam setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "ShareData",
-        "label": "Share Data",
-        "desc": "Adjust the Share Data setting.",
-        "default": 0
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
-        "type": "section",
-        "label": "Timeouts"
-      },
-      {
-        "type": "int",
-        "param": "MaxAngleFrames",
-        "label": "Max Angle Frames",
-        "desc": "Adjust the Max Angle Frames setting.",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-      },
-      {
+      },{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Driving Mode"
-      },
-      {
+      },{
         "type": "int",
         "param": "MyDrivingMode",
         "label": "My Driving Mode",
@@ -2800,8 +1584,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 5,
         "step": 1,
-      },
-      {
+      },{
         "type": "int",
         "param": "MyDrivingModeAuto",
         "label": "My Driving Mode Auto",
@@ -2809,92 +1592,25 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 2,
         "step": 1
-      },
-    ],
+      }],
   },
 
   "navigation__carrot_tuning__developer": {
     "id": "navigation__carrot_tuning__developer",
     "title": "Developer",
     "parent": "navigation__carrot_tuning",
-    "widgets": [
-      {
-        "type": "section",
-        "label": "CAN-FD Debug"
-      },
-      {
-        "type": "bool",
-        "param": "CanfdDebug",
-        "label": "CANFD Debug",
-        "desc": "Adjust the Canfd Debug setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "CanfdHDA2",
-        "label": "CANFD HDA2",
-        "desc": "Adjust the Canfd H D A2 setting.",
-        "default": 0
-      },
-      {
-        "type": "bool",
-        "param": "CanfdStopRetry",
-        "label": "CANFD Stop & Retry",
-        "desc": "CANFD stop-and-retry fallback (cp default 0).",
-        "default": 0
-      },
-      {
+    "widgets": [{
         "type": "separator"
-      },
-      {
+      },{
         "type": "section",
         "label": "Hardware / Tests"
-      },
-      {
-        "type": "bool",
-        "param": "HardwareC3xLite",
-        "label": "C3x Lite Hardware",
-        "desc": "Adjust the Hardware C3x Lite setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "CruiseButtonTest1",
-          "step": 1,
-          "max": 20,
-          "min": 1,
-        "label": "Cruise Button Test 1",
-        "desc": "Adjust the Cruise Button Test1 setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "CruiseButtonTest2",
-          "step": 1,
-          "max": 200,
-          "min": 1,
-        "label": "Cruise Button Test 2",
-        "desc": "Adjust the Cruise Button Test2 setting.",
-        "default": 0
-      },
-      {
-        "type": "int",
-        "param": "CruiseButtonTest3",
-          "step": 1,
-          "max": 20,
-          "min": 1,
-        "label": "Cruise Button Test 3",
-        "desc": "Adjust the Cruise Button Test3 setting.",
-        "default": 0
-      },
-      {
+      },{
         "type": "bool",
         "param": "ShowDebugLog",
         "label": "Show Debug Log",
         "desc": "Adjust the Show Debug Log setting.",
         "default": False
-      },
-    ],
+      }],
   },
 
   "steering__mads": {

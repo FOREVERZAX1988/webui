@@ -45,9 +45,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "AutoCurveSpeedAggressivenessH": ("int", 100),
   "SameSpiCamFilter": ("bool", 1),
   "StockBlinkerCtrl": ("bool", 0),
-  "ExtBlinkerCtrlTest": ("bool", 0),
-  "BlinkerMode": ("int", 1),
-  "LaneStabTime": ("int", 50),
   # Blind spot (BSD)
   "DynamicBlindRange": ("int", 0),
   "DynamicBlindDistance": ("int", 0),
@@ -60,11 +57,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # Lane change / blinker
   "AutoTurnInNotRoadEdge": ("bool", 1),
   "ContinuousLaneChange": ("bool", 1),
-  "ContinuousLaneChangeCnt": ("int", 4),
-  "ContinuousLaneChangeInterval": ("int", 2),
-  "AutoTurnLeft": ("bool", 1),
-  "AutoEnTurnNewLaneTimeH": ("int", 0),
-  "AutoEnTurnNewLaneTime": ("int", 0),
   "NewLaneWidthDiff": ("int", 8),
   # Planner / cruise (float params stored as FLOAT in Params; defaults aligned
   # with openpilot/common/params_keys.h).
