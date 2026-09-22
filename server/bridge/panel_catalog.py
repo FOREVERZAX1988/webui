@@ -303,7 +303,7 @@ PANELS: list[dict[str, Any]] = [
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."},{"type": "int", "param": "CarrotManUdpPort", "label": "Carrot UDP Port", "min": 0, "max": 65535, "step": 1,
        "offroad_only": True,
-       "desc": "UDP port the Carrot companion app pushes navigation data to. Must match the port configured in the app (0 disables)."},{"type": "bool", "param": "CarrotWebEnabled", "label": "Carrot Web Panel", "offroad_only": True,
+       "desc": "UDP port the Carrot companion app pushes navigation data to. Default 7706, which the app expects; only change it if the app is configured differently. 0 disables the listener."},{"type": "bool", "param": "CarrotWebEnabled", "label": "Carrot Web Panel", "offroad_only": True,
        "desc": "Serve the carrot tuning page (/nav_params) and four-corner radar visualisation (/radar) on port 8088."},{"type": "readonly", "param": "CarName", "label": "Car Model",
        "desc": "Identified car model, sent automatically with Carrot FTP uploads and shown in the companion app."},{"type": "custom", "custom": "amap_api_key", "label": "Amap API Key", "offroad_only": True,
        "desc": "API key for Amap services. Tap EDIT to enter or update the key."},{"type": "bool", "param": "AmapCurveSpeedEnabled", "label": "Amap Curve Speed", "offroad_only": True,
