@@ -19,7 +19,7 @@ from typing import Any
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "AdjustLaneOffset", "AlwaysLateral", "ApplyModelSpeed", "AutoCruiseControl",
   "AutoEngage", "AutoGasCancelSpeed",
-  "AutoGasSyncSpeed", "AutoGasTokSpeed", "AutoNaviRearCameraHoldDistance", "AutoTurnInNotRoadEdge",
+  "AutoGasTokSpeed", "AutoNaviRearCameraHoldDistance", "AutoTurnInNotRoadEdge",
   "BsdDelayTime", "CameraYawTrimDeg",
   "CancelButtonMode", "CanfdDebug", "CanfdHDA2", "CanfdStopRetry",
   "CarrotCruiseAtcDecel", "CarrotCruiseDecel", "CarrotTireTrajectory", "CarrotYouTubeLive",
@@ -28,8 +28,7 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CruiseSpeed1", "CruiseSpeed2", "CruiseSpeed3", "CruiseSpeed4",
   "CruiseSpeed5", "CruiseSpeedUnit", "CruiseSpeedUnitBasic", "CustomSR",
   "CustomSteerDeltaDown", "CustomSteerDeltaDownLC", "CustomSteerDeltaUp", "CustomSteerDeltaUpLC",
-  "CustomSteerMax", "DisableMinSteerSpeed", "EnableCornerRadar", "EnableRadarTracks",
-  "HDPuse", "HapticFeedbackWhenSpeedCamera", "HardwareC3xLite",
+  "CustomSteerMax", "DisableMinSteerSpeed", "EnableCornerRadar",  "HDPuse", "HapticFeedbackWhenSpeedCamera", "HardwareC3xLite",
   "HotspotOnBoot", "HyundaiCameraSCC", "IsLdwsCar", "LaneChangeBsd",
   "LaneChangeDelay", "LaneChangeNeedTorque", "LaneLineCheck",  "LatMpcAccelCost", "LatMpcInputOffset", "LatMpcJerkCost", "LatMpcMotionCost",
   "LatMpcPathCost", "LatMpcSteeringRateCost", "LatSmoothSec", "LateralTorqueAccelFactor",
@@ -46,10 +45,9 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "ShowPathMode", "ShowPathModeLane", "ShowPlotMode", "ShowRadarInfo",
   "ShowRouteInfo", "ShowTpms", "SideRadarMinDist", "SoftHoldOnCancel",
   "SoftwareMenu", "SoundLanguageSetting", "SoundVolumeAdjust", "SoundVolumeAdjustEngage",
-  "SpeedFromPCM", "SpeedTFFactor", "SteerActuatorDelay", "SteerRatioRate",
+  "SpeedTFFactor", "SteerActuatorDelay", "SteerRatioRate",
   "StockBlinkerCtrl", "UseLaneLineCurveSpeed", "UseLaneLineSpeed", "UseWideCamera",
-  "VEgoStopping", "VehicleSpeedCameraDistanceTime",
-})
+  "VEgoStopping",})
 
 
 # Widget types: bool, int, choice, readonly, action, section, html, subpanel_ref
@@ -557,13 +555,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "step": 1,
       },{
         "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      }],
+      },        {"type": "section", "label": "Auto Gas"},    {"type": "int", "param": "AutoGasSyncSpeed", "label": "Auto Gas Sync Speed",
+     "desc": "Speed at which cruise set speed is re-synchronized. Tesla BYD only.",
+    "min": 0, "max": 200, "step": 5}],
   },
 
   "navigation__carrot_tuning__cruise": {
@@ -733,9 +727,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "max": 300,
         "step": 5,
       },
-      {
-        "type": "separator"
-      }],
+      ],
   },
 
   "navigation__carrot_tuning__navi": {
@@ -830,7 +822,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {
         "type": "section",
         "label": "Road Speed Limits"
-      },
+      },      {"type": "int", "param": "SpeedFromPCM", "label": "Speed Source PCM",
+       "desc": "BYD only: with 1 the car reports its own ACC set speed over CAN.",
+      "min": 0, "max": 2, "step": 1},
       {
         "type": "int",
         "param": "AutoRoadSpeedLimitOffset",
@@ -855,7 +849,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {
         "type": "section",
         "label": "Vehicle CAN Speed Arbitration"
-      },
+      },      {"type": "int", "param": "VehicleSpeedCameraDistanceTime", "label": "Speed Camera Alert Time",
+       "desc": "Synthesises a camera distance when the car sends only an enforcement speed. 0.1 s units; 60 = 6.0 s.",
+      "min": 10, "max": 200, "step": 1},
       {
         "type": "multiple_button",
         "param": "VehicleNaviCanControl",
@@ -1236,18 +1232,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "title": "Lateral Tuning",
     "parent": "navigation__carrot_tuning",
     "widgets": [{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
         "type": "section",
         "label": "Lane Change"
       },{
@@ -1258,8 +1242,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 500,
         "step": 5,
-      },{
-        "type": "separator"
       },{
         "type": "separator"
       },{
@@ -1311,8 +1293,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 50,
         "step": 1,
-      },{
-        "type": "separator"
       }],
   },
 
@@ -1506,12 +1486,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 2,
         "step": 1
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
       }],
   },
 
@@ -1522,24 +1496,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "title": "Vehicle",
     "parent": "navigation__carrot_tuning",
     "widgets": [{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
         "type": "section",
         "label": "Radar / Tracks"
-      },{
+      },    {"type": "bool", "param": "EnableRadarTracks", "label": "Enable Radar Tracks",
+    "desc": "BYD only: feed corner-radar tracks into the radar interface.", "default": 0},{
         "type": "bool",
         "param": "EnableSpeedTF",
         "label": "Enable Speed TF",
         "desc": "Adjust the Enable Speed T F setting.",
         "default": 0
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
-      },{
-        "type": "separator"
       },{
         "type": "separator"
       },{
@@ -1569,8 +1534,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "title": "Developer",
     "parent": "navigation__carrot_tuning",
     "widgets": [{
-        "type": "separator"
-      },{
         "type": "section",
         "label": "Hardware / Tests"
       },{

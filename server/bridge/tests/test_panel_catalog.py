@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import re
 import unittest
 
 from webui.server.bridge import carrot_tuning_api
@@ -126,6 +127,58 @@ class CarrotTuningLayoutTests(unittest.TestCase):
     for w in (x for x in widgets if x.get("type") == "subpanel"):
       sub = get_panel(w["target"])["widgets"]
       self.assertTrue(sub, f"{w['target']} has no widgets")
+class CarrotHiddenParamsAreReallyDeadTests(unittest.TestCase):
+  """A param hidden from the UI must not be read anywhere in the tree.
+
+  The first version of the dead-param scan only walked `openpilot/**`, so readers
+  living inside the submodules were invisible and four working params got hidden -
+  three read by opendbc's BYD port (opendbc_repo/opendbc/car/byd/carcontroller.py and
+  radar_interface.py) and one by carrot_serv. This test scans the submodule trees too.
+  """
+
+  # Every source tree that ships and can read a param. `openpilot` is included so the
+  # test also catches a hidden param that gained a reader since it was hidden.
+  ROOTS = ("openpilot", "opendbc_repo", "panda", "msgq_repo", "system")
+  EXTS = (".py", ".cc", ".h", ".cpp", ".hpp", ".pyx")
+  # files that legitimately name every param without reading it
+  SURFACES = ("carrot_tuning_items.py", "panel_catalog.py", "carrot/config.py",
+              "carrot_tuning_api.py", "nav_params.json", "params_keys.h",
+              "carrot_tuning.py")
+
+  def _repo_root(self):
+    from pathlib import Path
+    # .../webui/server/bridge/tests/ -> repo root
+    return Path(__file__).resolve().parents[4]
+
+  def test_no_hidden_carrot_param_has_a_reader(self):
+    root = self._repo_root()
+    names = set(CARROT_TUNING_UNAVAILABLE)
+    self.assertTrue(names, "CARROT_TUNING_UNAVAILABLE is empty; the scan lost its input")
+
+    offenders: dict[str, list[str]] = {}
+    for tree in self.ROOTS:
+      for ext in self.EXTS:
+        for path in root.joinpath(tree).rglob(f"*{ext}"):
+          q = str(path).replace("\\", "/")
+          if "__pycache__" in q or "/tests/" in q or path.name.startswith("test_"):
+            continue
+          if any(s in q for s in self.SURFACES):
+            continue
+          try:
+            text = path.read_text(encoding="utf-8")
+          except (UnicodeDecodeError, OSError):
+            continue
+          for name in names:
+            pattern = r"get\w*\s*\(\s*[\"']" + re.escape(name) + r"[\"']"
+            if re.search(pattern, text):
+              rel = q.split("/openpilot/", 1)[-1]
+              offenders.setdefault(name, []).append(rel)
+
+    self.assertFalse(
+      offenders,
+      "these params are hidden from the UI but still read by shipped code - "
+      f"unhide them or confirm the reader is gone: {offenders}",
+    )
 
 
 if __name__ == "__main__":
