@@ -686,6 +686,21 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         sp_hud["scc_vision_active"] = bool(getattr(vision, "active", False))
         sp_hud["scc_map_enabled"] = bool(getattr(map_, "enabled", False))
         sp_hud["scc_map_active"] = bool(getattr(map_, "active", False))
+
+        # The targets these two controllers are actually commanding, in m/s, and only
+        # while active. V_CRUISE_UNSET (255) means "not constraining", so it is filtered
+        # out rather than shown - a sentinel must never render as a speed.
+        #
+        # Why the HUD needs these: carrot also computes its own curve speed
+        # (carrot_functions.vturn_speed) and publishes it as vTurnSpeed / desiredSpeed.
+        # That computation is display-only and uses a different model - max orientation
+        # rate against a fixed 1.9 m/s^2 target - from the controller that actually
+        # executes, which is SCC-V at the 97th-percentile curvature against a tuned
+        # a_lat ceiling. Showing only carrot's number let the HUD disagree with the car.
+        for key, ctrl in (("scc_vision", vision), ("scc_map", map_)):
+          v_raw = float(getattr(ctrl, "vTarget", 0.0) or 0.0)
+          active = bool(getattr(ctrl, "active", False))
+          sp_hud[f"{key}_v_target_ms"] = v_raw if active and 0.0 < v_raw < 255.0 else 0.0
       e2e = getattr(lp_sp, "e2eAlerts", None)
       if e2e is not None:
         sp_hud["e2e_green_light"] = bool(getattr(e2e, "greenLightAlert", False))

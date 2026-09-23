@@ -6,6 +6,7 @@ let poCode = "en";
 /** Bundled fallbacks when /api/opui/i18n has not picked up WebUI-only keys yet. */
 const LOCAL_FALLBACKS = {
   en: {
+    "Advisory": "Advisory",
     "Typical": "Typical",
     "min": "min",
     Refresh: "Refresh",
@@ -44,6 +45,7 @@ const LOCAL_FALLBACKS = {
     ),
   },
   "zh-CHS": {
+    "Advisory": "建议值",
     "Typical": "通常",
     "min": "分钟",
     Refresh: "刷新",
@@ -857,6 +859,7 @@ const LOCAL_FALLBACKS = {
     "sunnypilot Longitudinal Control (Alpha)": "sunnypilot Longitudinal Control (Alpha)",
     "sunnypilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.": "sunnypilot 要求设备安装角度左右不超过 4°，上仰不超过 5°，下倾不超过 9°。",
   "zh-CHT": {
+    "Advisory": "建議值",
     "Typical": "通常",
     "min": "分鐘",
     Refresh: "重新整理",

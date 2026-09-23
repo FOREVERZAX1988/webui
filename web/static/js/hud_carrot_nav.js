@@ -159,6 +159,7 @@ function injectStyle() {
 .cn-badge.cn-badge--apply { background: rgba(255, 180, 50, 0.88); color: #101418; }
 .cn-badge.cn-badge--cam { background: rgba(239, 68, 68, 0.82); color: #fff; }
 .cn-badge.cn-badge--cam.is-ok { background: rgba(239, 68, 68, 0.35); }
+.cn-badge.cn-badge--scc-curve { background: rgba(56, 132, 255, 0.30); color: #cfe0ff; border: 1px solid rgba(120, 170, 255, 0.5); }
 .cn-badge.cn-badge--vturn { background: rgba(255, 200, 50, 0.18); color: #ffc832; border: 1px solid rgba(255, 200, 50, 0.45); }
 .cn-badge.cn-tlight { background: rgba(255, 255, 255, 0.10); }
 .cn-badge.cn-tlight i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
@@ -286,7 +287,7 @@ function turnMiniHtml(nav) {
   return `<div class="cn-turn-mini ${atc}">${inner}</div>`;
 }
 
-function badgesHtml(nav, speedKph) {
+function badgesHtml(nav, speedKph, spHud) {
   const badges = [];
   if (nav.sdi_descr) {
     badges.push(`<span class="cn-badge cn-badge--sdi">${esc(nav.sdi_descr)}</span>`);
@@ -309,8 +310,27 @@ function badgesHtml(nav, speedKph) {
     const cd = nav.traffic_countdown > 0 ? nav.traffic_countdown : nav.left_sec;
     badges.push(`<span class="cn-badge cn-tlight"><i style="background:${info.c}"></i><span style="color:${info.c}">${info.t()}</span>${cd > 0 ? `${cd}s` : ""}</span>`);
   }
+  // Curve deceleration. Two distinct numbers exist and they must not be conflated:
+  //
+  //   * nav.v_turn_speed is carrot's own advisory, computed in
+  //     carrot_functions.vturn_speed() from the max model orientation rate against a
+  //     fixed 1.9 m/s^2 target. It is DISPLAY-ONLY - it feeds `desiredSpeed`, which
+  //     nothing acts on.
+  //   * scc_vision_v_target_ms / scc_map_v_target_ms is what the controllers that
+  //     actually slow the car are commanding right now (m/s), read from
+  //     longitudinalPlanSP.smartCruiseControl.
+  //
+  // They use different models and will not agree. Showing the executing one first, and
+  // marking carrot's as an advisory, is the honest presentation - previously only the
+  // advisory was drawn, so the HUD could claim a curve speed the car was not using.
+  const sccMs = Math.max(Number(spHud?.scc_vision_v_target_ms) || 0,
+                         Number(spHud?.scc_map_v_target_ms) || 0);
+  if (sccMs > 0) {
+    const kph = isMetric ? sccMs * 3.6 : sccMs * 2.23694;
+    badges.push(`<span class="cn-badge cn-badge--scc-curve">${tr("Curve")} ${Math.round(kph)}km/h</span>`);
+  }
   if (nav.v_turn_speed > 0 && nav.v_turn_speed < 120) {
-    badges.push(`<span class="cn-badge cn-badge--vturn">${tr("Curve")} ${nav.v_turn_speed}km/h</span>`);
+    badges.push(`<span class="cn-badge cn-badge--vturn">${tr("Advisory")} ${nav.v_turn_speed}km/h</span>`);
   }
   if (nav.sapa_name && nav.sapa_dist > 0) {
     const kind = SAPA_TYPES[nav.sapa_type] ? SAPA_TYPES[nav.sapa_type]() : tr("Service area");
@@ -428,7 +448,7 @@ function typicalHtml(inst) {
   return `<div class="cn-typical">${esc(tr("Typical"))} +${delta} ${esc(tr("min"))}</div>`;
 }
 
-function renderPanel(nav, isMetric, speedKph, inst) {
+function renderPanel(nav, isMetric, speedKph, inst, spHud) {
   const tbt = nav.tbt_main_text
     ? nav.tbt_main_text + (nav.near_dir_name ? " → " + nav.near_dir_name : "")
     : "";
@@ -442,7 +462,7 @@ function renderPanel(nav, isMetric, speedKph, inst) {
   }
   const dist = nav.dist_to_turn > 0 ? `<div class="cn-tdist">${esc(fmtDist(nav.dist_to_turn, isMetric))}</div>` : "";
   const cd = nav.turn_countdown > 0 ? `<div class="cn-tcd">${nav.turn_countdown}s</div>` : "<div class=\"cn-tcd\"></div>";
-  const badges = badgesHtml(nav, speedKph);
+  const badges = badgesHtml(nav, speedKph, spHud);
   return `
     <div class="cn-head">
       ${turn}
@@ -479,7 +499,7 @@ export function updateCarrotNav(st) {
               (isMetric ? "m" : "i") + "|" + speedKph;
   if (sig === lastNavSig) return;
   lastNavSig = sig;
-  el.innerHTML = renderPanel(nav, isMetric, speedKph, inst);
+  el.innerHTML = renderPanel(nav, isMetric, speedKph, inst, st?.sp_hud);
 }
 
 export function updateAmapBars(st) {
