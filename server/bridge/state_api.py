@@ -767,6 +767,66 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         "panel_side": carrot_panel_side,
         "panel_opacity": max(0, min(100, carrot_panel_opacity)),
       }
+
+    # navInstructionCarrotSP - the fused stock-navd + 7714 guidance stream.
+    #
+    # carrot_man publishes this but nothing consumed it, so the webui HUD was missing
+    # what only this service carries: the multi-step manoeuvre list and the per-lane
+    # guidance arrows. Note carrot_man does NOT publish carStateSP, so this is the only
+    # route for those two. Everything below is display-only; no control reads it.
+    #
+    # capnp List fields are not JSON-serialisable, so they are flattened by hand; a
+    # malformed or absent service must leave the key out entirely rather than raise.
+    if sm.valid.get("navInstructionCarrotSP"):
+      try:
+        ni = sm["navInstructionCarrotSP"]
+
+        def _enum_int(value, default: int = 0) -> int:
+          # capnp enums surface as either an int or an "Enum.name" string depending on
+          # how they were built; normalise both to an int.
+          if isinstance(value, int):
+            return value
+          text = str(value)
+          return int(text.rsplit(".", 1)[-1]) if text.isdigit() else default
+
+        def _enum_name(value) -> str:
+          text = str(value)
+          return text.rsplit(".", 1)[-1] if "." in text else text
+
+        maneuvers = []
+        for mv in getattr(ni, "allManeuvers", []):
+          maneuvers.append({
+            "distance": float(getattr(mv, "distance", 0.0) or 0.0),
+            "type": str(getattr(mv, "type", "") or ""),
+            "modifier": str(getattr(mv, "modifier", "") or ""),
+          })
+
+        lanes = []
+        for ln in getattr(ni, "lanes", []):
+          lanes.append({
+            "directions": [_enum_int(d) for d in getattr(ln, "directions", [])],
+            "active": bool(getattr(ln, "active", False)),
+            "active_direction": _enum_int(getattr(ln, "activeDirection", 0)),
+          })
+
+        sp_hud["carrot_instruction"] = {
+          "valid": True,
+          "primary_text": str(getattr(ni, "maneuverPrimaryText", "") or ""),
+          "secondary_text": str(getattr(ni, "maneuverSecondaryText", "") or ""),
+          "maneuver_distance": float(getattr(ni, "maneuverDistance", 0.0) or 0.0),
+          "maneuver_type": str(getattr(ni, "maneuverType", "") or ""),
+          "maneuver_modifier": str(getattr(ni, "maneuverModifier", "") or ""),
+          "distance_remaining": float(getattr(ni, "distanceRemaining", 0.0) or 0.0),
+          "time_remaining": float(getattr(ni, "timeRemaining", 0.0) or 0.0),
+          "time_remaining_typical": float(getattr(ni, "timeRemainingTypical", 0.0) or 0.0),
+          "speed_limit": float(getattr(ni, "speedLimit", 0.0) or 0.0),
+          "speed_limit_sign": _enum_name(getattr(ni, "speedLimitSign", "")),
+          "show_full": bool(getattr(ni, "showFull", False)),
+          "maneuvers": maneuvers,
+          "lanes": lanes,
+        }
+      except Exception as e:
+        sp_hud["carrot_instruction"] = {"valid": False, "error": f"{type(e).__name__}: {e}"}
     # Unified longitudinal control diagnostics.
     if sm.valid.get("longitudinalPlanSP"):
       lp_sp = sm["longitudinalPlanSP"]

@@ -126,6 +126,23 @@ function injectStyle() {
 .cn-tdist { font-size: 29px; font-weight: 700; line-height: 1.1; }
 .cn-tcd { font-size: 19px; font-weight: 700; color: #ffdc64; margin-top: 3px; min-height: 22px; }
 
+/* Fused guidance from navInstructionCarrotSP: the multi-step manoeuvre chain and the
+   per-lane arrows. Sizes follow the card's existing scale (29 headline / 20 sub /
+   19 badge) so the three rows stay visually consistent. */
+.cn-maneuvers { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.cn-mv { display: inline-flex; align-items: center; gap: 5px; font-size: 19px; font-weight: 700;
+         color: rgba(255, 255, 255, 0.86); }
+.cn-mv i { width: 26px; height: 26px; border-radius: 6px; display: inline-flex;
+           align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.13);
+           font-size: 16px; font-style: normal; }
+.cn-mv.cn-mv--then { color: rgba(255, 255, 255, 0.62); }
+.cn-lanes { display: flex; align-items: flex-end; gap: 6px; margin-top: 9px; }
+.cn-lane { display: flex; flex-direction: column; align-items: center; gap: 3px;
+           font-size: 17px; font-weight: 700; color: rgba(255, 255, 255, 0.45);
+           padding: 4px 7px; border-radius: 7px; background: rgba(255, 255, 255, 0.07); }
+.cn-lane.cn-lane--active { color: #fff; background: rgba(56, 132, 255, 0.42); }
+.cn-typical { font-size: 17px; font-weight: 600; color: rgba(255, 255, 255, 0.62); }
+
 /* badge row */
 .cn-badges { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .cn-badge {
@@ -347,7 +364,71 @@ function parseJsonIntArray(raw) {
   });
 }
 
-function renderPanel(nav, isMetric, speedKph) {
+// (type, modifier) -> a compact glyph, mirroring the backend NAV_TYPE_MAPPING intent.
+// Kept deliberately small: this is a glanceable HUD, not a routing display.
+const MV_GLYPH = {
+  "turn|left": "\u2190", "turn|right": "\u2192",
+  "turn|sharp left": "\u21B0", "turn|sharp right": "\u21B1",
+  "turn|slight left": "\u2196", "turn|slight right": "\u2197",
+  "turn|uturn": "\u21BA",
+  "fork|slight left": "\u2196", "fork|slight right": "\u2197",
+  "fork|left": "\u2196", "fork|right": "\u2197",
+  "off ramp|left": "\u2196", "off ramp|right": "\u2197",
+  "merge|left": "\u2196", "merge|right": "\u2197",
+  "continue|straight": "\u2191", "new name|straight": "\u2191",
+  "roundabout|left": "\u21BA", "roundabout|right": "\u21BB",
+  "arrive|straight": "\u25CF",
+};
+
+function mvGlyph(type, modifier) {
+  const key = `${String(type || "").toLowerCase()}|${String(modifier || "").toLowerCase()}`;
+  if (MV_GLYPH[key]) return MV_GLYPH[key];
+  if (key.includes("|left")) return "\u2190";
+  if (key.includes("|right")) return "\u2192";
+  if (key.includes("straight")) return "\u2191";
+  return "\u2191";
+}
+
+function maneuversHtml(inst, isMetric) {
+  const list = Array.isArray(inst?.maneuvers) ? inst.maneuvers : [];
+  if (!list.length) return "";
+  // Skip the first entry: it duplicates the headline row, which comes from carrotManSP.
+  const rest = list.slice(1, 4);
+  if (!rest.length) return "";
+  const parts = rest.map((mv, i) => {
+    const dist = Number(mv.distance) > 0 ? esc(fmtDist(Number(mv.distance), isMetric)) : "";
+    const cls = i === 0 ? "cn-mv" : "cn-mv cn-mv--then";
+    return `<span class="${cls}"><i>${esc(mvGlyph(mv.type, mv.modifier))}</i>${dist}</span>`;
+  });
+  return `<div class="cn-maneuvers">${parts.join("")}</div>`;
+}
+
+const LANE_GLYPH = { 0: "", 1: "\u2190", 2: "\u2192", 3: "\u2191", 4: "\u2196", 5: "\u2197" };
+
+function lanesHtml(inst) {
+  const lanes = Array.isArray(inst?.lanes) ? inst.lanes : [];
+  if (!lanes.length) return "";
+  const cells = lanes.map((ln) => {
+    const dirs = Array.isArray(ln.directions) ? ln.directions : [];
+    // An empty direction list means "this lane has no guidance", drawn as a dash.
+    const glyph = dirs.map((d) => LANE_GLYPH[d] || "").join("") || "\u2013";
+    const cls = ln.active ? "cn-lane cn-lane--active" : "cn-lane";
+    return `<span class="${cls}">${esc(glyph)}</span>`;
+  });
+  return `<div class="cn-lanes">${cells.join("")}</div>`;
+}
+
+function typicalHtml(inst) {
+  // Only worth showing when the live estimate is meaningfully worse than typical.
+  const live = Number(inst?.time_remaining) || 0;
+  const typical = Number(inst?.time_remaining_typical) || 0;
+  if (!(live > 0 && typical > 0)) return "";
+  const delta = Math.round((live - typical) / 60);
+  if (delta < 5) return "";
+  return `<div class="cn-typical">${esc(tr("Typical"))} +${delta} ${esc(tr("min"))}</div>`;
+}
+
+function renderPanel(nav, isMetric, speedKph, inst) {
   const tbt = nav.tbt_main_text
     ? nav.tbt_main_text + (nav.near_dir_name ? " → " + nav.near_dir_name : "")
     : "";
@@ -371,6 +452,9 @@ function renderPanel(nav, isMetric, speedKph) {
       </div>
       ${dist || cd ? `<div class="cn-turnmeta">${dist}${cd}</div>` : ""}
     </div>
+    ${maneuversHtml(inst, isMetric)}
+    ${lanesHtml(inst)}
+    ${typicalHtml(inst)}
     ${badges}`;
 }
 
@@ -379,6 +463,7 @@ export function updateCarrotNav(st) {
   const el = document.getElementById("hud-carrot-nav");
   if (!el) return;
   const nav = st?.sp_hud?.carrot_nav;
+  const inst = st?.sp_hud?.carrot_instruction;
   if (!st?.started || !hasNavContent(nav)) {
     el.hidden = true;
     lastNavSig = "";
@@ -390,10 +475,11 @@ export function updateCarrotNav(st) {
   // horizontally centered, raised above the torque arc band (panel_side is
   // intentionally no longer used — the user prefers a fixed centered card)
   el.style.opacity = String(Math.max(0.1, Math.min(1, (Number(nav.panel_opacity) || 100) / 100)));
-  const sig = JSON.stringify(nav) + "|" + (isMetric ? "m" : "i") + "|" + speedKph;
+  const sig = JSON.stringify(nav) + "|" + JSON.stringify(inst) + "|" +
+              (isMetric ? "m" : "i") + "|" + speedKph;
   if (sig === lastNavSig) return;
   lastNavSig = sig;
-  el.innerHTML = renderPanel(nav, isMetric, speedKph);
+  el.innerHTML = renderPanel(nav, isMetric, speedKph, inst);
 }
 
 export function updateAmapBars(st) {
