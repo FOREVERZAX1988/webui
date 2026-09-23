@@ -754,6 +754,10 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         "near_dir_name": _txt("szNearDirName"),
         "desired_speed": _num("desiredSpeed"),
         "desired_source": _txt("desiredSource"),
+        # Pre-resolved by carrot_man: the driver-facing reason and its colour mode.
+        # The raw token above stays for diagnostics; the UI shows these.
+        "desired_source_label": _txt("desiredSourceLabel"),
+        "desired_source_color": _num("desiredSourceColor"),
         "traffic_state": _num("trafficState"),
         "traffic_countdown": _num("trafficCountdown"),
         "left_sec": _num("leftSec"),

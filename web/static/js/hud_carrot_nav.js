@@ -296,9 +296,13 @@ function badgesHtml(nav, speedKph, spHud) {
       ? `<b class="cn-cate cn-cate-${nav.road_cate}">${ROAD_CATE[nav.road_cate]()}</b>` : "";
     badges.push(`<span class="cn-badge">${cate}${esc(nav.road_name)}</span>`);
   }
-  if (nav.desired_speed > 0 && nav.desired_source) {
-    const src = esc(nav.desired_source).slice(0, 10);
-    badges.push(`<span class="cn-badge cn-badge--apply">${src} ${nav.desired_speed}</span>`);
+  if (nav.desired_speed > 0 && (nav.desired_source_label || nav.desired_source)) {
+    // Prefer the resolved reason + colour from carrot_man; fall back to the raw
+    // token so an older packet still renders something rather than nothing.
+    const label = nav.desired_source_label || esc(nav.desired_source).slice(0, 10);
+    const mode = Number(nav.desired_source_color) || 0;
+    const cls = mode === 3 ? " is-vnavi" : mode === 4 ? " is-extnavi" : "";
+    badges.push(`<span class="cn-badge cn-badge--apply${cls}">${esc(label)} ${nav.desired_speed}</span>`);
   }
   if (nav.spd_limit > 0 && nav.spd_dist > 0) {
     const over = Math.round(speedKph) > nav.spd_limit;
