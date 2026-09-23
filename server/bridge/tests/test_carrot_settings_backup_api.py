@@ -90,27 +90,27 @@ class TestBackupExport(CarrotSettingsBackupTests):
       self.assertIsInstance(v, str)
 
   def test_export_reflects_current_values(self):
-    self.params.put("AutoCruiseControl", 7)
+    self.params.put("AutoUpRoadLimit", 7)
     backup = mod.export_params_backup()
-    self.assertEqual(backup["values"]["AutoCruiseControl"], "7")
+    self.assertEqual(backup["values"]["AutoUpRoadLimit"], "7")
 
   def test_restore_round_trip(self):
-    payload = {"AutoCruiseControl": "5", "AlwaysLateral": "1", "CruiseSpeed1": "42"}
+    payload = {"AutoUpRoadLimit": "5", "AlwaysLateral": "1", "CruiseSpeed1": "42"}
     result = mod.restore_params_backup(payload)
     self.assertTrue(result["ok"], result)
     self.assertEqual(result["ok_cnt"], 3)
     self.assertEqual(result["unknown_keys"], [])
-    self.assertEqual(carrot_value_str("AutoCruiseControl"), "5")
+    self.assertEqual(carrot_value_str("AutoUpRoadLimit"), "5")
     self.assertEqual(carrot_value_str("AlwaysLateral"), "1")
     self.assertEqual(carrot_value_str("CruiseSpeed1"), "42")
 
   def test_restore_rejects_unknown_key(self):
-    payload = {"AutoCruiseControl": "5", "NotARealCarrotKey": "99"}
+    payload = {"AutoUpRoadLimit": "5", "NotARealCarrotKey": "99"}
     result = mod.restore_params_backup(payload)
     self.assertIn("NotARealCarrotKey", result["unknown_keys"])
     self.assertFalse(result["ok"])
     self.assertEqual(result["ok_cnt"], 1)
-    self.assertEqual(carrot_value_str("AutoCruiseControl"), "5")
+    self.assertEqual(carrot_value_str("AutoUpRoadLimit"), "5")
     self.assertFalse(is_carrot_key("NotARealCarrotKey"))
 
 
@@ -148,14 +148,14 @@ class TestRestoreOffroadGuard(unittest.TestCase):
       return mod.restore_params_backup(values)
 
     offroad_guard.device_is_onroad = lambda: True  # type: ignore[assignment]
-    res = asyncio.run(handler({"AutoCruiseControl": "9"}))
+    res = asyncio.run(handler({"AutoUpRoadLimit": "9"}))
     self.assertEqual(res["error"], "only_available_offroad")
-    self.assertEqual(carrot_value_str("AutoCruiseControl"), "0")
+    self.assertEqual(carrot_value_str("AutoUpRoadLimit"), "0")
 
     offroad_guard.device_is_onroad = lambda: False  # type: ignore[assignment]
-    res = asyncio.run(handler({"AutoCruiseControl": "9"}))
+    res = asyncio.run(handler({"AutoUpRoadLimit": "9"}))
     self.assertTrue(res["ok"], res)
-    self.assertEqual(carrot_value_str("AutoCruiseControl"), "9")
+    self.assertEqual(carrot_value_str("AutoUpRoadLimit"), "9")
 
 
 class TestQrBackup(unittest.TestCase):
@@ -168,13 +168,13 @@ class TestQrBackup(unittest.TestCase):
 
   def test_qr_builds_payload_with_encoder(self):
     with patch("webui.server.bridge.qr_data_url.qr_data_url", return_value="data:image/png;base64,XXXX"):
-      res = mod.build_params_qr_backup({"AutoCruiseControl": "3"})
+      res = mod.build_params_qr_backup({"AutoUpRoadLimit": "3"})
     self.assertTrue(res["ok"])
     self.assertTrue(res["data_url"].startswith("data:image/png;base64,"))
 
   def test_qr_too_large_when_encoder_returns_empty(self):
     with patch("webui.server.bridge.qr_data_url.qr_data_url", return_value=""):
-      res = mod.build_params_qr_backup({"AutoCruiseControl": "3"})
+      res = mod.build_params_qr_backup({"AutoUpRoadLimit": "3"})
     self.assertFalse(res["ok"])
     self.assertEqual(res["error"], "qr_too_large_or_encoder_unavailable")
 
@@ -218,34 +218,34 @@ class TestProfiles(unittest.TestCase):
     self.assertTrue(all(is_carrot_key(k) for k in profile["values"].keys()))
 
   def test_apply_writes_values(self):
-    self.params.put("AutoCruiseControl", 0)
+    self.params.put("AutoUpRoadLimit", 0)
     profile = mod.create_setting_profile("P")
     new_values = dict(profile["values"])
-    new_values["AutoCruiseControl"] = "8"
+    new_values["AutoUpRoadLimit"] = "8"
     mod.update_setting_profile(profile["id"], {"values": new_values})
     res = mod.apply_setting_profile(profile["id"])
     self.assertTrue(res["ok"], res)
-    self.assertEqual(carrot_value_str("AutoCruiseControl"), "8")
+    self.assertEqual(carrot_value_str("AutoUpRoadLimit"), "8")
 
   def test_apply_ignores_unknown_keys(self):
-    self.params.put("AutoCruiseControl", 0)
+    self.params.put("AutoUpRoadLimit", 0)
     profile = mod.create_setting_profile("P")
     bad = dict(profile["values"])
     bad["NoSuchKey"] = "1"
-    bad["AutoCruiseControl"] = "8"
+    bad["AutoUpRoadLimit"] = "8"
     res = mod.apply_setting_profile(profile["id"], bad)
     self.assertTrue(res["ok"], res)
-    self.assertEqual(carrot_value_str("AutoCruiseControl"), "8")
+    self.assertEqual(carrot_value_str("AutoUpRoadLimit"), "8")
     # Unknown key was dropped (not written); it is not a carrot key at all.
     self.assertFalse(is_carrot_key("NoSuchKey"))
 
   def test_preview_reports_changed(self):
-    self.params.put("AutoCruiseControl", 0)
+    self.params.put("AutoUpRoadLimit", 0)
     profile = mod.create_setting_profile("P")
     new_values = dict(profile["values"])
-    new_values["AutoCruiseControl"] = "9"
+    new_values["AutoUpRoadLimit"] = "9"
     preview = mod.preview_setting_profile(profile["id"], new_values)
-    entry = next(e for e in preview["entries"] if e["key"] == "AutoCruiseControl")
+    entry = next(e for e in preview["entries"] if e["key"] == "AutoUpRoadLimit")
     self.assertTrue(entry["changed"])
     self.assertEqual(entry["value"], "9")
     self.assertEqual(entry["current"], "0")
@@ -266,17 +266,17 @@ class TestFavorites(unittest.TestCase):
       os.remove(mod.FAVORITES_PATH)
 
   def test_update_and_read(self):
-    res = mod.update_setting_favorites({"favorites": ["AutoCruiseControl", "AlwaysLateral"]})
-    self.assertEqual(res["favorites"], ["AutoCruiseControl", "AlwaysLateral"])
-    self.assertEqual(mod.read_setting_favorites()["favorites"], ["AutoCruiseControl", "AlwaysLateral"])
+    res = mod.update_setting_favorites({"favorites": ["AutoUpRoadLimit", "AlwaysLateral"]})
+    self.assertEqual(res["favorites"], ["AutoUpRoadLimit", "AlwaysLateral"])
+    self.assertEqual(mod.read_setting_favorites()["favorites"], ["AutoUpRoadLimit", "AlwaysLateral"])
 
   def test_favorites_rejects_unknown_keys(self):
-    res = mod.update_setting_favorites({"favorites": ["AutoCruiseControl", "Nope"]})
-    self.assertEqual(res["favorites"], ["AutoCruiseControl"])
+    res = mod.update_setting_favorites({"favorites": ["AutoUpRoadLimit", "Nope"]})
+    self.assertEqual(res["favorites"], ["AutoUpRoadLimit"])
 
   def test_favorites_dedup_and_cap(self):
-    res = mod.update_setting_favorites({"favorites": ["AlwaysLateral", "AlwaysLateral", "AutoCruiseControl"]})
-    self.assertEqual(res["favorites"], ["AlwaysLateral", "AutoCruiseControl"])
+    res = mod.update_setting_favorites({"favorites": ["AlwaysLateral", "AlwaysLateral", "AutoUpRoadLimit"]})
+    self.assertEqual(res["favorites"], ["AlwaysLateral", "AutoUpRoadLimit"])
 
 
 # --- small fakes / helpers -------------------------------------------------
