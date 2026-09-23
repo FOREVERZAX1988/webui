@@ -173,6 +173,8 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "AutoCurveSpeedLowerLimit": ("int", 30),
   "AutoNaviCountDownMode": ("int", 2),
   "AutoNaviSpeedBumpEndDistance": ("int", 200),
+  # G2: now consumed by CarrotServ.rear_camera_speed (SDI 75/76 hold).
+  "AutoNaviRearCameraHoldDistance": ("int", 100),
   "AutoNaviSpeedBumpSpeed": ("int", 35),
   "AutoNaviSpeedBumpTime": ("int", 1),
   "AutoNaviSpeedCtrlEnd": ("int", 6),

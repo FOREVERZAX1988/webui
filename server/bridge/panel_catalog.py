@@ -46,7 +46,7 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CruiseMaxVals0",
   "AdjustLaneOffset", "AlwaysLateral", "ApplyModelSpeed", "AutoCruiseControl",
   "AutoEngage", "AutoGasCancelSpeed",
-  "AutoGasTokSpeed", "AutoNaviRearCameraHoldDistance", "AutoTurnInNotRoadEdge",
+  "AutoGasTokSpeed", "AutoTurnInNotRoadEdge",
   "BsdDelayTime", "CameraYawTrimDeg",
   "CancelButtonMode", "CanfdDebug", "CanfdHDA2", "CanfdStopRetry",
   "CarrotCruiseAtcDecel", "CarrotCruiseDecel", "CarrotTireTrajectory", "CarrotYouTubeLive",
@@ -839,6 +839,19 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {
         "type": "section",
         "label": "Speed Bumps"
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviRearCameraHoldDistance",
+        "label": "Rear Speed Camera Hold",
+        "desc": "How far past a rear speed camera the limit is held, in centimetres. The phone app drops the limit at the camera, so this prevents speeding back up while still passing it. 100 = 1.00 m.",
+        "min": 0,
+        "max": 300,
+        "step": 10,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
       },
       {
         "type": "int",
