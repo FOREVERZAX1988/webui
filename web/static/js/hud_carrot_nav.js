@@ -156,6 +156,21 @@ function injectStyle() {
 .cn-badge .cn-cate.cn-cate-1 { background: rgba(22, 160, 74, 0.85); }
 .cn-badge .cn-cate.cn-cate-2 { background: rgba(217, 145, 10, 0.85); }
 .cn-badge.cn-badge--sdi { background: rgba(22, 160, 74, 0.8); color: #fff; }
+/* Projected road limit from the phone app. Solid when the resolver adopted it, outlined
+   when it did not - so "the app says 50" and "the car is using 50" are distinguishable.
+   The top speed HUD shows the resolver's merged value, which is a different thing: when
+   the limit is not adopted there is nothing up there, which is exactly when this badge
+   matters most. */
+.cn-badge.cn-badge--limit { background: rgba(255, 255, 255, 0.95); color: #101418; font-weight: 800; }
+.cn-badge.cn-badge--limit.is-unused {
+  background: rgba(255, 255, 255, 0.10); color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.45); font-weight: 700;
+}
+.cn-badge.cn-badge--limit .cn-limit-src { font-size: 15px; font-weight: 600; opacity: 0.65; margin-left: 4px; }
+/* Above the projected limit. The filled variant has a light background, the outlined one
+   is dark, so each needs its own red. */
+.cn-badge.cn-badge--limit.is-over { color: #c81e1e; }
+.cn-badge.cn-badge--limit.is-unused.is-over { color: #ff8a8a; border-color: rgba(255, 138, 138, 0.7); }
 .cn-badge.cn-badge--apply { background: rgba(255, 180, 50, 0.88); color: #101418; }
 .cn-badge.cn-badge--cam { background: rgba(239, 68, 68, 0.82); color: #fff; }
 .cn-badge.cn-badge--cam.is-ok { background: rgba(239, 68, 68, 0.35); }
@@ -289,6 +304,31 @@ function turnMiniHtml(nav) {
 
 function badgesHtml(nav, speedKph, spHud) {
   const badges = [];
+
+  // Projected road limit from the phone app (carrotManSP.nRoadLimitSpeed).
+  //
+  // This badge exists because the "glass navigation card" redesign removed the old
+  // LIMIT box on the grounds that the top speed HUD already shows the limit. That
+  // reasoning does not hold when the two disagree: the top HUD shows the RESOLVER's
+  // merged value (speed_limit_resolver / speed_limit_source), while this is what the
+  // phone actually projected. If the resolver did not adopt it - wrong policy for the
+  // active source, a stale packet, an inactive packet - the top HUD shows nothing and
+  // the projected limit became invisible everywhere.
+  //
+  // So: always shown when carrot projects one, and styled as outlined when the resolver
+  // is not currently using it. Filled = in effect, outlined = the app says so but the
+  // car is not acting on it.
+  const roadLimit = Number(nav.road_limit_speed) || 0;
+  if (roadLimit > 0) {
+    // "adopted" needs both halves: the resolver picked the map source AND landed on
+    // this same number. Either alone can be true while the car uses something else.
+    const resolved = Number(spHud?.speed_limit_resolver) || 0;
+    const adopted = spHud?.speed_limit_source === "map" && Math.round(resolved) === Math.round(roadLimit);
+    const over = Math.round(speedKph) > roadLimit;
+    const cls = (adopted ? "" : " is-unused") + (over ? " is-over" : "");
+    const src = adopted ? "" : `<span class="cn-limit-src">${esc(tr("Projected"))}</span>`;
+    badges.push(`<span class="cn-badge cn-badge--limit${cls}">${roadLimit}${src}</span>`);
+  }
   if (nav.sdi_descr) {
     badges.push(`<span class="cn-badge cn-badge--sdi">${esc(nav.sdi_descr)}</span>`);
   } else if (nav.road_name) {

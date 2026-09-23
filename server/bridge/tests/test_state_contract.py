@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import ast
 import os
+import re
 import unittest
 
 os.environ.setdefault("WEBUI_DEV_PC", "1")
@@ -133,3 +134,67 @@ class CarrotInstructionTests(unittest.TestCase):
     self.assertIn('carrot_instruction', js, 'the HUD does not read sp_hud.carrot_instruction')
     for fn in ('maneuversHtml', 'lanesHtml', 'mvGlyph'):
       self.assertIn(fn, js, f'{fn} is missing from the HUD')
+
+class ProjectedSpeedLimitBadgeTests(unittest.TestCase):
+  """The carrot nav card must render the projected road limit.
+
+  A commit titled "glass navigation card redesign" dropped the old LIMIT box on the
+  grounds that "the top speed HUD already shows the limit". That is only true when the
+  resolver adopted it: the top HUD renders the RESOLVER's merged value and source, while
+  carrotManSP.nRoadLimitSpeed is what the phone actually projected. When the resolver
+  did not adopt it there was nothing on screen at all, which is the regression this
+  guards against.
+  """
+
+  @staticmethod
+  def _read(rel: str) -> str:
+    """Read a file relative to the webui root.
+
+    tests -> bridge -> server -> webui, hence four levels up.
+    """
+    import os
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(
+      os.path.dirname(os.path.abspath(__file__)))))
+    with open(os.path.join(root, rel), encoding='utf-8') as f:
+      return f.read()
+
+  def test_backend_exposes_the_projected_limit_and_the_resolver_state(self) -> None:
+    src = self._read(os.path.join('server', 'bridge', 'state_api.py'))
+    # the projected value...
+    self.assertIn('"road_limit_speed"', src)
+    # ...and the two fields needed to tell whether it is in effect
+    self.assertIn('"speed_limit_resolver"', src)
+    self.assertIn('"speed_limit_source"', src)
+
+  def test_hud_renders_it(self) -> None:
+    js = self._read(os.path.join('web', 'static', 'js', 'hud_carrot_nav.js'))
+    self.assertIn('road_limit_speed', js, 'the projected limit is no longer rendered')
+    self.assertIn('cn-badge--limit', js)
+    # the distinction between "projected" and "in effect" is the whole point
+    self.assertIn('is-unused', js)
+    self.assertIn('speed_limit_source', js)
+    self.assertIn('speed_limit_resolver', js)
+
+  def test_adopted_requires_both_halves(self) -> None:
+    """Source alone or value alone is not enough - either can match while the car uses
+    something else.
+
+    Checking the semantics, not the literal text: the value comes from a variable
+    (`resolved`) assigned just above, so asserting on `speed_limit_resolver` inside the
+    expression itself would be testing formatting rather than behaviour. Confirmed by
+    this very test failing that way first.
+    """
+    js = self._read(os.path.join('web', 'static', 'js', 'hud_carrot_nav.js'))
+    m = re.search(r'const adopted = ([^;]+);', js)
+    self.assertIsNotNone(m, 'the adopted test is gone')
+    expr = m.group(1)
+    # half 1: the resolver must have picked the map source
+    self.assertIn('speed_limit_source', expr, 'the source half of the test was dropped')
+    # half 2: and landed on this same value. `resolved` is the read of
+    # speed_limit_resolver; assert both that it is used here and that it is defined from
+    # the right field, so the comparison cannot be silently neutered.
+    self.assertIn('resolved', expr, 'the value half of the test was dropped')
+    self.assertRegex(js, r'const resolved = Number\(spHud\?\.speed_limit_resolver\)',
+                     'resolved no longer reads speed_limit_resolver')
+
