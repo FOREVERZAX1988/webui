@@ -382,7 +382,9 @@ PANELS: list[dict[str, Any]] = [
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default."},{"type": "bool", "param": "CarrotNavCruiseSpeedEnabled", "label": "Navigation Cruise Speed", "default": True,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "desc": "Use navigation desired speed to limit cruise set speed."},{"type": "subpanel", "target": "navigation__carrot_tuning", "label": "Carrot Tuning", "button": "CUSTOMIZE"}],
+       "desc": "Use navigation desired speed to limit cruise set speed."},{"type": "int", "param": "HapticFeedbackWhenSpeedCamera", "label": "Haptic Feedback (Speed Camera)", "default": 0,
+       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
+       "desc": "Steering-wheel nudge when carrot decelerates for a speed camera. 0=off, 1/2 = lane-warning styles."},{"type": "subpanel", "target": "navigation__carrot_tuning", "label": "Carrot Tuning", "button": "CUSTOMIZE"}],
   },
   {
     "id": "visuals",

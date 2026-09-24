@@ -228,6 +228,7 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # here; defaults mirror config.py::_DEFAULT_NAV_PARAMS ---
   "CruiseGapLevels": ("int", 4),
   "AutoCruiseControl": ("int", 0),
+  "HapticFeedbackWhenSpeedCamera": ("int", 0),
   "AutoGasCancelSpeed": ("int", 30),
   "AutoGasTokSpeed": ("int", 0),
   "PaddleMode": ("int", 0),
