@@ -227,6 +227,14 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # --- cp tuning alignment: params present in CarrotPilot settings but missing
   # here; defaults mirror config.py::_DEFAULT_NAV_PARAMS ---
   "CruiseGapLevels": ("int", 4),
+  "AutoCruiseControl": ("int", 0),
+  "AutoGasCancelSpeed": ("int", 30),
+  "AutoGasTokSpeed": ("int", 0),
+  "PaddleMode": ("int", 0),
+  "SoftHoldOnCancel": ("bool", 0),
+  "UseLaneLineSpeed": ("int", 0),
+  "AutoRoadSpeedAdjust": ("int", 50),
+  "AutoSpeedUptoRoadSpeedLimit": ("int", 0),
   "LeadAccelResponseTF1": ("int", -1),
   "LeadAccelResponseTF2": ("int", -1),
   "LeadAccelResponseTF3": ("int", -1),

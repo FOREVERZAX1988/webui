@@ -19,7 +19,6 @@ from typing import Any
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CarrotCurveSpeedEnabled",
   "CarrotHudInfoEnabled",
-
   "ClusterNaviMapTheme",
   "ClusterNaviMapType",
   "ClusterNaviMapFps",
@@ -47,35 +46,79 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CruiseMaxVals2",
   "CruiseMaxVals1",
   "CruiseMaxVals0",
-  "AlwaysLateral", "ApplyModelSpeed", 
-  "AutoEngage", 
+  "AlwaysLateral",
   "AutoTurnInNotRoadEdge",
-  "BsdDelayTime", "CameraYawTrimDeg",
-  "CancelButtonMode", 
+  "BsdDelayTime",
+  "CameraYawTrimDeg",
   "CarrotYouTubeLive",
-  "CarrotYouTubeQuality", "CarrotYouTubeTimestamp", "ContinuousLaneChange",  "CruiseButtonLongDelay", "CruiseButtonMode", 
-  "CruiseOnDist",
-  "CruiseSpeed1", "CruiseSpeed2", "CruiseSpeed3", "CruiseSpeed4",
-  "CruiseSpeed5", "CruiseSpeedUnit", "CruiseSpeedUnitBasic", "CustomSR",
-  "HotspotOnBoot", 
-  "LaneChangeDelay", "LaneChangeNeedTorque", "LaneLineCheck",  "LatMpcAccelCost", "LatMpcInputOffset", "LatMpcJerkCost", "LatMpcMotionCost",
-  "LatMpcPathCost", "LatMpcSteeringRateCost", "LatSmoothSec", "LateralTorqueAccelFactor",
-  "LateralTorqueCustom", "LateralTorqueFriction", "LateralTorqueKd", "LateralTorqueKf",
-  "LateralTorqueKiV", "LateralTorqueKpV", "LeadAccelResponseTF1", "LeadAccelResponseTF2",
-  "LeadAccelResponseTF3", "LeadAccelResponseTF4", "LfaButtonMode", "LongActuatorDelay",
-  "LongTuningKf", "LongTuningKiV", "LongTuningKpV", "MapboxStyle",
-  "MuteDoor", "MuteSeatbelt", "NewLaneWidthDiff",
-  "OnnxBsdIntervalMs", "OnnxBsdSmoothingMs", "OnnxBsdThreshold", "OnnxLaneIntervalMs",
-  "OnnxLaneThreshold", "PathOffset", "RecordRoadCam",
-  "ShareData", "ShowCameraWithCluster", "ShowCustomBrightness", "ShowDateTime",
-  "ShowDebugUI", "ShowDeviceState", "ShowLaneInfo", "ShowModelView",
-  "ShowPathColor", "ShowPathColorCruiseOff", "ShowPathColorLane", "ShowPathEnd",
-  "ShowPathMode", "ShowPathModeLane", "ShowPlotMode", "ShowRadarInfo",
-  "ShowRouteInfo", "ShowTpms", "SideRadarMinDist", 
-  "SoftwareMenu", "SoundLanguageSetting",
-  "SteerActuatorDelay", "SteerRatioRate",
-  "StockBlinkerCtrl", "UseLaneLineCurveSpeed", "UseWideCamera",
-  })
+  "CarrotYouTubeQuality",
+  "CarrotYouTubeTimestamp",
+  "ContinuousLaneChange",
+  "CustomSR",
+  "HotspotOnBoot",
+  "LaneChangeDelay",
+  "LaneChangeNeedTorque",
+  "LaneLineCheck",
+  "LatMpcAccelCost",
+  "LatMpcInputOffset",
+  "LatMpcJerkCost",
+  "LatMpcMotionCost",
+  "LatMpcPathCost",
+  "LatMpcSteeringRateCost",
+  "LatSmoothSec",
+  "LateralTorqueAccelFactor",
+  "LateralTorqueCustom",
+  "LateralTorqueFriction",
+  "LateralTorqueKd",
+  "LateralTorqueKf",
+  "LateralTorqueKiV",
+  "LateralTorqueKpV",
+  "LeadAccelResponseTF1",
+  "LeadAccelResponseTF2",
+  "LeadAccelResponseTF3",
+  "LeadAccelResponseTF4",
+  "LongActuatorDelay",
+  "LongTuningKf",
+  "LongTuningKiV",
+  "LongTuningKpV",
+  "MapboxStyle",
+  "MuteDoor",
+  "MuteSeatbelt",
+  "NewLaneWidthDiff",
+  "OnnxBsdIntervalMs",
+  "OnnxBsdSmoothingMs",
+  "OnnxBsdThreshold",
+  "OnnxLaneIntervalMs",
+  "OnnxLaneThreshold",
+  "PathOffset",
+  "RecordRoadCam",
+  "ShareData",
+  "ShowCameraWithCluster",
+  "ShowCustomBrightness",
+  "ShowDateTime",
+  "ShowDebugUI",
+  "ShowDeviceState",
+  "ShowLaneInfo",
+  "ShowModelView",
+  "ShowPathColor",
+  "ShowPathColorCruiseOff",
+  "ShowPathColorLane",
+  "ShowPathEnd",
+  "ShowPathMode",
+  "ShowPathModeLane",
+  "ShowPlotMode",
+  "ShowRadarInfo",
+  "ShowRouteInfo",
+  "ShowTpms",
+  "SideRadarMinDist",
+  "SoftwareMenu",
+  "SoundLanguageSetting",
+  "SteerActuatorDelay",
+  "SteerRatioRate",
+  "StockBlinkerCtrl",
+  "UseLaneLineCurveSpeed",
+  "UseWideCamera",
+ })
 
 
 # Widget types: bool, int, choice, readonly, action, section, html, subpanel_ref
@@ -607,6 +650,188 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "How many follow-gap levels the distance button cycles (2-4). A value below the vehicle's maximum shortens the cycle; leave at 4 for the full range.",
         "min": 2,
         "max": 4,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeedUnit",
+        "label": "Cruise Speed Unit",
+        "desc": "Speed step unit for the cruise buttons.",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeedUnitBasic",
+        "label": "Cruise Speed Unit (Basic)",
+        "desc": "Basic increment applied on a short press.",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed1",
+        "label": "Cruise Speed 1",
+        "desc": "First preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed2",
+        "label": "Cruise Speed 2",
+        "desc": "Second preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed3",
+        "label": "Cruise Speed 3",
+        "desc": "Third preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed4",
+        "label": "Cruise Speed 4",
+        "desc": "Fourth preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed5",
+        "label": "Cruise Speed 5",
+        "desc": "Fifth preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseButtonMode",
+        "label": "Cruise Button Mode",
+        "desc": "How the cruise buttons behave (long-press behaviour and steps).",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseButtonLongDelay",
+        "label": "Cruise Button Long Delay",
+        "desc": "Frames before a press counts as long.",
+        "min": 10,
+        "max": 100,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CancelButtonMode",
+        "label": "Cancel Button Mode",
+        "desc": "What the cancel button does while engaged.",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "LfaButtonMode",
+        "label": "LFA Button Mode",
+        "desc": "What the LFA button does.",
+        "min": 0,
+        "max": 2,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseOnDist",
+        "label": "Cruise On Distance",
+        "desc": "Distance (percent of a base) at which auto-cruise engages.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "ApplyModelSpeed",
+        "label": "Apply Model Speed",
+        "desc": "Blend the model's desired speed into the cruise target (percent).",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "AutoEngage",
+        "label": "Auto Engage",
+        "desc": "Automatically engage lateral control when cruise engages.",
+        "min": 0,
+        "max": 2,
         "step": 1,
         "visible_if": {
           "param": "CarrotEnabled",
