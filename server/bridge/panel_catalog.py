@@ -1601,6 +1601,84 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Guide Blocking",
         "desc": "Let the phone app guided-lane arrows block lane changes toward non-guided lanes. Only ever adds blocking.",
         "default": False
+      },{
+        "type": "bool",
+        "param": "BydBsdType2",
+        "label": "BYD BSD Type 2",
+        "desc": "Use the second blind-spot detection variant on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydLatUseSiglin",
+        "label": "BYD Lateral Signal Lines",
+        "desc": "Use signal-line based lateral state on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydLowSpdLong",
+        "label": "BYD Low Speed Longitudinal",
+        "desc": "Allow longitudinal control at low speed on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydModifiedStockLong",
+        "label": "BYD Modified Stock Longitudinal",
+        "desc": "Run the modified stock longitudinal path on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydMpcTsr",
+        "label": "BYD MPC TSR",
+        "desc": "Feed traffic-sign recognition into the BYD MPC.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "EnableExtRadar",
+        "label": "External Radar",
+        "desc": "Use an external radar unit instead of the stock one.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "UseRedPanda",
+        "label": "Use Red Panda",
+        "desc": "Select the BYD safety configuration for red panda hardware.",
+        "default": False
+      },{
+        "type": "int",
+        "param": "SpeedCorrect30",
+        "label": "Speed Correct @ 30 km/h",
+        "desc": "Dash-speed correction at 30 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      },{
+        "type": "int",
+        "param": "SpeedCorrect60",
+        "label": "Speed Correct @ 60 km/h",
+        "desc": "Dash-speed correction at 60 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      },{
+        "type": "int",
+        "param": "SpeedCorrect90",
+        "label": "Speed Correct @ 90 km/h",
+        "desc": "Dash-speed correction at 90 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      },{
+        "type": "int",
+        "param": "SpeedCorrect120",
+        "label": "Speed Correct @ 120 km/h",
+        "desc": "Dash-speed correction at 120 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
       }],
   },
 
