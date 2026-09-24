@@ -119,14 +119,15 @@ class CarrotTuningLayoutTests(unittest.TestCase):
 
   def test_group_rows_are_separated_and_described(self):
     widgets = get_panel(self.ROOT)["widgets"]
-    # Only the run of group rows matters here; the panel also ends with a
-    # separator + "Reset Carrot Tuning" action, which is not a group separator.
-    last_row = max(i for i, w in enumerate(widgets) if w.get("type") == "subpanel")
-    rows = [w for w in widgets[:last_row + 1] if w.get("type") == "subpanel"]
-    seps = [w for w in widgets[:last_row + 1] if w.get("type") == "separator"]
-    self.assertEqual(len(seps), len(rows) - 1, "one separator between each pair of rows")
-    self.assertEqual(widgets[0].get("type"), "subpanel", "the list must not open with a separator")
-    for w in rows:
+    row_indices = [i for i, w in enumerate(widgets) if w.get("type") == "subpanel"]
+    self.assertEqual(len(row_indices), 8, "expected 8 group rows")
+    self.assertNotEqual(widgets[0].get("type"), "separator", "the list must not open with a separator")
+    for i in range(len(row_indices) - 1):
+      between = widgets[row_indices[i] + 1:row_indices[i + 1]]
+      self.assertEqual(sum(1 for w in between if w.get("type") == "separator"), 1,
+                       "exactly one separator between each pair of group rows")
+    for idx in row_indices:
+      w = widgets[idx]
       self.assertTrue(w.get("desc"), f"{w['target']} has no description")
       self.assertTrue(w.get("label"), f"{w['target']} has no label")
 
