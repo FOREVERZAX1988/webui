@@ -4,6 +4,123 @@ from __future__ import annotations
 
 from typing import Any
 
+# Carrot tuning params that stay registered (params_keys.h + carrot/config.py +
+# carrot_tuning_api.py) but are deliberately NOT rendered as UI widgets, because no
+# code in this tree reads them. Hiding them keeps the settings page honest; keeping
+# them registered keeps profile/backup/restore working and lets a future port
+# re-expose them without a migration.
+#
+# Grouped by why they are inert:
+#   - the subsystem they configure was never ported (lateral control, ONNX lane
+#     lines, cluster HUD, path renderer, YouTube/sound, radar tracks)
+#   - the behaviour is already owned by a sunnypilot module with its own params
+#     (torque override, lagd, camera offset, longitudinal MPC tuning, lane change)
+#   - CarrotPilot has no equivalent at all
+CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
+  "CarrotCurveSpeedEnabled",
+  "CarrotHudInfoEnabled",
+  "ClusterNaviMapTheme",
+  "ClusterNaviMapType",
+  "ClusterNaviMapFps",
+  "CarrotNaviHudMapProfile",
+  "ClusterHud",
+  "ClusterHudBrightness",
+  "ClusterHudCameraViewMode",
+  "ClusterHudCoreMode",
+  "ClusterHudDebug",
+  "ClusterHudEncoder",
+  "ClusterHudLiveFps",
+  "ClusterHudMirror",
+  "ClusterHudOrientation",
+  "ClusterHudPanelLayout",
+  "ClusterHudPriority",
+  "ClusterHudRadarDisplay",
+  "ClusterHudRadarInfo",
+  "ClusterHudRadarSourceColor",
+  "ClusterHudScreenMode",
+  "ClusterHudTheme",
+  "CruiseMaxVals6",
+  "CruiseMaxVals5",
+  "CruiseMaxVals4",
+  "CruiseMaxVals3",
+  "CruiseMaxVals2",
+  "CruiseMaxVals1",
+  "CruiseMaxVals0",
+  "AlwaysLateral",
+  "AutoTurnInNotRoadEdge",
+  "BsdDelayTime",
+  "CameraYawTrimDeg",
+  "CarrotYouTubeLive",
+  "CarrotYouTubeQuality",
+  "CarrotYouTubeTimestamp",
+  "ContinuousLaneChange",
+  "CustomSR",
+  "HotspotOnBoot",
+  "LaneChangeDelay",
+  "LaneChangeNeedTorque",
+  "LaneLineCheck",
+  "LatMpcAccelCost",
+  "LatMpcInputOffset",
+  "LatMpcJerkCost",
+  "LatMpcMotionCost",
+  "LatMpcPathCost",
+  "LatMpcSteeringRateCost",
+  "LatSmoothSec",
+  "LateralTorqueAccelFactor",
+  "LateralTorqueCustom",
+  "LateralTorqueFriction",
+  "LateralTorqueKd",
+  "LateralTorqueKf",
+  "LateralTorqueKiV",
+  "LateralTorqueKpV",
+  "LeadAccelResponseTF1",
+  "LeadAccelResponseTF2",
+  "LeadAccelResponseTF3",
+  "LeadAccelResponseTF4",
+  "LongActuatorDelay",
+  "LongTuningKf",
+  "LongTuningKiV",
+  "LongTuningKpV",
+  "MapboxStyle",
+  "MuteDoor",
+  "MuteSeatbelt",
+  "NewLaneWidthDiff",
+  "OnnxBsdIntervalMs",
+  "OnnxBsdSmoothingMs",
+  "OnnxBsdThreshold",
+  "OnnxLaneIntervalMs",
+  "OnnxLaneThreshold",
+  "PathOffset",
+  "RecordRoadCam",
+  "ShareData",
+  "ShowCameraWithCluster",
+  "ShowCustomBrightness",
+  "ShowDateTime",
+  "ShowDebugUI",
+  "ShowDeviceState",
+  "ShowLaneInfo",
+  "ShowModelView",
+  "ShowPathColor",
+  "ShowPathColorCruiseOff",
+  "ShowPathColorLane",
+  "ShowPathEnd",
+  "ShowPathMode",
+  "ShowPathModeLane",
+  "ShowPlotMode",
+  "ShowRadarInfo",
+  "ShowRouteInfo",
+  "ShowTpms",
+  "SideRadarMinDist",
+  "SoftwareMenu",
+  "SoundLanguageSetting",
+  "SteerActuatorDelay",
+  "SteerRatioRate",
+  "StockBlinkerCtrl",
+  "UseLaneLineCurveSpeed",
+  "UseWideCamera",
+ })
+
+
 # Widget types: bool, int, choice, readonly, action, section, html, subpanel_ref
 
 PANELS: list[dict[str, Any]] = [
@@ -243,56 +360,64 @@ PANELS: list[dict[str, Any]] = [
   {
     "id": "navigation",
     "title": "Navigation",
-    "widgets": [
-      {"type": "bool", "param": "AmapMapDataEnabled", "label": "Enable Amap Map Data", "offroad_only": True,
+    "widgets": [{"type": "bool", "param": "AmapMapDataEnabled", "label": "Enable Amap Map Data", "offroad_only": True,
        "desc": "Use Amap (Gaode) online map data for speed limits and road names in China."},
-      {"type": "bool", "param": "CarrotAmapBlindSpotEnabled", "label": "Enable Amap Blind Spot Data", "offroad_only": True,
-       "desc": "Parse blind-spot / LiDAR / extBlinker fields from the 7706 UDP stream."},
-      {"type": "bool", "param": "CarrotEnabled", "label": "Enable Carrot Navigation", "offroad_only": True,
-       "desc": "Use Carrot navigation data for map-based features."},
-      {"type": "bool", "param": "CarrotNaviV2Enabled", "label": "Enable Carrot Navi v2 (7714)", "offroad_only": True,
+      {"type": "bool", "param": "OsmMapDataEnabled", "label": "Enable OSM Map Data", "offroad_only": True,
+       "desc": "Use offline OSM map data for speed limits and road names. Turn off to ignore the offline map entirely, which matters when navigation or Amap is the source you trust - the offline data can be years out of date."},{"type": "bool", "param": "CarrotAmapBlindSpotEnabled", "label": "Enable Amap Blind Spot Data", "offroad_only": True,
+       "desc": "Parse blind-spot / LiDAR / extBlinker fields from the 7706 UDP stream."},{"type": "bool", "param": "CarrotEnabled", "label": "Enable Carrot Navigation", "offroad_only": True,
+       "desc": "Use Carrot navigation data for map-based features."},{"type": "bool", "param": "CarrotNaviV2Enabled", "label": "Enable Carrot Navi v2 (7714)", "offroad_only": True,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "desc": "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."},
-      {"type": "int", "param": "CarrotManUdpPort", "label": "Carrot UDP Port", "min": 0, "max": 65535, "step": 1,
-       "offroad_only": True,
-       "desc": "UDP port the Carrot companion app pushes navigation data to. Must match the port configured in the app (0 disables)."},
+       "desc": "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."},{"type": "custom", "custom": "amap_api_key", "label": "Amap API Key", "offroad_only": True,
+       "desc": "API key for Amap services. Tap EDIT to enter or update the key."},{"type": "bool", "param": "AmapCurveSpeedEnabled", "label": "Amap Curve Speed", "offroad_only": True,
+       "visible_if": {"param": "AmapMapDataEnabled", "eq": "1"},
+       "desc": "Derive a curve speed from the Amap route shape. Advisory only; it never overrides the road speed limit."},{"type": "bool", "param": "AmapTrafficLightHintEnabled", "label": "Amap Traffic Light Hint", "offroad_only": True,
+       "visible_if": {"param": "AmapMapDataEnabled", "eq": "1"},
+       "desc": "Show how many traffic lights are on the route ahead. Display only; it never controls the car."},{"type": "separator"},{"type": "int", "param": "CarrotPanelOpacity", "label": "Carrot Nav Panel Opacity",
+       "min": 10, "max": 100, "step": 5, "offroad_only": True,
+       "desc": "Opacity of the onroad Carrot navigation panel, in percent. Default 100."},{"type": "custom", "custom": "navigation_provider", "label": "Map Provider",
+       "desc": "Current map data source used for speed limits and road names. Amap requires an API key to be set above."},{"type": "custom", "custom": "carrot_navi_debug", "label": "Carrot Navi Debug",
+       "desc": "View the last navigation event summary handled by CarrotManager."},{"type": "separator"},{"type": "bool", "param": "CarrotAtcBlinkerEnabled", "label": "Carrot ATC Turn Signal",
+       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
+       "desc": "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default."},{"type": "bool", "param": "CarrotNavCruiseSpeedEnabled", "label": "Navigation Cruise Speed", "default": True,
+       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
+       "desc": "Use navigation desired speed to limit cruise set speed."},{"type": "int", "param": "HapticFeedbackWhenSpeedCamera", "label": "Haptic Feedback (Speed Camera)", "default": 0,
+       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
+       "desc": "Steering-wheel nudge when carrot decelerates for a speed camera. 0=off, 1/2 = lane-warning styles."}],
+  },
+  {
+    "id": "carrot",
+    "title": "Carrot",
+    "widgets": [
       {"type": "bool", "param": "CarrotWebEnabled", "label": "Carrot Web Panel", "offroad_only": True,
        "desc": "Serve the carrot tuning page (/nav_params) and four-corner radar visualisation (/radar) on port 8088."},
-      {"type": "readonly", "param": "CarName", "label": "Car Model",
-       "desc": "Identified car model, sent automatically with Carrot FTP uploads and shown in the companion app."},
-      {"type": "custom", "custom": "amap_api_key", "label": "Amap API Key", "offroad_only": True,
-       "desc": "API key for Amap services. Tap EDIT to enter or update the key."},
       {"type": "separator"},
-      {"type": "multiple_button", "param": "CarrotPanelSide", "label": "Carrot Nav Panel Side",
-       "offroad_only": True,
-       "buttons": ["Left", "Right"],
-       "desc": "Place the onroad Carrot navigation panel on the left or right side of the screen."},
-      {"type": "int", "param": "CarrotPanelOpacity", "label": "Carrot Nav Panel Opacity",
-       "min": 10, "max": 100, "step": 5, "offroad_only": True,
-       "desc": "Opacity of the onroad Carrot navigation panel, in percent. Default 100."},
-      {"type": "custom", "custom": "navigation_provider", "label": "Map Provider",
-       "desc": "Current map data source used for speed limits and road names. Amap requires an API key to be set above."},
-      {"type": "custom", "custom": "carrot_navi_debug", "label": "Carrot Navi Debug",
-       "desc": "View the last navigation event summary handled by CarrotManager."},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__start", "label": "Start / Engage",
+       "desc": "How openpilot engages cruise and which steering wheel buttons control it.", "button": "CUSTOMIZE"},
       {"type": "separator"},
-      {"type": "multiple_button", "param": "MyDrivingMode", "label": "Carrot Driving Mode",
-       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "buttons": ["Eco", "Normal", "Sport", "Safe"],
-       "desc": "Carrot driving style preset."},
-      {"type": "multiple_button", "param": "TrafficLightDetectMode", "label": "Traffic Light Assist",
-       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "buttons": ["Off", "Red Stop", "Red Stop + Green Go"],
-       "desc": "Stop at red lights and optionally resume on green when using model-based stop line detection."},
-      {"type": "bool", "param": "CarrotCurveSpeedEnabled", "label": "Navigation Curve Speed", "default": True,
-       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "desc": "Slow down for curves using navigation route curvature."},
-      {"type": "bool", "param": "CarrotNavCruiseSpeedEnabled", "label": "Navigation Cruise Speed", "default": True,
-       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "desc": "Use navigation desired speed to limit cruise set speed."},
-      {"type": "bool", "param": "CarrotHudInfoEnabled", "label": "Extended HUD Info", "default": True,
-       "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "desc": "Show blind spot state, side vehicle distance, and traffic light info on the HUD."},
-      {"type": "subpanel", "target": "navigation__carrot_tuning", "label": "Carrot Tuning", "button": "CUSTOMIZE"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__cruise", "label": "Cruise & Following",
+       "desc": "Following distance, longitudinal gains, acceleration limits and cruise behavior.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__navi", "label": "Navigation",
+       "desc": "Navigation-based speed control, speed cameras, road limits and speed bumps.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__speed", "label": "Turns & Curves",
+       "desc": "Automatic turn, fork / merge and curve speed control.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__tuning", "label": "Lateral Tuning",
+       "desc": "Steering geometry, MPC costs, torque tuning, lane change and blind spot.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__display", "label": "Display & Sound",
+       "desc": "Cluster HUD, on-screen overlays, sound, YouTube and map style.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__vehicle", "label": "Vehicle",
+       "desc": "Vehicle-specific overrides and convenience options.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__developer", "label": "Developer",
+       "desc": "Debug and diagnostic toggles. Use with caution.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "action", "label": "Reset Carrot Tuning",
+       "desc": "Restore every Carrot tuning parameter on this page to its compiled-in default.",
+       "action": "carrot_tuning_reset", "confirm": "Reset all Carrot tuning parameters to defaults?", "button": "RESET"},
     ],
   },
   {
@@ -432,2227 +557,83 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "title": "Carrot Tuning",
     "parent": "navigation",
     "widgets": [
-      {"type": "tabs", "tabs": ["Start", "Cruise", "Navigation", "Speed", "Tuning", "Display", "Path", "Vehicle", "Developer"], "default": "Start"},
-      {"type": "tab", "tab": "Start", "widgets": [
-        {
-          "type": "section",
-          "label": "Auto Start / Cruise"
-        },
-        {
-          "type": "int",
-          "param": "AutoEngage",
-          "label": "Auto Engage",
-          "desc": "Adjust the Auto Engage setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoCruiseControl",
-          "label": "Auto Cruise Speed",
-          "desc": "Adjust the Auto Cruise Control setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseOnDist",
-          "label": "Cruise On Distance",
-          "desc": "Adjust the Cruise On Dist setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "CruiseEcoControl",
-          "label": "Eco Cruise Control",
-          "desc": "Adjust the Cruise Eco Control setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Button Behavior"
-        },
-        {
-          "type": "int",
-          "param": "CruiseButtonMode",
-          "label": "Cruise Button Mode",
-          "desc": "Adjust the Cruise Button Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CancelButtonMode",
-          "label": "Cancel Button Mode",
-          "desc": "Adjust the Cancel Button Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "SoftHoldOnCancel",
-          "label": "Soft Hold on Cancel",
-          "desc": "Adjust the Soft Hold On Cancel setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseButtonLongDelay",
-          "label": "Cruise Button Long Press Delay",
-          "desc": "Adjust the Cruise Button Long Delay setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Speed Presets"
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeed1",
-          "label": "Cruise Preset Speed 1",
-          "desc": "Adjust the Cruise Speed1 setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeed2",
-          "label": "Cruise Preset Speed 2",
-          "desc": "Adjust the Cruise Speed2 setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeed3",
-          "label": "Cruise Preset Speed 3",
-          "desc": "Adjust the Cruise Speed3 setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeed4",
-          "label": "Cruise Preset Speed 4",
-          "desc": "Adjust the Cruise Speed4 setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeed5",
-          "label": "Cruise Preset Speed 5",
-          "desc": "Adjust the Cruise Speed5 setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeedUnit",
-          "label": "Cruise Preset Speed Unit",
-          "desc": "Adjust the Cruise Speed Unit setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CruiseSpeedUnitBasic",
-          "label": "Basic Cruise Preset Speed Unit",
-          "desc": "Adjust the Cruise Speed Unit Basic setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Steering Wheel Buttons"
-        },
-        {
-          "type": "int",
-          "param": "LfaButtonMode",
-          "label": "LFA Button Mode",
-          "desc": "Adjust the Lfa Button Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "PaddleMode",
-          "label": "Paddle Mode",
-          "desc": "Adjust the Paddle Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Auto Gas"
-        },
-        {
-          "type": "int",
-          "param": "AutoGasCancelSpeed",
-          "label": "Auto Gas Cancel Speed",
-          "desc": "Adjust the Auto Gas Cancel Speed setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoGasSyncSpeed",
-          "label": "Auto Gas Sync Speed",
-          "desc": "Adjust the Auto Gas Sync Speed setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoGasTokSpeed",
-          "label": "Auto Gas Takeover Speed",
-          "desc": "Adjust the Auto Gas Tok Speed setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-      ]},
-      {"type": "tab", "tab": "Cruise", "widgets": [
-        {
-          "type": "section",
-          "label": "Following Distance"
-        },
-        {
-          "type": "text",
-          "param": "TFollowGap1",
-          "label": "Follow Time Gap 1",
-          "desc": "Adjust the T Follow Gap1 setting."
-        },
-        {
-          "type": "text",
-          "param": "TFollowGap2",
-          "label": "Follow Time Gap 2",
-          "desc": "Adjust the T Follow Gap2 setting."
-        },
-        {
-          "type": "text",
-          "param": "TFollowGap3",
-          "label": "Follow Time Gap 3",
-          "desc": "Adjust the T Follow Gap3 setting."
-        },
-        {
-          "type": "text",
-          "param": "TFollowGap4",
-          "label": "Follow Time Gap 4",
-          "desc": "Adjust the T Follow Gap4 setting."
-        },
-        {
-          "type": "text",
-          "param": "DynamicTFollow",
-          "label": "Dynamic Follow Time",
-          "desc": "Adjust the Dynamic T Follow setting."
-        },
-        {
-          "type": "text",
-          "param": "DynamicTFollowLC",
-          "label": "Dynamic Follow Time on Lane Change",
-          "desc": "Adjust the Dynamic T Follow L C setting."
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Longitudinal Gains"
-        },
-        {
-          "type": "int",
-          "param": "LeadAccelResponse",
-          "label": "Lead Acceleration Response",
-          "desc": "Adjust the Lead Accel Response setting.",
-          "min": -100,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LongActuatorDelay",
-          "label": "Longitudinal Actuator Delay",
-          "desc": "Adjust the Long Actuator Delay setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LongTuningKf",
-          "label": "Longitudinal Feedforward",
-          "desc": "Adjust the Long Tuning Kf setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LongTuningKiV",
-          "label": "Longitudinal Integral Velocity",
-          "desc": "Adjust the Long Tuning Ki V setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LongTuningKpV",
-          "label": "Longitudinal Proportional Velocity",
-          "desc": "Adjust the Long Tuning Kp V setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "StoppingAccel",
-          "label": "Stopping Acceleration",
-          "desc": "Adjust the Stopping Accel setting.",
-          "min": -200,
-          "max": 0,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "TFollowDecelBoost",
-          "label": "Follow Deceleration Boost",
-          "desc": "Adjust the T Follow Decel Boost setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Acceleration Limits"
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals0",
-          "label": "Cruise Max Acceleration 0",
-          "desc": "Adjust the Cruise Max Vals0 setting."
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals1",
-          "label": "Cruise Max Acceleration 1",
-          "desc": "Adjust the Cruise Max Vals1 setting."
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals2",
-          "label": "Cruise Max Acceleration 2",
-          "desc": "Adjust the Cruise Max Vals2 setting."
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals3",
-          "label": "Cruise Max Acceleration 3",
-          "desc": "Adjust the Cruise Max Vals3 setting."
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals4",
-          "label": "Cruise Max Acceleration 4",
-          "desc": "Adjust the Cruise Max Vals4 setting."
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals5",
-          "label": "Cruise Max Acceleration 5",
-          "desc": "Adjust the Cruise Max Vals5 setting."
-        },
-        {
-          "type": "text",
-          "param": "CruiseMaxVals6",
-          "label": "Cruise Max Acceleration 6",
-          "desc": "Adjust the Cruise Max Vals6 setting."
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Cruise Behavior"
-        },
-        {
-          "type": "int",
-          "param": "CarrotCruiseDecel",
-          "label": "Carrot Cruise Decel",
-          "desc": "Adjust the Carrot Cruise Decel setting.",
-          "min": -100,
-          "max": 0,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CarrotCruiseAtcDecel",
-          "label": "Carrot Cruise ATC Decel",
-          "desc": "Adjust the Carrot Cruise Atc Decel setting.",
-          "min": -100,
-          "max": 0,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "VEgoStopping",
-          "label": "Stop Speed Threshold",
-          "desc": "Adjust the V Ego Stopping setting.",
-          "min": 0,
-          "max": 500,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "ApplyModelSpeed",
-          "label": "Model Speed Compensation",
-          "desc": "Adjust the Apply Model Speed setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-      ]},
-      {"type": "tab", "tab": "Navigation", "widgets": [
-        {
-          "type": "section",
-          "label": "Navigation Speed Control"
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedCtrlMode",
-          "label": "Navigation Speed Ctrl Mode",
-          "desc": "Adjust the Auto Navi Speed Ctrl Mode setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedDecelRate",
-          "label": "Navigation Speed Decel Rate",
-          "desc": "Adjust the Auto Navi Speed Decel Rate setting.",
-          "min": 0,
-          "max": 500,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedSafetyFactor",
-          "label": "Navigation Speed Safety Factor",
-          "desc": "Adjust the Auto Navi Speed Safety Factor setting.",
-          "min": 50,
-          "max": 150,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedCtrlEnd",
-          "label": "Navigation Speed Ctrl End Distance",
-          "desc": "Adjust the Auto Navi Speed Ctrl End setting.",
-          "min": 0,
-          "max": 30,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Stop / Speed Camera"
-        },
-        {
-          "type": "int",
-          "param": "StopDistanceCarrot",
-          "label": "Stop Target Distance",
-          "desc": "Adjust the Stop Distance Carrot setting.",
-          "min": 0,
-          "max": 2000,
-          "step": 10
-        },
-        {
-          "type": "bool",
-          "param": "SameSpiCamFilter",
-          "label": "Same Direction Speed Cam Filter",
-          "desc": "Adjust the Same Spi Cam Filter setting.",
-          "default": True
-        },
-        {
-          "type": "int",
-          "param": "HapticFeedbackWhenSpeedCamera",
-          "label": "Speed Camera Haptic Alert",
-          "desc": "Adjust the Haptic Feedback When Speed Camera setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "TrafficStopDistanceAdjust",
-          "label": "Traffic Stop Distance Adjust",
-          "desc": "Adjust the Traffic Stop Distance Adjust setting.",
-          "min": -500,
-          "max": 500,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "TrafficLightDetectMode",
-          "label": "Traffic Light Detect Mode",
-          "desc": "Adjust the Traffic Light Detect Mode setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Road Speed Limits"
-        },
-        {
-          "type": "int",
-          "param": "AutoRoadSpeedAdjust",
-          "label": "Road Speed Auto Adjust",
-          "desc": "Adjust the Auto Road Speed Adjust setting.",
-          "min": -50,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoRoadSpeedLimitOffset",
-          "label": "Road Speed Limit Offset",
-          "desc": "Adjust the Auto Road Speed Limit Offset setting.",
-          "min": -30,
-          "max": 30,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoSpeedUptoRoadSpeedLimit",
-          "label": "Auto Speed Up to Road Limit",
-          "desc": "Adjust the Auto Speed Upto Road Speed Limit setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "SpeedFromPCM",
-          "label": "Speed Source PCM",
-          "desc": "Adjust the Speed From P C M setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "RoadType",
-          "label": "Road Type",
-          "desc": "Adjust the Road Type setting.",
-          "min": -1,
-          "max": 5,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Vehicle CAN Speed Arbitration"
-        },
-        {
-          "type": "multiple_button",
-          "param": "VehicleNaviCanControl",
-          "label": "Vehicle Navi CAN Control",
-          "desc": "Adjust the Vehicle Navi Can Control setting.",
-          "buttons": ["Off", "Camera/Bump Always", "Camera Always/Bump Route", "Camera/Bump Route"],
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "bool",
-          "param": "VehicleNaviSchoolZoneControl",
-          "label": "School Zone CAN Control",
-          "desc": "Adjust the Vehicle Navi School Zone Control setting.",
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          },
-          "default": False
-        },
-        {
-          "type": "multiple_button",
-          "param": "VehicleSpeedCameraControlMode",
-          "label": "Speed Camera Control Mode",
-          "desc": "Adjust the Vehicle Speed Camera Control Mode setting.",
-          "buttons": ["Off", "Always Apply", "Gas Floor", "Gas Pause"],
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "int",
-          "param": "VehicleSpeedCameraDistanceTime",
-          "label": "Speed Camera Alert Time",
-          "desc": "Adjust the Vehicle Speed Camera Distance Time setting.",
-          "min": 10,
-          "max": 200,
-          "step": 1,
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Speed Bumps"
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedBumpEndDistance",
-          "label": "Speed Bump End Distance",
-          "desc": "Adjust the Auto Navi Speed Bump End Distance setting.",
-          "min": 0,
-          "max": 5000,
-          "step": 10,
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviCountDownMode",
-          "label": "Countdown Mode",
-          "desc": "Adjust the Auto Navi Count Down Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedBumpSpeed",
-          "label": "Speed Bump Target Speed",
-          "desc": "Adjust the Auto Navi Speed Bump Speed setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoNaviSpeedBumpTime",
-          "label": "Speed Bump Hold Time",
-          "desc": "Adjust the Auto Navi Speed Bump Time setting.",
-          "min": 0,
-          "max": 10,
-          "step": 1
-        },
-      ]},
-      {"type": "tab", "tab": "Speed", "widgets": [
-        {
-          "type": "section",
-          "label": "ATC Turn Control"
-        },
-        {
-          "type": "int",
-          "param": "AutoTurnControl",
-          "label": "Auto Turn Control",
-          "desc": "Adjust the Auto Turn Control setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoTurnControlSpeedTurn",
-          "label": "Auto Turn Speed Threshold",
-          "desc": "Adjust the Auto Turn Control Speed Turn setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoTurnControlTurnEnd",
-          "label": "Auto Turn End Distance",
-          "desc": "Adjust the Auto Turn Control Turn End setting.",
-          "min": 0,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoTurnMapChange",
-          "label": "Auto Turn on Navi Lane Change",
-          "desc": "Adjust the Auto Turn Map Change setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoTurnDistOffset",
-          "label": "Auto Turn Distance Offset",
-          "desc": "Adjust the Auto Turn Dist Offset setting.",
-          "min": 0,
-          "max": 1000,
-          "step": 5
-        },
-        {
-          "type": "bool",
-          "param": "AutoTurnInNotRoadEdge",
-          "label": "Auto Turn Outside Road Edge",
-          "desc": "Adjust the Auto Turn In Not Road Edge setting.",
-          "default": True
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Fork Control"
-        },
-        {
-          "type": "int",
-          "param": "AutoForkDistOffset",
-          "label": "Fork Merge Distance Offset",
-          "desc": "Adjust the Auto Fork Dist Offset setting.",
-          "min": 0,
-          "max": 500,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoForkDistOffsetH",
-          "label": "Fork Merge Distance Offset (Highway)",
-          "desc": "Adjust the Auto Fork Dist Offset H setting.",
-          "min": 0,
-          "max": 2000,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "AutoDoForkBlinkerDist",
-          "label": "Fork Blinker Trigger Distance",
-          "desc": "Adjust the Auto Do Fork Blinker Dist setting.",
-          "min": 0,
-          "max": 200,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoDoForkBlinkerDistH",
-          "label": "Fork Blinker Trigger Distance (Highway)",
-          "desc": "Adjust the Auto Do Fork Blinker Dist H setting.",
-          "min": 0,
-          "max": 500,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoDoForkNavDist",
-          "label": "Fork Navi Trigger Distance",
-          "desc": "Adjust the Auto Do Fork Nav Dist setting.",
-          "min": 0,
-          "max": 200,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoDoForkNavDistH",
-          "label": "Fork Navi Trigger Distance (Highway)",
-          "desc": "Adjust the Auto Do Fork Nav Dist H setting.",
-          "min": 0,
-          "max": 500,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoDoForkDecalDist",
-          "label": "Fork Decel Trigger Distance",
-          "desc": "Adjust the Auto Do Fork Decal Dist setting.",
-          "min": 0,
-          "max": 300,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoDoForkDecalDistH",
-          "label": "Fork Decel Trigger Distance (Highway)",
-          "desc": "Adjust the Auto Do Fork Decal Dist H setting.",
-          "min": 0,
-          "max": 500,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoForkDecalRate",
-          "label": "Fork Decel Rate",
-          "desc": "Adjust the Auto Fork Decal Rate setting.",
-          "min": 0,
-          "max": 500,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "AutoForkDecalRateH",
-          "label": "Fork Decel Rate (Highway)",
-          "desc": "Adjust the Auto Fork Decal Rate H setting.",
-          "min": 0,
-          "max": 500,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "AutoForkSpeedMin",
-          "label": "Fork Minimum Speed",
-          "desc": "Adjust the Auto Fork Speed Min setting.",
-          "min": 0,
-          "max": 120,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoForkSpeedMinH",
-          "label": "Fork Minimum Speed (Highway)",
-          "desc": "Adjust the Auto Fork Speed Min H setting.",
-          "min": 0,
-          "max": 120,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoKeepForkSpeed",
-          "label": "Fork Keep Speed",
-          "desc": "Adjust the Auto Keep Fork Speed setting.",
-          "min": 0,
-          "max": 60,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoKeepForkSpeedH",
-          "label": "Fork Keep Speed (Highway)",
-          "desc": "Adjust the Auto Keep Fork Speed H setting.",
-          "min": 0,
-          "max": 60,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Turn Speed"
-        },
-        {
-          "type": "int",
-          "param": "MapTurnSpeedFactor",
-          "label": "Map Turn Speed Factor",
-          "desc": "Adjust the Map Turn Speed Factor setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "TurnSpeedControlMode",
-          "label": "Turn Speed Control Mode",
-          "desc": "Adjust the Turn Speed Control Mode setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Curve Speed"
-        },
-        {
-          "type": "int",
-          "param": "AutoCurveSpeedFactor",
-          "label": "Curve Speed Factor",
-          "desc": "Adjust the Auto Curve Speed Factor setting.",
-          "min": 10,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoCurveSpeedFactorH",
-          "label": "Curve Speed Factor (Highway)",
-          "desc": "Adjust the Auto Curve Speed Factor H setting.",
-          "min": 10,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoCurveSpeedAggressivenessH",
-          "label": "Highway Curve Aggressiveness",
-          "desc": "Adjust the Auto Curve Speed Aggressiveness H setting.",
-          "min": 10,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoCurveSpeedLowerLimit",
-          "label": "Curve Speed Lower Limit",
-          "desc": "Adjust the Auto Curve Speed Lower Limit setting.",
-          "min": 0,
-          "max": 150,
-          "step": 5
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Road Limit Raising"
-        },
-        {
-          "type": "int",
-          "param": "AutoUpRoadLimit",
-          "label": "Auto Up Road Limit",
-          "desc": "Adjust the Auto Up Road Limit setting.",
-          "min": 0,
-          "max": 120,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoUpRoadLimit40KMH",
-          "label": "Auto Up 40 km/h Road Limit",
-          "desc": "Adjust the Auto Up Road Limit40 K M H setting.",
-          "min": 0,
-          "max": 60,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoUpHighwayRoadLimit",
-          "label": "Auto Up Highway Limit",
-          "desc": "Adjust the Auto Up Highway Road Limit setting.",
-          "min": 0,
-          "max": 160,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoUpHighwayRoadLimit40KMH",
-          "label": "Auto Up 40 km/h Highway Limit",
-          "desc": "Adjust the Auto Up Highway Road Limit40 K M H setting.",
-          "min": 0,
-          "max": 60,
-          "step": 1
-        },
-      ]},
-      {"type": "tab", "tab": "Tuning", "widgets": [
-        {
-          "type": "section",
-          "label": "Lateral Mode"
-        },
-        {
-          "type": "int",
-          "param": "AlwaysLateral",
-          "label": "Always Lateral",
-          "desc": "Adjust the Always Lateral setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Steering Limits"
-        },
-        {
-          "type": "int",
-          "param": "CustomSR",
-          "label": "Custom Steer Ratio",
-          "desc": "Adjust the Custom S R setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CustomSteerMax",
-          "label": "Max Steer Angle",
-          "desc": "Adjust the Custom Steer Max setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CustomSteerDeltaDown",
-          "label": "Steer Delta Down",
-          "desc": "Adjust the Custom Steer Delta Down setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CustomSteerDeltaUp",
-          "label": "Steer Delta Up",
-          "desc": "Adjust the Custom Steer Delta Up setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CustomSteerDeltaDownLC",
-          "label": "Steer Delta Down (Lane Change)",
-          "desc": "Adjust the Custom Steer Delta Down L C setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CustomSteerDeltaUpLC",
-          "label": "Steer Delta Up (Lane Change)",
-          "desc": "Adjust the Custom Steer Delta Up L C setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "SteerActuatorDelay",
-          "label": "Steer Actuator Delay",
-          "desc": "Adjust the Steer Actuator Delay setting.",
-          "min": 0,
-          "max": 200,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "SteerRatioRate",
-          "label": "Steer Ratio Rate",
-          "desc": "Adjust the Steer Ratio Rate setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Path Offset"
-        },
-        {
-          "type": "int",
-          "param": "PathOffset",
-          "label": "Path Offset",
-          "desc": "Adjust the Path Offset setting.",
-          "min": -100,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AdjustLaneOffset",
-          "label": "Lane Offset Adjust",
-          "desc": "Adjust the Adjust Lane Offset setting.",
-          "min": -50,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "CameraYawTrimDeg",
-          "label": "Camera Yaw Trim",
-          "desc": "Adjust the Camera Yaw Trim Deg setting.",
-          "min": -20,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Lateral MPC Costs"
-        },
-        {
-          "type": "int",
-          "param": "LatMpcAccelCost",
-          "label": "Lateral Acceleration Cost",
-          "desc": "Adjust the Lat Mpc Accel Cost setting.",
-          "min": 0,
-          "max": 500,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LatMpcJerkCost",
-          "label": "Lateral Jerk Cost",
-          "desc": "Adjust the Lat Mpc Jerk Cost setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "LatMpcMotionCost",
-          "label": "Lateral Motion Cost",
-          "desc": "Adjust the Lat Mpc Motion Cost setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "LatMpcPathCost",
-          "label": "Lateral Path Cost",
-          "desc": "Adjust the Lat Mpc Path Cost setting.",
-          "min": 0,
-          "max": 1000,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LatMpcSteeringRateCost",
-          "label": "Lateral Steering Rate Cost",
-          "desc": "Adjust the Lat Mpc Steering Rate Cost setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Lateral Torque"
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueCustom",
-          "label": "Custom Lateral Torque",
-          "desc": "Adjust the Lateral Torque Custom setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueFriction",
-          "label": "Lateral Torque Friction",
-          "desc": "Adjust the Lateral Torque Friction setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueKd",
-          "label": "Lateral Torque Derivative",
-          "desc": "Adjust the Lateral Torque Kd setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueKf",
-          "label": "Lateral Torque Feedforward",
-          "desc": "Adjust the Lateral Torque Kf setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueKiV",
-          "label": "Lateral Torque Integral Velocity",
-          "desc": "Adjust the Lateral Torque Ki V setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueKpV",
-          "label": "Lateral Torque Proportional",
-          "desc": "Adjust the Lateral Torque Kp V setting.",
-          "min": 0,
-          "max": 300,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "LateralTorqueAccelFactor",
-          "label": "Lateral Torque Accel Factor",
-          "desc": "Adjust the Lateral Torque Accel Factor setting.",
-          "min": 0,
-          "max": 5000,
-          "step": 50
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Lateral Smoothing"
-        },
-        {
-          "type": "int",
-          "param": "LatMpcInputOffset",
-          "label": "Lateral MPC Input Offset",
-          "desc": "Adjust the Lat Mpc Input Offset setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "LatSmoothSec",
-          "label": "Lateral Smooth Seconds",
-          "desc": "Adjust the Lat Smooth Sec setting.",
-          "min": 0,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Lane Change"
-        },
-        {
-          "type": "int",
-          "param": "LaneChangeBsd",
-          "label": "Lane Change BSD",
-          "desc": "Adjust the Lane Change Bsd setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "LaneChangeDelay",
-          "label": "Lane Change Delay",
-          "desc": "Adjust the Lane Change Delay setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "LaneChangeNeedTorque",
-          "label": "Lane Change Need Torque",
-          "desc": "Adjust the Lane Change Need Torque setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "ContinuousLaneChange",
-          "label": "Continuous Lane Change",
-          "desc": "Adjust the Continuous Lane Change setting.",
-          "default": True
-        },
-        {
-          "type": "int",
-          "param": "ContinuousLaneChangeCnt",
-          "label": "Continuous Lane Change Count",
-          "desc": "Adjust the Continuous Lane Change Cnt setting.",
-          "min": 1,
-          "max": 10,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ContinuousLaneChangeInterval",
-          "label": "Continuous Lane Change Interval",
-          "desc": "Adjust the Continuous Lane Change Interval setting.",
-          "min": 0,
-          "max": 30,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AChangeCostStarting",
-          "label": "Lane Change Start Cost",
-          "desc": "Adjust the A Change Cost Starting setting.",
-          "min": 0,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Auto Turn / New Lane"
-        },
-        {
-          "type": "int",
-          "param": "LaneStabTime",
-          "label": "Lane Stabilization Time",
-          "desc": "Adjust the Lane Stab Time setting.",
-          "min": 0,
-          "max": 200,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "NewLaneWidthDiff",
-          "label": "New Lane Width Difference",
-          "desc": "Adjust the New Lane Width Diff setting.",
-          "min": 0,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "AutoEnTurnNewLaneTime",
-          "label": "Auto Enter New Lane Time",
-          "desc": "Adjust the Auto En Turn New Lane Time setting.",
-          "min": 0,
-          "max": 60,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "AutoEnTurnNewLaneTimeH",
-          "label": "Auto Enter New Lane Time (Highway)",
-          "desc": "Adjust the Auto En Turn New Lane Time H setting.",
-          "min": 0,
-          "max": 60,
-          "step": 5
-        },
-        {
-          "type": "bool",
-          "param": "AutoTurnLeft",
-          "label": "Auto Turn Left",
-          "desc": "Adjust the Auto Turn Left setting.",
-          "default": True
-        },
-        {
-          "type": "bool",
-          "param": "StockBlinkerCtrl",
-          "label": "Stock Blinker Control",
-          "desc": "Adjust the Stock Blinker Ctrl setting.",
-          "default": False
-        },
-        {
-          "type": "bool",
-          "param": "ExtBlinkerCtrlTest",
-          "label": "Extended Blinker Test",
-          "desc": "Adjust the Ext Blinker Ctrl Test setting.",
-          "default": False
-        },
-        {
-          "type": "int",
-          "param": "BlinkerMode",
-          "label": "Blinker Mode",
-          "desc": "Adjust the Blinker Mode setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Blind Spot"
-        },
-        {
-          "type": "bool",
-          "param": "DisableBlindSpot",
-          "label": "Disable Blind Spot",
-          "desc": "Adjust the Disable Blind Spot setting.",
-          "default": False
-        },
-        {
-          "type": "int",
-          "param": "DynamicBlindRange",
-          "label": "Dynamic Blind Spot Range",
-          "desc": "Adjust the Dynamic Blind Range setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "DynamicBlindDistance",
-          "label": "Dynamic Blind Spot Distance",
-          "desc": "Adjust the Dynamic Blind Distance setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "BsdDelayTime",
-          "label": "Blind Spot Delay Time",
-          "desc": "Adjust the Bsd Delay Time setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "SideBsdDelayTime",
-          "label": "Side Blind Spot Delay",
-          "desc": "Adjust the Side Bsd Delay Time setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "SideRelDistTime",
-          "label": "Side Relative Distance Time",
-          "desc": "Adjust the Side Rel Dist Time setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "SidevRelDistTime",
-          "label": "Side vRel Distance Time",
-          "desc": "Adjust the Sidev Rel Dist Time setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "SideRadarMinDist",
-          "label": "Side Radar Min Distance",
-          "desc": "Adjust the Side Radar Min Dist setting.",
-          "min": 0,
-          "max": 50,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Lane Line / ONNX"
-        },
-        {
-          "type": "int",
-          "param": "LaneLineCheck",
-          "label": "Lane Line Check",
-          "desc": "Adjust the Lane Line Check setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "OnnxBsdIntervalMs",
-          "label": "ONNX BSD Interval",
-          "desc": "Adjust the Onnx Bsd Interval Ms setting.",
-          "min": 50,
-          "max": 1000,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "OnnxBsdSmoothingMs",
-          "label": "ONNX BSD Smoothing",
-          "desc": "Adjust the Onnx Bsd Smoothing Ms setting.",
-          "min": 0,
-          "max": 1000,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "OnnxBsdThreshold",
-          "label": "ONNX BSD Threshold",
-          "desc": "Adjust the Onnx Bsd Threshold setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "OnnxLaneIntervalMs",
-          "label": "ONNX Lane Interval",
-          "desc": "Adjust the Onnx Lane Interval Ms setting.",
-          "min": 50,
-          "max": 1000,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "OnnxLaneThreshold",
-          "label": "ONNX Lane Threshold",
-          "desc": "Adjust the Onnx Lane Threshold setting.",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        },
-      ]},
-      {"type": "tab", "tab": "Display", "widgets": [
-        {
-          "type": "section",
-          "label": "Steering Suspend"
-        },
-        {
-          "type": "int",
-          "param": "LatSuspendAngleDeg",
-          "label": "Lateral Suspend Angle",
-          "desc": "Adjust the Lat Suspend Angle Deg setting.",
-          "min": 45,
-          "max": 300,
-          "step": 10
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Cluster Map"
-        },
-        {
-          "type": "multiple_button",
-          "param": "ClusterNaviMapTheme",
-          "label": "Cluster Navigation Map Theme",
-          "desc": "Adjust the Cluster Navi Map Theme setting.",
-          "buttons": ["Auto", "Dark", "Light"],
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "multiple_button",
-          "param": "ClusterNaviMapType",
-          "label": "Cluster Navigation Map Type",
-          "desc": "Adjust the Cluster Navi Map Type setting.",
-          "buttons": ["Normal", "Satellite"],
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "multiple_button",
-          "param": "ClusterNaviMapFps",
-          "label": "Cluster Navigation Map FPS",
-          "desc": "Adjust the Cluster Navi Map Fps setting.",
-          "buttons": ["5 FPS", "10 FPS", "20 FPS", "30 FPS"],
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          }
-        },
-        {
-          "type": "bool",
-          "param": "CarrotNaviHudMapProfile",
-          "label": "Carrot Navi HUD Profile",
-          "desc": "Adjust the Carrot Navi Hud Map Profile setting.",
-          "visible_if": {
-            "param": "CarrotEnabled",
-            "eq": "1"
-          },
-          "default": False
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Cluster HUD"
-        },
-        {
-          "type": "bool",
-          "param": "ClusterHud",
-          "label": "Cluster HUD",
-          "desc": "Adjust the Cluster Hud setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudBrightness",
-          "label": "Cluster HUD Brightness",
-          "desc": "Adjust the Cluster Hud Brightness setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudCameraViewMode",
-          "label": "Cluster HUD Camera View Mode",
-          "desc": "Adjust the Cluster Hud Camera View Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudCoreMode",
-          "label": "Cluster HUD Core Mode",
-          "desc": "Adjust the Cluster Hud Core Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "ClusterHudDebug",
-          "label": "Cluster HUD Debug",
-          "desc": "Adjust the Cluster Hud Debug setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ClusterHudEncoder",
-          "label": "Cluster HUD Encoder",
-          "desc": "Adjust the Cluster Hud Encoder setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudLiveFps",
-          "label": "Cluster HUD Live FPS",
-          "desc": "Adjust the Cluster Hud Live Fps setting.",
-          "min": 1,
-          "max": 60,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "ClusterHudMirror",
-          "label": "Cluster HUD Mirror",
-          "desc": "Adjust the Cluster Hud Mirror setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudOrientation",
-          "label": "Cluster HUD Orientation",
-          "desc": "Adjust the Cluster Hud Orientation setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudPanelLayout",
-          "label": "Cluster HUD Panel Layout",
-          "desc": "Adjust the Cluster Hud Panel Layout setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudPriority",
-          "label": "Cluster HUD Priority",
-          "desc": "Adjust the Cluster Hud Priority setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "ClusterHudRadarDisplay",
-          "label": "Cluster HUD Radar Display",
-          "desc": "Adjust the Cluster Hud Radar Display setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudRadarInfo",
-          "label": "Cluster HUD Radar Info",
-          "desc": "Adjust the Cluster Hud Radar Info setting.",
-          "min": 0,
-          "max": 10,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "ClusterHudRadarSourceColor",
-          "label": "Cluster HUD Radar Source Color",
-          "desc": "Adjust the Cluster Hud Radar Source Color setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudScreenMode",
-          "label": "Cluster HUD Screen Mode",
-          "desc": "Adjust the Cluster Hud Screen Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ClusterHudTheme",
-          "label": "Cluster HUD Theme",
-          "desc": "Adjust the Cluster Hud Theme setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "On-Screen Info"
-        },
-        {
-          "type": "bool",
-          "param": "ShowCameraWithCluster",
-          "label": "Show Camera with Cluster",
-          "desc": "Adjust the Show Camera With Cluster setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "ShowCustomBrightness",
-          "label": "Show Custom Brightness",
-          "desc": "Adjust the Show Custom Brightness setting.",
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        {
-          "type": "bool",
-          "param": "ShowDateTime",
-          "label": "Show Date Time",
-          "desc": "Adjust the Show Date Time setting.",
-          "default": 1
-        },
-        {
-          "type": "bool",
-          "param": "ShowDebugUI",
-          "label": "Show Debug UI",
-          "desc": "Adjust the Show Debug U I setting.",
-          "default": 1
-        },
-        {
-          "type": "bool",
-          "param": "ShowDeviceState",
-          "label": "Show Device State",
-          "desc": "Adjust the Show Device State setting.",
-          "default": 1
-        },
-        {
-          "type": "bool",
-          "param": "ShowLaneInfo",
-          "label": "Show Lane Info",
-          "desc": "Adjust the Show Lane Info setting.",
-          "default": 1
-        },
-        {
-          "type": "bool",
-          "param": "ShowModelView",
-          "label": "Show Model View",
-          "desc": "Adjust the Show Model View setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ShowPlotMode",
-          "label": "Show Plot Mode",
-          "desc": "Adjust the Show Plot Mode setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ShowRadarInfo",
-          "label": "Show Radar Info",
-          "desc": "Adjust the Show Radar Info setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ShowRouteInfo",
-          "label": "Show Route Info",
-          "desc": "Adjust the Show Route Info setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ShowTpms",
-          "label": "Show TPMS",
-          "desc": "Adjust the Show Tpms setting.",
-          "default": 1
-        },
-        {
-          "type": "bool",
-          "param": "SoftwareMenu",
-          "label": "Software Menu",
-          "desc": "Adjust the Software Menu setting.",
-          "default": 0
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Sound / Map"
-        },
-        {
-          "type": "int",
-          "param": "SoundVolumeAdjust",
-          "label": "Sound Volume Adjust",
-          "desc": "Adjust the Sound Volume Adjust setting.",
-          "min": 0,
-          "max": 200,
-          "step": 10
-        },
-        {
-          "type": "int",
-          "param": "SoundVolumeAdjustEngage",
-          "label": "Sound Volume Adjust Engage",
-          "desc": "Adjust the Sound Volume Adjust Engage setting.",
-          "min": 0,
-          "max": 200,
-          "step": 10
-        },
-        {
-          "type": "text",
-          "param": "SoundLanguageSetting",
-          "label": "Sound Language",
-          "desc": "Adjust the Sound Language Setting setting."
-        },
-        {
-          "type": "int",
-          "param": "MapboxStyle",
-          "label": "Mapbox Style",
-          "desc": "Adjust the Mapbox Style setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "YouTube Live"
-        },
-        {
-          "type": "bool",
-          "param": "CarrotYouTubeLive",
-          "label": "Carrot YouTube Live",
-          "desc": "Adjust the Carrot You Tube Live setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "CarrotYouTubeQuality",
-          "label": "Carrot YouTube Quality",
-          "desc": "Adjust the Carrot You Tube Quality setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "CarrotYouTubeTimestamp",
-          "label": "Carrot YouTube Timestamp",
-          "desc": "Adjust the Carrot You Tube Timestamp setting.",
-          "default": 0
-        },
-      ]},
-      {"type": "tab", "tab": "Path", "widgets": [
-        {
-          "type": "section",
-          "label": "Path Appearance"
-        },
-        {
-          "type": "int",
-          "param": "ShowPathColor",
-          "label": "Path Color",
-          "desc": "Adjust the Show Path Color setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ShowPathColorCruiseOff",
-          "label": "Path Color Cruise Off",
-          "desc": "Adjust the Show Path Color Cruise Off setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ShowPathColorLane",
-          "label": "Path Color Lane",
-          "desc": "Adjust the Show Path Color Lane setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "bool",
-          "param": "ShowPathEnd",
-          "label": "Show Path End",
-          "desc": "Adjust the Show Path End setting.",
-          "default": 1
-        },
-        {
-          "type": "int",
-          "param": "ShowPathMode",
-          "label": "Path Display Mode",
-          "desc": "Adjust the Show Path Mode setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "ShowPathModeLane",
-          "label": "Path Display Mode Lane",
-          "desc": "Adjust the Show Path Mode Lane setting.",
-          "min": 0,
-          "max": 20,
-          "step": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Trajectory / Lane Line"
-        },
-        {
-          "type": "bool",
-          "param": "CarrotTireTrajectory",
-          "label": "Tire Trajectory",
-          "desc": "Adjust the Carrot Tire Trajectory setting.",
-          "default": 0
-        },
-        {
-          "type": "int",
-          "param": "UseLaneLineCurveSpeed",
-          "label": "Use Lane Line Curve Speed",
-          "desc": "Adjust the Use Lane Line Curve Speed setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "UseLaneLineSpeed",
-          "label": "Use Lane Line Speed",
-          "desc": "Adjust the Use Lane Line Speed setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-      ]},
-      {"type": "tab", "tab": "Vehicle", "widgets": [
-        {
-          "type": "section",
-          "label": "Driver / Safety"
-        },
-        {
-          "type": "bool",
-          "param": "DisableDM",
-          "label": "Disable Driver Monitoring",
-          "desc": "Adjust the Disable D M setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "DisableMinSteerSpeed",
-          "label": "Disable Min Steer Speed",
-          "desc": "Adjust the Disable Min Steer Speed setting.",
-          "default": 0
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Vehicle Features"
-        },
-        {
-          "type": "bool",
-          "param": "HyundaiCameraSCC",
-          "label": "Hyundai Camera SCC",
-          "desc": "Adjust the Hyundai Camera S C C setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "IsLdwsCar",
-          "label": "LDWS Vehicle",
-          "desc": "Adjust the Is Ldws Car setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "HDPuse",
-          "label": "HDP Use",
-          "desc": "Adjust the H D Puse setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "HotspotOnBoot",
-          "label": "Hotspot on Boot",
-          "desc": "Adjust the Hotspot On Boot setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "UseWideCamera",
-          "label": "Use Wide Camera",
-          "desc": "Adjust the Use Wide Camera setting.",
-          "default": 1
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Radar / Tracks"
-        },
-        {
-          "type": "bool",
-          "param": "EnableCornerRadar",
-          "label": "Enable Corner Radar",
-          "desc": "Adjust the Enable Corner Radar setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "EnableRadarTracks",
-          "label": "Enable Radar Tracks",
-          "desc": "Adjust the Enable Radar Tracks setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "EnableSpeedTF",
-          "label": "Enable Speed TF",
-          "desc": "Adjust the Enable Speed T F setting.",
-          "default": 0
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Comfort"
-        },
-        {
-          "type": "bool",
-          "param": "MuteDoor",
-          "label": "Mute Door",
-          "desc": "Adjust the Mute Door setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "MuteSeatbelt",
-          "label": "Mute Seatbelt",
-          "desc": "Adjust the Mute Seatbelt setting.",
-          "default": 0
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Driving Data"
-        },
-        {
-          "type": "bool",
-          "param": "RecordRoadCam",
-          "label": "Record Road Camera",
-          "desc": "Adjust the Record Road Cam setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ShareData",
-          "label": "Share Data",
-          "desc": "Adjust the Share Data setting.",
-          "default": 0
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Timeouts"
-        },
-        {
-          "type": "int",
-          "param": "MaxAngleFrames",
-          "label": "Max Angle Frames",
-          "desc": "Adjust the Max Angle Frames setting.",
-          "min": 0,
-          "max": 200,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "MaxTimeOffroadMin",
-          "label": "Max Time Offroad (min)",
-          "desc": "Adjust the Max Time Offroad Min setting.",
-          "min": 0,
-          "max": 600,
-          "step": 5
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Driving Mode"
-        },
-        {
-          "type": "int",
-          "param": "MyDrivingMode",
-          "label": "My Driving Mode",
-          "desc": "Adjust the My Driving Mode setting.",
-          "min": 0,
-          "max": 3,
-          "step": 1
-        },
-        {
-          "type": "int",
-          "param": "MyDrivingModeAuto",
-          "label": "My Driving Mode Auto",
-          "desc": "Adjust the My Driving Mode Auto setting.",
-          "min": 0,
-          "max": 2,
-          "step": 1
-        },
-      ]},
-      {"type": "tab", "tab": "Developer", "widgets": [
-        {
-          "type": "section",
-          "label": "CAN-FD Debug"
-        },
-        {
-          "type": "bool",
-          "param": "CanfdDebug",
-          "label": "CANFD Debug",
-          "desc": "Adjust the Canfd Debug setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "CanfdHDA2",
-          "label": "CANFD HDA2",
-          "desc": "Adjust the Canfd H D A2 setting.",
-          "default": 0
-        },
-        {
-          "type": "separator"
-        },
-        {
-          "type": "section",
-          "label": "Hardware / Tests"
-        },
-        {
-          "type": "bool",
-          "param": "HardwareC3xLite",
-          "label": "C3x Lite Hardware",
-          "desc": "Adjust the Hardware C3x Lite setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "CruiseButtonTest1",
-          "label": "Cruise Button Test 1",
-          "desc": "Adjust the Cruise Button Test1 setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "CruiseButtonTest2",
-          "label": "Cruise Button Test 2",
-          "desc": "Adjust the Cruise Button Test2 setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "CruiseButtonTest3",
-          "label": "Cruise Button Test 3",
-          "desc": "Adjust the Cruise Button Test3 setting.",
-          "default": 0
-        },
-        {
-          "type": "bool",
-          "param": "ShowDebugLog",
-          "label": "Show Debug Log",
-          "desc": "Adjust the Show Debug Log setting.",
-          "default": False
-        },
-      ]},
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__start",
+        "label": "Start / Engage",
+        "desc": "How openpilot engages cruise and which steering wheel buttons control it.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__cruise",
+        "label": "Cruise & Following",
+        "desc": "Following distance, longitudinal gains, acceleration limits and cruise behavior.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__navi",
+        "label": "Navigation",
+        "desc": "Navigation-based speed control, speed cameras, road limits and speed bumps.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__speed",
+        "label": "Turns & Curves",
+        "desc": "Automatic turn, fork / merge and curve speed control.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__tuning",
+        "label": "Lateral Tuning",
+        "desc": "Steering geometry, MPC costs, torque tuning, lane change and blind spot.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__display",
+        "label": "Display & Sound",
+        "desc": "Cluster HUD, on-screen overlays, sound, YouTube and map style.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__vehicle",
+        "label": "Vehicle",
+        "desc": "Vehicle-specific overrides and convenience options.",
+        "button": "CUSTOMIZE"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "subpanel",
+        "target": "navigation__carrot_tuning__developer",
+        "label": "Developer",
+        "desc": "Debug and diagnostic toggles. Use with caution.",
+        "button": "CUSTOMIZE"
+      },
       {
         "type": "separator"
       },
@@ -2665,6 +646,1074 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "button": "RESET"
       },
     ],
+  },
+
+  "navigation__carrot_tuning__start": {
+    "id": "navigation__carrot_tuning__start",
+    "title": "Start / Engage",
+    "parent": "carrot",
+    "widgets": [{
+        "type": "section",
+        "label": "Auto Start / Cruise"
+      },{
+        "type": "int",
+        "param": "CruiseEcoControl",
+        "label": "Eco Cruise Control",
+        "desc": "Adjust the Cruise Eco Control setting.",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+      },{
+        "type": "separator"
+      },        {"type": "section", "label": "Auto Gas"},    {"type": "int", "param": "AutoGasSyncSpeed", "label": "Auto Gas Sync Speed",
+     "desc": "Speed at which cruise set speed is re-synchronized. Tesla BYD only.",
+    "min": 0, "max": 200, "step": 5}],
+  },
+
+  "navigation__carrot_tuning__cruise": {
+    "id": "navigation__carrot_tuning__cruise",
+    "title": "Cruise & Following",
+    "parent": "carrot",
+    "widgets": [
+      {
+        "type": "section",
+        "label": "Following Distance"
+      },
+            {
+        "type": "int",
+        "param": "CruiseGapLevels",
+        "label": "Cruise Gap Levels",
+        "desc": "How many follow-gap levels the distance button cycles (2-4). A value below the vehicle's maximum shortens the cycle; leave at 4 for the full range.",
+        "min": 2,
+        "max": 4,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeedUnit",
+        "label": "Cruise Speed Unit",
+        "desc": "Speed step unit for the cruise buttons.",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeedUnitBasic",
+        "label": "Cruise Speed Unit (Basic)",
+        "desc": "Basic increment applied on a short press.",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed1",
+        "label": "Cruise Speed 1",
+        "desc": "First preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed2",
+        "label": "Cruise Speed 2",
+        "desc": "Second preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed3",
+        "label": "Cruise Speed 3",
+        "desc": "Third preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed4",
+        "label": "Cruise Speed 4",
+        "desc": "Fourth preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseSpeed5",
+        "label": "Cruise Speed 5",
+        "desc": "Fifth preset cruise speed.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseButtonMode",
+        "label": "Cruise Button Mode",
+        "desc": "How the cruise buttons behave (long-press behaviour and steps).",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseButtonLongDelay",
+        "label": "Cruise Button Long Delay",
+        "desc": "Frames before a press counts as long.",
+        "min": 10,
+        "max": 100,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CancelButtonMode",
+        "label": "Cancel Button Mode",
+        "desc": "What the cancel button does while engaged.",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "LfaButtonMode",
+        "label": "LFA Button Mode",
+        "desc": "What the LFA button does.",
+        "min": 0,
+        "max": 2,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "CruiseOnDist",
+        "label": "Cruise On Distance",
+        "desc": "Distance (percent of a base) at which auto-cruise engages.",
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "ApplyModelSpeed",
+        "label": "Apply Model Speed",
+        "desc": "Blend the model's desired speed into the cruise target (percent).",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "AutoEngage",
+        "label": "Auto Engage",
+        "desc": "Automatically engage lateral control when cruise engages.",
+        "min": 0,
+        "max": 2,
+        "step": 1,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+{
+        "type": "int",
+        "param": "TFollowGap1",
+        "label": "Follow Time Gap 1",
+        "desc": "Adjust the T Follow Gap1 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "TFollowGap2",
+        "label": "Follow Time Gap 2",
+        "desc": "Adjust the T Follow Gap2 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "TFollowGap3",
+        "label": "Follow Time Gap 3",
+        "desc": "Adjust the T Follow Gap3 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "TFollowGap4",
+        "label": "Follow Time Gap 4",
+        "desc": "Adjust the T Follow Gap4 setting.",
+        "min": 50,
+        "max": 300,
+        "step": 5,
+      },
+      
+      {
+        "type": "int",
+        "param": "DynamicTFollowLC",
+        "label": "Dynamic Follow Time on Lane Change",
+        "desc": "Adjust the Dynamic T Follow L C setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Longitudinal Gains"
+      },
+      {
+        "type": "int",
+        "param": "LeadAccelResponse",
+        "label": "Lead Acceleration Response",
+        "desc": "Adjust the Lead Accel Response setting.",
+        "min": -100,
+        "max": 100,
+        "step": 5,
+      },
+      
+      {
+        "type": "int",
+        "param": "TFollowDecelBoost",
+        "label": "Follow Deceleration Boost",
+        "desc": "Adjust the T Follow Decel Boost setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "separator"
+      },
+      
+      
+      
+      
+      
+      
+      
+      
+      ],
+  },
+
+  "navigation__carrot_tuning__navi": {
+    "id": "navigation__carrot_tuning__navi",
+    "title": "Navigation",
+    "parent": "carrot",
+    "widgets": [
+      {
+        "type": "section",
+        "label": "Navigation Speed Control"
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedCtrlMode",
+        "label": "Navigation Speed Ctrl Mode",
+        "desc": "Adjust the Auto Navi Speed Ctrl Mode setting.",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedDecelRate",
+        "label": "Navigation Speed Decel Rate",
+        "desc": "Adjust the Auto Navi Speed Decel Rate setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedSafetyFactor",
+        "label": "Navigation Speed Safety Factor",
+        "desc": "Adjust the Auto Navi Speed Safety Factor setting.",
+        "min": 50,
+        "max": 150,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedCtrlEnd",
+        "label": "Navigation Speed Ctrl End Distance",
+        "desc": "Adjust the Auto Navi Speed Ctrl End setting.",
+        "min": 0,
+        "max": 30,
+        "step": 1,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Stop / Speed Camera"
+      },
+      
+      {
+        "type": "bool",
+        "param": "SameSpiCamFilter",
+        "label": "Same Direction Speed Cam Filter",
+        "desc": "Adjust the Same Spi Cam Filter setting.",
+        "default": True
+      },
+      {
+        "type": "int",
+        "param": "TrafficStopDistanceAdjust",
+        "label": "Traffic Stop Distance Adjust",
+        "desc": "Adjust the Traffic Stop Distance Adjust setting.",
+        "min": -500,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "TrafficLightDetectMode",
+        "label": "Traffic Light Detect Mode",
+        "desc": "Adjust the Traffic Light Detect Mode setting.",
+        "min": 0,
+        "max": 2,
+        "step": 1,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Road Speed Limits"
+      },      {"type": "int", "param": "SpeedFromPCM", "label": "Speed Source PCM",
+       "desc": "BYD only: with 1 the car reports its own ACC set speed over CAN.",
+      "min": 0, "max": 2, "step": 1},
+      {
+        "type": "int",
+        "param": "AutoRoadSpeedLimitOffset",
+        "label": "Road Speed Limit Offset",
+        "desc": "Adjust the Auto Road Speed Limit Offset setting.",
+        "min": -20,
+        "max": 20,
+        "step": 1,
+      },
+      {
+        "type": "int",
+        "param": "RoadType",
+        "label": "Road Type",
+        "desc": "Adjust the Road Type setting.",
+        "min": 0,
+        "max": 2,
+        "step": 1,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Vehicle CAN Speed Arbitration"
+      },      {"type": "int", "param": "VehicleSpeedCameraDistanceTime", "label": "Speed Camera Alert Time",
+       "desc": "Synthesises a camera distance when the car sends only an enforcement speed. 0.1 s units; 60 = 6.0 s.",
+      "min": 10, "max": 200, "step": 1},
+      {
+        "type": "multiple_button",
+        "param": "VehicleNaviCanControl",
+        "label": "Vehicle Navi CAN Control",
+        "desc": "Adjust the Vehicle Navi Can Control setting.",
+        "buttons": ["Off", "Camera/Bump Always", "Camera Always/Bump Route", "Camera/Bump Route"],
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "bool",
+        "param": "VehicleNaviSchoolZoneControl",
+        "label": "School Zone CAN Control",
+        "desc": "Adjust the Vehicle Navi School Zone Control setting.",
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        },
+        "default": False
+      },
+      {
+        "type": "multiple_button",
+        "param": "VehicleSpeedCameraControlMode",
+        "label": "Speed Camera Control Mode",
+        "desc": "Adjust the Vehicle Speed Camera Control Mode setting.",
+        "buttons": ["Off", "Always Apply", "Gas Floor", "Gas Pause"],
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Speed Bumps"
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviRearCameraHoldDistance",
+        "label": "Rear Speed Camera Hold",
+        "desc": "How far past a rear speed camera the limit is held, in centimetres. The phone app drops the limit at the camera, so this prevents speeding back up while still passing it. 100 = 1.00 m.",
+        "min": 0,
+        "max": 300,
+        "step": 10,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedBumpEndDistance",
+        "label": "Speed Bump End Distance",
+        "desc": "Adjust the Auto Navi Speed Bump End Distance setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+        "visible_if": {
+          "param": "CarrotEnabled",
+          "eq": "1"
+        }
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviCountDownMode",
+        "label": "Countdown Mode",
+        "desc": "Adjust the Auto Navi Count Down Mode setting.",
+        "min": 0,
+        "max": 2,
+        "step": 1,
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedBumpSpeed",
+        "label": "Speed Bump Target Speed",
+        "desc": "Adjust the Auto Navi Speed Bump Speed setting.",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+      },
+      {
+        "type": "int",
+        "param": "AutoNaviSpeedBumpTime",
+        "label": "Speed Bump Hold Time",
+        "desc": "Adjust the Auto Navi Speed Bump Time setting.",
+        "min": 0,
+        "max": 20,
+        "step": 1,
+      }],
+  },
+
+  "navigation__carrot_tuning__speed": {
+    "id": "navigation__carrot_tuning__speed",
+    "title": "Turns & Curves",
+    "parent": "carrot",
+    "widgets": [
+      {
+        "type": "section",
+        "label": "ATC Turn Control"
+      },
+      {
+        "type": "int",
+        "param": "AutoTurnControl",
+        "label": "Auto Turn Control",
+        "desc": "Adjust the Auto Turn Control setting.",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+      },
+      {
+        "type": "int",
+        "param": "AutoTurnControlSpeedTurn",
+        "label": "Auto Turn Speed Threshold",
+        "desc": "Adjust the Auto Turn Control Speed Turn setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoTurnControlTurnEnd",
+        "label": "Auto Turn End Distance",
+        "desc": "Adjust the Auto Turn Control Turn End setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "bool",
+        "param": "AutoTurnMapChange",
+        "label": "Auto Turn on Navi Lane Change",
+        "desc": "Adjust the Auto Turn Map Change setting.",
+      },
+      {
+        "type": "int",
+        "param": "AutoTurnDistOffset",
+        "label": "Auto Turn Distance Offset",
+        "desc": "Adjust the Auto Turn Dist Offset setting.",
+        "min": -200,
+        "max": 200,
+        "step": 10,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Fork Control"
+      },
+      {
+        "type": "int",
+        "param": "AutoForkDistOffset",
+        "label": "Fork Merge Distance Offset",
+        "desc": "Adjust the Auto Fork Dist Offset setting.",
+        "min": -200,
+        "max": 200,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoForkDistOffsetH",
+        "label": "Fork Merge Distance Offset (Highway)",
+        "desc": "Adjust the Auto Fork Dist Offset H setting.",
+        "min": -200,
+        "max": 200,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoDoForkBlinkerDist",
+        "label": "Fork Blinker Trigger Distance",
+        "desc": "Adjust the Auto Do Fork Blinker Dist setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoDoForkBlinkerDistH",
+        "label": "Fork Blinker Trigger Distance (Highway)",
+        "desc": "Adjust the Auto Do Fork Blinker Dist H setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoDoForkNavDist",
+        "label": "Fork Navi Trigger Distance",
+        "desc": "Adjust the Auto Do Fork Nav Dist setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoDoForkNavDistH",
+        "label": "Fork Navi Trigger Distance (Highway)",
+        "desc": "Adjust the Auto Do Fork Nav Dist H setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoDoForkDecalDist",
+        "label": "Fork Decel Trigger Distance",
+        "desc": "Adjust the Auto Do Fork Decal Dist setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoDoForkDecalDistH",
+        "label": "Fork Decel Trigger Distance (Highway)",
+        "desc": "Adjust the Auto Do Fork Decal Dist H setting.",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoForkDecalRate",
+        "label": "Fork Decel Rate",
+        "desc": "Adjust the Auto Fork Decal Rate setting.",
+        "min": 0,
+        "max": 300,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoForkDecalRateH",
+        "label": "Fork Decel Rate (Highway)",
+        "desc": "Adjust the Auto Fork Decal Rate H setting.",
+        "min": 0,
+        "max": 300,
+        "step": 10,
+      },
+      {
+        "type": "int",
+        "param": "AutoForkSpeedMin",
+        "label": "Fork Minimum Speed",
+        "desc": "Adjust the Auto Fork Speed Min setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoForkSpeedMinH",
+        "label": "Fork Minimum Speed (Highway)",
+        "desc": "Adjust the Auto Fork Speed Min H setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoKeepForkSpeed",
+        "label": "Fork Keep Speed",
+        "desc": "Adjust the Auto Keep Fork Speed setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoKeepForkSpeedH",
+        "label": "Fork Keep Speed (Highway)",
+        "desc": "Adjust the Auto Keep Fork Speed H setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Turn Speed"
+      },
+      {
+        "type": "int",
+        "param": "MapTurnSpeedFactor",
+        "label": "Map Turn Speed Factor",
+        "desc": "Adjust the Map Turn Speed Factor setting.",
+        "min": 50,
+        "max": 150,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "TurnSpeedControlMode",
+        "label": "Turn Speed Control Mode",
+        "desc": "Adjust the Turn Speed Control Mode setting.",
+        "min": 0,
+        "max": 3,
+        "step": 1,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Curve Speed"
+      },
+      {
+        "type": "int",
+        "param": "AutoCurveSpeedFactor",
+        "label": "Curve Speed Factor",
+        "desc": "How much lateral acceleration to allow below 80 km/h, in percent. Higher takes curves faster. 100 is neutral. Used by Smart Cruise Control (Vision).",
+        "min": 50,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoCurveSpeedFactorH",
+        "label": "Curve Speed Factor (Highway)",
+        "desc": "How much lateral acceleration to allow at or above 80 km/h, in percent. Higher takes curves faster. 100 is neutral. Used by Smart Cruise Control (Vision).",
+        "min": 50,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoCurveSpeedAggressivenessH",
+        "label": "Highway Curve Aggressiveness",
+        "desc": "How early to react to curves on the highway. Lower reacts to gentler curves. Used by Smart Cruise Control (Vision).",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },
+      {
+        "type": "int",
+        "param": "AutoCurveSpeedAggressiveness",
+        "label": "Normal Road Curve Aggressiveness",
+        "desc": "How early to react to curves on normal roads. Lower reacts to gentler curves. Used by Smart Cruise Control (Vision).",
+        "min": 0,
+        "max": 200,
+        "step": 5
+      },
+      {
+        "type": "int",
+        "param": "AutoCurveSpeedLowerLimit",
+        "label": "Curve Speed Lower Limit",
+        "desc": "Adjust the Auto Curve Speed Lower Limit setting.",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "section",
+        "label": "Road Limit Raising"
+      },
+      {
+        "type": "bool",
+        "param": "AutoUpRoadLimit",
+        "label": "Auto Up Road Limit",
+        "desc": "Adjust the Auto Up Road Limit setting.",
+        "default": False
+      },
+      {
+        "type": "int",
+        "param": "AutoUpRoadLimit40KMH",
+        "label": "Auto Up 40 km/h Road Limit",
+        "desc": "Adjust the Auto Up Road Limit40 K M H setting.",
+        "min": 0,
+        "max": 60,
+        "step": 5
+      },
+      {
+        "type": "bool",
+        "param": "AutoUpHighwayRoadLimit",
+        "label": "Auto Up Highway Limit",
+        "desc": "Adjust the Auto Up Highway Road Limit setting.",
+        "default": False
+      },
+      {
+        "type": "int",
+        "param": "AutoUpHighwayRoadLimit40KMH",
+        "label": "Auto Up 40 km/h Highway Limit",
+        "desc": "Adjust the Auto Up Highway Road Limit40 K M H setting.",
+        "min": 0,
+        "max": 60,
+        "step": 5
+      }],
+  },
+
+  "navigation__carrot_tuning__tuning": {
+    "id": "navigation__carrot_tuning__tuning",
+    "title": "Lateral Tuning",
+    "parent": "carrot",
+    "widgets": [{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Blind Spot"
+      },{
+        "type": "bool",
+        "param": "DisableBlindSpot",
+        "label": "Disable Blind Spot",
+        "desc": "Adjust the Disable Blind Spot setting.",
+        "default": False
+      },{
+        "type": "int",
+        "param": "DynamicBlindRange",
+        "label": "Dynamic Blind Spot Range",
+        "desc": "Adjust the Dynamic Blind Range setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },{
+        "type": "int",
+        "param": "DynamicBlindDistance",
+        "label": "Dynamic Blind Spot Distance",
+        "desc": "Adjust the Dynamic Blind Distance setting.",
+        "min": 0,
+        "max": 200,
+        "step": 5,
+      },{
+        "type": "int",
+        "param": "SideBsdDelayTime",
+        "label": "Side Blind Spot Delay",
+        "desc": "Adjust the Side Bsd Delay Time setting.",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+      },{
+        "type": "int",
+        "param": "SideRelDistTime",
+        "label": "Side Relative Distance Time",
+        "desc": "Adjust the Side Rel Dist Time setting.",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+      },{
+        "type": "int",
+        "param": "SidevRelDistTime",
+        "label": "Side vRel Distance Time",
+        "desc": "Adjust the Sidev Rel Dist Time setting.",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+      }],
+  },
+
+  "navigation__carrot_tuning__display": {
+    "id": "navigation__carrot_tuning__display",
+    "title": "Display & Sound",
+    "parent": "carrot",
+    "widgets": [{
+        "type": "section",
+        "label": "Steering Suspend"
+      },{
+        "type": "int",
+        "param": "LatSuspendAngleDeg",
+        "label": "Lateral Suspend Angle",
+        "desc": "Steering angle at which lateral control pauses while you steer. 300 effectively disables it. CarrotPilot declares 0.1-degree units for this parameter, but its code - like this port - compares the raw value against the steering angle, so the number reads as degrees here.",
+        "min": 45,
+        "max": 300,
+        "step": 1,
+      },{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Cluster Map"
+      },{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Cluster HUD (external display required)"
+      }],
+  },
+
+
+
+  "navigation__carrot_tuning__vehicle": {
+    "id": "navigation__carrot_tuning__vehicle",
+    "title": "Vehicle",
+    "parent": "carrot",
+    "widgets": [{
+        "type": "section",
+        "label": "Radar / Tracks"
+      },    {"type": "bool", "param": "EnableRadarTracks", "label": "Enable Radar Tracks",
+    "desc": "BYD only: feed corner-radar tracks into the radar interface.", "default": 0},
+      {"type": "int", "param": "SoundVolumeAdjust", "label": "Alert Volume",
+       "desc": "Scale every alert sound, in percent. 100 keeps the current loudness.",
+       "min": 5, "max": 200, "step": 5},
+      {"type": "int", "param": "SoundVolumeAdjustEngage", "label": "Engage Chime Volume",
+       "desc": "Scale the engage / disengage / reverse chimes, in percent.",
+       "min": 5, "max": 200, "step": 5},{
+        "type": "int",
+        "param": "EnableSpeedTF",
+        "label": "Speed-dependent Follow Time",
+        "desc": "Shrink the follow distance as speed rises. 0 disables it, 1 scales linearly, and -1/-2/-3 select speed breakpoint profiles at 30/60/90, 40/80/120 and 50/100/150 km/h. The code reads all four modes; the control used to be a toggle, which could only write 0 or 1 and made the profiles unreachable.",
+        "min": -3,
+        "max": 1,
+        "step": 1
+      },{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Driving Mode"
+      },{
+        "type": "int",
+        "param": "MyDrivingMode",
+        "label": "My Driving Mode",
+        "desc": "Adjust the My Driving Mode setting.",
+        "min": 1,
+        "max": 4,
+        "step": 1,
+      },{
+        "type": "int",
+        "param": "MyDrivingModeAuto",
+        "label": "My Driving Mode Auto",
+        "desc": "Adjust the My Driving Mode Auto setting.",
+        "min": 0,
+        "max": 2,
+        "step": 1
+      }],
+  },
+
+  "navigation__carrot_tuning__developer": {
+    "id": "navigation__carrot_tuning__developer",
+    "title": "Developer",
+    "parent": "carrot",
+    "widgets": [{
+        "type": "section",
+        "label": "Hardware / Tests"
+      },{
+        "type": "bool",
+        "param": "ShowDebugLog",
+        "label": "Show Debug Log",
+        "desc": "Adjust the Show Debug Log setting.",
+        "default": False
+      },{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Navigation Control (advanced)"
+      },{
+        "type": "bool",
+        "param": "CarrotTrafficCongestionEnabled",
+        "label": "Traffic Congestion Slowdown",
+        "desc": "Fold the phone app traffic congestion report into map-based cruise control. Only ever lowers the target speed. Needs Smart Cruise Control - Map to be on as well.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "CarrotNavLaneGuideBlockEnabled",
+        "label": "Lane Guide Blocking",
+        "desc": "Let the phone app guided-lane arrows block lane changes toward non-guided lanes. Only ever adds blocking.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydBsdType2",
+        "label": "BYD BSD Type 2",
+        "desc": "Use the second blind-spot detection variant on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydLatUseSiglin",
+        "label": "BYD Lateral Signal Lines",
+        "desc": "Use signal-line based lateral state on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydLowSpdLong",
+        "label": "BYD Low Speed Longitudinal",
+        "desc": "Allow longitudinal control at low speed on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydModifiedStockLong",
+        "label": "BYD Modified Stock Longitudinal",
+        "desc": "Run the modified stock longitudinal path on BYD platforms.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "BydMpcTsr",
+        "label": "BYD MPC TSR",
+        "desc": "Feed traffic-sign recognition into the BYD MPC.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "EnableExtRadar",
+        "label": "External Radar",
+        "desc": "Use an external radar unit instead of the stock one.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "UseRedPanda",
+        "label": "Use Red Panda",
+        "desc": "Select the BYD safety configuration for red panda hardware.",
+        "default": False
+      },{
+        "type": "int",
+        "param": "SpeedCorrect30",
+        "label": "Speed Correct @ 30 km/h",
+        "desc": "Dash-speed correction at 30 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      },{
+        "type": "int",
+        "param": "SpeedCorrect60",
+        "label": "Speed Correct @ 60 km/h",
+        "desc": "Dash-speed correction at 60 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      },{
+        "type": "int",
+        "param": "SpeedCorrect90",
+        "label": "Speed Correct @ 90 km/h",
+        "desc": "Dash-speed correction at 90 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      },{
+        "type": "int",
+        "param": "SpeedCorrect120",
+        "label": "Speed Correct @ 120 km/h",
+        "desc": "Dash-speed correction at 120 km/h, in tenths of km/h (10 = +1.0 km/h). Interpolated in between.",
+        "min": -50,
+        "max": 50,
+        "step": 1,
+        "default": 0
+      }],
   },
 
   "steering__mads": {
@@ -2835,7 +1884,8 @@ def panel_schema() -> dict[str, Any]:
   }
 
 
-def _collect_widget_keys(widgets: list[dict], keys: list[str]) -> None:
+def _collect_widget_keys(widgets: list[dict], keys: list[str], _seen: set[str] | None = None) -> None:
+  seen = _seen if _seen is not None else set()
   for w in widgets:
     for dep_key in ("visible_if", "advanced_if"):
       dep = w.get(dep_key)
@@ -2848,7 +1898,18 @@ def _collect_widget_keys(widgets: list[dict], keys: list[str]) -> None:
           keys.append(sk)
       continue
     if w.get("type") == "tab" and "widgets" in w:
-      _collect_widget_keys(w["widgets"], keys)
+      _collect_widget_keys(w["widgets"], keys, seen)
+      continue
+    # A subpanel owns its own widgets, so its params belong to the parent's
+    # coverage too - otherwise moving widgets into a subpanel would silently
+    # drop them from panel_param_keys(). `seen` guards against a cycle.
+    if w.get("type") == "subpanel" and w.get("target"):
+      target = w["target"]
+      if target not in seen:
+        seen.add(target)
+        sub = get_panel(target)
+        if sub:
+          _collect_widget_keys(sub.get("widgets", []), keys, seen)
       continue
     key = w.get("param")
     if key:

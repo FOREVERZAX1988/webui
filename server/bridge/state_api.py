@@ -608,9 +608,14 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     screensaver_enabled = p.get_bool("ScreenSaverEnabled")
     screensaver_timeout_sec = int(p.get("ScreenSaverTimeout", return_default=True) or 300)
     speed_limit_mode = int(p.get("SpeedLimitMode", return_default=True) or 0)
-    amap_enabled = bool(p.get_bool("AmapEnabled"))
+    # AmapMapDataEnabled is what the UI actually toggles; AmapEnabled is the deprecated
+    # param that mapd_mode migrates from, kept as a fallback for installs that have not
+    # run the migration. Reading only AmapEnabled made the panel report "OSM" while Amap
+    # was in fact the active provider.
+    amap_enabled = bool(p.get_bool("AmapMapDataEnabled") or p.get_bool("AmapEnabled"))
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
+    carrot_web_enabled = p.get_bool("CarrotWebEnabled")
   except Exception:
     pass
 
@@ -682,6 +687,21 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         sp_hud["scc_vision_active"] = bool(getattr(vision, "active", False))
         sp_hud["scc_map_enabled"] = bool(getattr(map_, "enabled", False))
         sp_hud["scc_map_active"] = bool(getattr(map_, "active", False))
+
+        # The targets these two controllers are actually commanding, in m/s, and only
+        # while active. V_CRUISE_UNSET (255) means "not constraining", so it is filtered
+        # out rather than shown - a sentinel must never render as a speed.
+        #
+        # Why the HUD needs these: carrot also computes its own curve speed
+        # (carrot_functions.vturn_speed) and publishes it as vTurnSpeed / desiredSpeed.
+        # That computation is display-only and uses a different model - max orientation
+        # rate against a fixed 1.9 m/s^2 target - from the controller that actually
+        # executes, which is SCC-V at the 97th-percentile curvature against a tuned
+        # a_lat ceiling. Showing only carrot's number let the HUD disagree with the car.
+        for key, ctrl in (("scc_vision", vision), ("scc_map", map_)):
+          v_raw = float(getattr(ctrl, "vTarget", 0.0) or 0.0)
+          active = bool(getattr(ctrl, "active", False))
+          sp_hud[f"{key}_v_target_ms"] = v_raw if active and 0.0 < v_raw < 255.0 else 0.0
       e2e = getattr(lp_sp, "e2eAlerts", None)
       if e2e is not None:
         sp_hud["e2e_green_light"] = bool(getattr(e2e, "greenLightAlert", False))
@@ -735,6 +755,10 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         "near_dir_name": _txt("szNearDirName"),
         "desired_speed": _num("desiredSpeed"),
         "desired_source": _txt("desiredSource"),
+        # Pre-resolved by carrot_man: the driver-facing reason and its colour mode.
+        # The raw token above stays for diagnostics; the UI shows these.
+        "desired_source_label": _txt("desiredSourceLabel"),
+        "desired_source_color": _num("desiredSourceColor"),
         "traffic_state": _num("trafficState"),
         "traffic_countdown": _num("trafficCountdown"),
         "left_sec": _num("leftSec"),
@@ -743,9 +767,86 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         "goal_name": _txt("szGoalName"),
         "sdi_descr": _txt("szSdiDescr"),
         "road_cate": _num("roadCate"),
+        # Service area / toll gate hint (App §2.3 SAPA_* group).
+        "sapa_name": _txt("sapaName"),
+        "sapa_dist": _num("sapaDist"),
+        "sapa_type": _num("sapaType"),
+        "sapa_cnt": _num("sapaCnt"),
+        # TMC congestion summary (App §2.5). The per-segment arrays ride as JSON
+        # strings on carrotManSP; expose them verbatim so the HUD can render the
+        # congestion bar without a second schema change.
+        "tmc_overall_status": _num("tmcOverallStatus"),
+        "tmc_total_distance": _num("tmcTotalDistance"),
+        "tmc_residual_distance": _num("tmcResidualDistance"),
+        "tmc_segment_count": _num("tmcSegmentCount"),
+        "tmc_segment_statuses": _txt("tmcSegmentStatuses"),
+        "tmc_segment_distances": _txt("tmcSegmentDistances"),
+        # Guided-lane arrow codes (App §2.2).
+        "nav_lane_guide": _txt("navLaneGuide"),
+        "nav_lane_guide_cnt": _num("navLaneGuideCnt"),
         "panel_side": carrot_panel_side,
         "panel_opacity": max(0, min(100, carrot_panel_opacity)),
       }
+
+    # navInstructionCarrotSP - the fused stock-navd + 7714 guidance stream.
+    #
+    # carrot_man publishes this but nothing consumed it, so the webui HUD was missing
+    # what only this service carries: the multi-step manoeuvre list and the per-lane
+    # guidance arrows. Note carrot_man does NOT publish carStateSP, so this is the only
+    # route for those two. Everything below is display-only; no control reads it.
+    #
+    # capnp List fields are not JSON-serialisable, so they are flattened by hand; a
+    # malformed or absent service must leave the key out entirely rather than raise.
+    if sm.valid.get("navInstructionCarrotSP"):
+      try:
+        ni = sm["navInstructionCarrotSP"]
+
+        def _enum_int(value, default: int = 0) -> int:
+          # capnp enums surface as either an int or an "Enum.name" string depending on
+          # how they were built; normalise both to an int.
+          if isinstance(value, int):
+            return value
+          text = str(value)
+          return int(text.rsplit(".", 1)[-1]) if text.isdigit() else default
+
+        def _enum_name(value) -> str:
+          text = str(value)
+          return text.rsplit(".", 1)[-1] if "." in text else text
+
+        maneuvers = []
+        for mv in getattr(ni, "allManeuvers", []):
+          maneuvers.append({
+            "distance": float(getattr(mv, "distance", 0.0) or 0.0),
+            "type": str(getattr(mv, "type", "") or ""),
+            "modifier": str(getattr(mv, "modifier", "") or ""),
+          })
+
+        lanes = []
+        for ln in getattr(ni, "lanes", []):
+          lanes.append({
+            "directions": [_enum_int(d) for d in getattr(ln, "directions", [])],
+            "active": bool(getattr(ln, "active", False)),
+            "active_direction": _enum_int(getattr(ln, "activeDirection", 0)),
+          })
+
+        sp_hud["carrot_instruction"] = {
+          "valid": True,
+          "primary_text": str(getattr(ni, "maneuverPrimaryText", "") or ""),
+          "secondary_text": str(getattr(ni, "maneuverSecondaryText", "") or ""),
+          "maneuver_distance": float(getattr(ni, "maneuverDistance", 0.0) or 0.0),
+          "maneuver_type": str(getattr(ni, "maneuverType", "") or ""),
+          "maneuver_modifier": str(getattr(ni, "maneuverModifier", "") or ""),
+          "distance_remaining": float(getattr(ni, "distanceRemaining", 0.0) or 0.0),
+          "time_remaining": float(getattr(ni, "timeRemaining", 0.0) or 0.0),
+          "time_remaining_typical": float(getattr(ni, "timeRemainingTypical", 0.0) or 0.0),
+          "speed_limit": float(getattr(ni, "speedLimit", 0.0) or 0.0),
+          "speed_limit_sign": _enum_name(getattr(ni, "speedLimitSign", "")),
+          "show_full": bool(getattr(ni, "showFull", False)),
+          "maneuvers": maneuvers,
+          "lanes": lanes,
+        }
+      except Exception as e:
+        sp_hud["carrot_instruction"] = {"valid": False, "error": f"{type(e).__name__}: {e}"}
     # Unified longitudinal control diagnostics.
     if sm.valid.get("longitudinalPlanSP"):
       lp_sp = sm["longitudinalPlanSP"]
@@ -1012,6 +1113,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "developer_ui": developer_ui,
     "dev_ui": dev_ui,
     "recording_audio": recording_audio,
+    "carrot_web_enabled": carrot_web_enabled,
     "torque_bar": torque_bar,
     "torque_utilization": torque_utilization,
     "steering_angle_deg": steering_angle_deg,

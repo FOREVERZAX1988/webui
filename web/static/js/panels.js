@@ -2156,7 +2156,23 @@ function renderSubpanelRow(w) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "opui-simple-btn";
-  btn.textContent = t(w.label || w.button);
+  // `label` names the destination, `desc` explains it. When a desc is present the
+  // button becomes a title/description block so subpanel entries can read like the
+  // native settings rows (title + description) instead of a bare button.
+  const desc = w.desc ? t(w.desc) : "";
+  if (desc) {
+    btn.classList.add("opui-simple-btn--with-desc");
+    const title = document.createElement("span");
+    title.className = "opui-simple-btn-title";
+    title.textContent = t(w.label || w.button);
+    const sub = document.createElement("span");
+    sub.className = "opui-simple-btn-desc";
+    sub.textContent = desc;
+    btn.appendChild(title);
+    btn.appendChild(sub);
+  } else {
+    btn.textContent = t(w.label || w.button);
+  }
   if (w.target) btn.dataset.subpanel = w.target;
   if (w.offroad_only) btn.dataset.offroadOnly = "1";
   if (w.requires?.param) {

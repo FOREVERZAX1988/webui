@@ -3,42 +3,22 @@
 from __future__ import annotations
 
 import ast
+import re
 import unittest
-from pathlib import Path
 
 from webui.server.bridge import carrot_tuning_api
-from webui.server.bridge.panel_catalog import panel_param_keys
+from webui.server.bridge.panel_catalog import (CARROT_TUNING_UNAVAILABLE, SUBPANELS,
+                                                    get_panel, panel_param_keys)
 
-# Carrot tuning keys that are intentionally NOT rendered as user-tunable
-# widgets (e.g. a cross-process diagnostic sink written by the carrot daemon).
-_PANEL_EXCLUDED = {"CarrotException"}
-
-
-_CONFIG_RELPATHS = (
-  Path("sunnypilot") / "carrot" / "config.py",          # nested: <repo>/openpilot/sunnypilot/carrot/config.py
-  Path("openpilot") / "sunnypilot" / "carrot" / "config.py",  # flat: <repo>/sunnypilot/carrot/config.py
-)
-
-
-def _find_config_py() -> Path:
-  """Locate sunnypilot/carrot/config.py from the checkout this test lives in.
-
-  The path must be derived from the repo, never hardcoded to a developer machine
-  (the previous literal pointed at a Windows dev checkout, so these tests could
-  never run on the device).
-  """
-  for base in Path(__file__).resolve().parents:
-    for rel in _CONFIG_RELPATHS:
-      candidate = base / rel
-      if candidate.is_file():
-        return candidate
-  raise FileNotFoundError(
-    f"sunnypilot/carrot/config.py not found above {Path(__file__).resolve()}")
+# Carrot tuning keys that are intentionally NOT rendered as user-tunable widgets:
+# a cross-process diagnostic sink written by the carrot daemon, plus every param
+# that no code in this tree consumes (see CARROT_TUNING_UNAVAILABLE for the reasons).
+_PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE)
 
 
 def _config_nav_param_keys() -> set[str]:
   """Parse _DEFAULT_NAV_PARAMS keys from config.py without importing openpilot."""
-  src = _find_config_py().read_text(encoding="utf-8")
+  src = open(r"E:\sp\openpilot\sunnypilot\carrot\config.py", encoding="utf-8").read()
   for node in ast.walk(ast.parse(src)):
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) \
        and node.target.id == "_DEFAULT_NAV_PARAMS":
@@ -51,25 +31,38 @@ def _config_nav_param_keys() -> set[str]:
 
 
 class PanelCatalogParamTests(unittest.TestCase):
-  """Verify P1 carrot params are exposed in the webui."""
+  """Verify the P1 carrot params that are actually wired are exposed in the webui.
+
+  VehicleSpeedCameraDistanceTime was in this list but no code reads it, so it is now
+  hidden like the rest of the inert params - exposing it would advertise a control
+  that cannot do anything. It stays registered, so re-adding it here is all that is
+  needed once a reader exists.
+  """
 
   _P1_PARAMS = {
     "VehicleNaviCanControl",
     "VehicleNaviSchoolZoneControl",
     "VehicleSpeedCameraControlMode",
-    "VehicleSpeedCameraDistanceTime",
     "AutoNaviSpeedBumpEndDistance",
     "LatSuspendAngleDeg",
-    "ClusterNaviMapTheme",
-    "ClusterNaviMapType",
-    "ClusterNaviMapFps",
-    "CarrotNaviHudMapProfile",
+  }
+
+  # Removed from the panel: sp has no cluster subsystem, so these were registered,
+  # exposed in both UIs, and read by nothing.
+  _CLUSTER_HIDDEN = {
+    "ClusterNaviMapTheme", "ClusterNaviMapType", "ClusterNaviMapFps",
+    "CarrotNaviHudMapProfile", "ClusterHud", "ClusterHudTheme",
   }
 
   def test_carrot_tuning_exposes_p1_params(self):
     keys = set(panel_param_keys("navigation__carrot_tuning"))
     missing = self._P1_PARAMS - keys
     self.assertFalse(missing, f"navigation__carrot_tuning missing params: {sorted(missing)}")
+
+  def test_carrot_tuning_hides_cluster_params(self):
+    keys = set(panel_param_keys("navigation__carrot_tuning"))
+    leaked = self._CLUSTER_HIDDEN & keys
+    self.assertFalse(leaked, f"cluster params are exposed again: {sorted(leaked)}")
 
 
 class CarrotTuningFullCoverageTests(unittest.TestCase):
@@ -93,6 +86,108 @@ class CarrotTuningFullCoverageTests(unittest.TestCase):
     # CarrotEnabled is a master toggle dependency, not a carrot tuning key.
     orphan = panel_keys - api_keys - {"CarrotEnabled"}
     self.assertFalse(orphan, f"panel params not in API: {sorted(orphan)}")
+
+
+class CarrotTuningLayoutTests(unittest.TestCase):
+  """The carrot tuning page is a root list of groups, not a tab strip.
+
+  It used to be the only panel in the catalogue using the `tabs` widget. It now
+  mirrors the native settings page: a root list of subpanel rows, one per group,
+  separated by `separator` (the webui equivalent of LineSeparatorSP).
+  """
+
+  ROOT = "carrot"
+
+  def test_root_uses_subpanel_rows_not_tabs(self):
+    widgets = get_panel(self.ROOT)["widgets"]
+    types = [w.get("type") for w in widgets]
+    self.assertNotIn("tabs", types, "the tab strip is gone; use subpanel rows")
+    self.assertNotIn("tab", types, "tab panes are gone; use subpanel rows")
+
+  def test_every_subpanel_row_targets_a_real_panel(self):
+    widgets = get_panel(self.ROOT)["widgets"]
+    rows = [w for w in widgets if w.get("type") == "subpanel"]
+    # 8 groups: "Path Rendering" lost every item when the params with no reader
+    # were hidden, so the group and its row were removed rather than left empty.
+    self.assertEqual(len(rows), 8, f"expected 8 group rows, got {len(rows)}")
+    for w in rows:
+      target = w["target"]
+      self.assertIn(target, SUBPANELS, f"{target} is not a registered subpanel")
+      self.assertTrue(get_panel(target), f"{target} resolves to nothing")
+      self.assertEqual(get_panel(target).get("parent"), self.ROOT,
+                       f"{target} must declare parent={self.ROOT} so the back button renders")
+
+  def test_group_rows_are_separated_and_described(self):
+    widgets = get_panel(self.ROOT)["widgets"]
+    row_indices = [i for i, w in enumerate(widgets) if w.get("type") == "subpanel"]
+    self.assertEqual(len(row_indices), 8, "expected 8 group rows")
+    self.assertNotEqual(widgets[0].get("type"), "separator", "the list must not open with a separator")
+    for i in range(len(row_indices) - 1):
+      between = widgets[row_indices[i] + 1:row_indices[i + 1]]
+      self.assertEqual(sum(1 for w in between if w.get("type") == "separator"), 1,
+                       "exactly one separator between each pair of group rows")
+    for idx in row_indices:
+      w = widgets[idx]
+      self.assertTrue(w.get("desc"), f"{w['target']} has no description")
+      self.assertTrue(w.get("label"), f"{w['target']} has no label")
+
+  def test_no_group_panel_is_empty(self):
+    widgets = get_panel(self.ROOT)["widgets"]
+    for w in (x for x in widgets if x.get("type") == "subpanel"):
+      sub = get_panel(w["target"])["widgets"]
+      self.assertTrue(sub, f"{w['target']} has no widgets")
+class CarrotHiddenParamsAreReallyDeadTests(unittest.TestCase):
+  """A param hidden from the UI must not be read anywhere in the tree.
+
+  The first version of the dead-param scan only walked `openpilot/**`, so readers
+  living inside the submodules were invisible and four working params got hidden -
+  three read by opendbc's BYD port (opendbc_repo/opendbc/car/byd/carcontroller.py and
+  radar_interface.py) and one by carrot_serv. This test scans the submodule trees too.
+  """
+
+  # Every source tree that ships and can read a param. `openpilot` is included so the
+  # test also catches a hidden param that gained a reader since it was hidden.
+  ROOTS = ("openpilot", "opendbc_repo", "panda", "msgq_repo", "system")
+  EXTS = (".py", ".cc", ".h", ".cpp", ".hpp", ".pyx")
+  # files that legitimately name every param without reading it
+  SURFACES = ("carrot_tuning_items.py", "panel_catalog.py", "carrot/config.py",
+              "carrot_tuning_api.py", "nav_params.json", "params_keys.h",
+              "carrot_tuning.py")
+
+  def _repo_root(self):
+    from pathlib import Path
+    # .../webui/server/bridge/tests/ -> repo root
+    return Path(__file__).resolve().parents[4]
+
+  def test_no_hidden_carrot_param_has_a_reader(self):
+    root = self._repo_root()
+    names = set(CARROT_TUNING_UNAVAILABLE)
+    self.assertTrue(names, "CARROT_TUNING_UNAVAILABLE is empty; the scan lost its input")
+
+    offenders: dict[str, list[str]] = {}
+    for tree in self.ROOTS:
+      for ext in self.EXTS:
+        for path in root.joinpath(tree).rglob(f"*{ext}"):
+          q = str(path).replace("\\", "/")
+          if "__pycache__" in q or "/tests/" in q or path.name.startswith("test_"):
+            continue
+          if any(s in q for s in self.SURFACES):
+            continue
+          try:
+            text = path.read_text(encoding="utf-8")
+          except (UnicodeDecodeError, OSError):
+            continue
+          for name in names:
+            pattern = r"get\w*\s*\(\s*[\"']" + re.escape(name) + r"[\"']"
+            if re.search(pattern, text):
+              rel = q.split("/openpilot/", 1)[-1]
+              offenders.setdefault(name, []).append(rel)
+
+    self.assertFalse(
+      offenders,
+      "these params are hidden from the UI but still read by shipped code - "
+      f"unhide them or confirm the reader is gone: {offenders}",
+    )
 
 
 if __name__ == "__main__":
