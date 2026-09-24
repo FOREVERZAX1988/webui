@@ -112,7 +112,7 @@ def _seed_params() -> dict[str, bytes | str]:
   bool_on = {
     "OpenpilotEnabledToggle", "IsLdwEnabled", "AlwaysOnDM", "IsMetric",
     "Mads", "BlindSpot", "SunnylinkEnabled", "DisengageOnAccelerator",
-    "RecordFront", "RecordAudio",
+    "RecordFront", "RecordAudio", "CarrotWebEnabled",
   }
   data: dict[str, bytes | str] = {}
   for k in bool_on:
@@ -547,12 +547,20 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "alert_sound": str(s.get("alert_sound", "none") or "none"),
     "quiet_mode": _mock_quiet_mode(),
     "is_body": bool(s.get("is_body", False)),
+    "carrot_web_enabled": bool(s.get("carrot_web_enabled", _mock_carrot_web_enabled())),
   }
 
 
 def _mock_quiet_mode() -> bool:
   try:
     return MockParams().get_bool("QuietMode")
+  except Exception:
+    return False
+
+
+def _mock_carrot_web_enabled() -> bool:
+  try:
+    return MockParams().get_bool("CarrotWebEnabled")
   except Exception:
     return False
 
@@ -676,4 +684,5 @@ def install_openpilot_mocks(root: str) -> None:
 
   os.environ["WEBUI_DEV_PC"] = "1"
   os.environ.setdefault("OPENPILOT_ROOT", root)
+  MockParams()  # trigger full _seed_params() before carrot-navi overlay adds its keys
   _seed_carrot_navi_params()

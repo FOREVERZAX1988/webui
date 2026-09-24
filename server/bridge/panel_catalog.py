@@ -368,8 +368,7 @@ PANELS: list[dict[str, Any]] = [
        "desc": "Use Carrot navigation data for map-based features."},{"type": "bool", "param": "CarrotNaviV2Enabled", "label": "Enable Carrot Navi v2 (7714)", "offroad_only": True,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."},{"type": "bool", "param": "CarrotWebEnabled", "label": "Carrot Web Panel", "offroad_only": True,
-       "desc": "Serve the carrot tuning page (/nav_params) and four-corner radar visualisation (/radar) on port 8088."},{"type": "readonly", "param": "CarName", "label": "Car Model",
-       "desc": "Identified car model, sent automatically with Carrot FTP uploads and shown in the companion app."},{"type": "custom", "custom": "amap_api_key", "label": "Amap API Key", "offroad_only": True,
+       "desc": "Serve the carrot tuning page (/nav_params) and four-corner radar visualisation (/radar) on port 8088."},{"type": "custom", "custom": "amap_api_key", "label": "Amap API Key", "offroad_only": True,
        "desc": "API key for Amap services. Tap EDIT to enter or update the key."},{"type": "bool", "param": "AmapCurveSpeedEnabled", "label": "Amap Curve Speed", "offroad_only": True,
        "visible_if": {"param": "AmapMapDataEnabled", "eq": "1"},
        "desc": "Derive a curve speed from the Amap route shape. Advisory only; it never overrides the road speed limit."},{"type": "bool", "param": "AmapTrafficLightHintEnabled", "label": "Amap Traffic Light Hint", "offroad_only": True,
@@ -384,7 +383,40 @@ PANELS: list[dict[str, Any]] = [
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Use navigation desired speed to limit cruise set speed."},{"type": "int", "param": "HapticFeedbackWhenSpeedCamera", "label": "Haptic Feedback (Speed Camera)", "default": 0,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
-       "desc": "Steering-wheel nudge when carrot decelerates for a speed camera. 0=off, 1/2 = lane-warning styles."},{"type": "subpanel", "target": "navigation__carrot_tuning", "label": "Carrot Tuning", "button": "CUSTOMIZE"}],
+       "desc": "Steering-wheel nudge when carrot decelerates for a speed camera. 0=off, 1/2 = lane-warning styles."}],
+  },
+  {
+    "id": "carrot",
+    "title": "Carrot",
+    "widgets": [
+      {"type": "subpanel", "target": "navigation__carrot_tuning__start", "label": "Start / Engage",
+       "desc": "How openpilot engages cruise and which steering wheel buttons control it.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__cruise", "label": "Cruise & Following",
+       "desc": "Following distance, longitudinal gains, acceleration limits and cruise behavior.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__navi", "label": "Navigation",
+       "desc": "Navigation-based speed control, speed cameras, road limits and speed bumps.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__speed", "label": "Turns & Curves",
+       "desc": "Automatic turn, fork / merge and curve speed control.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__tuning", "label": "Lateral Tuning",
+       "desc": "Steering geometry, MPC costs, torque tuning, lane change and blind spot.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__display", "label": "Display & Sound",
+       "desc": "Cluster HUD, on-screen overlays, sound, YouTube and map style.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__vehicle", "label": "Vehicle",
+       "desc": "Vehicle-specific overrides and convenience options.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "navigation__carrot_tuning__developer", "label": "Developer",
+       "desc": "Debug and diagnostic toggles. Use with caution.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "action", "label": "Reset Carrot Tuning",
+       "desc": "Restore every Carrot tuning parameter on this page to its compiled-in default.",
+       "action": "carrot_tuning_reset", "confirm": "Reset all Carrot tuning parameters to defaults?", "button": "RESET"},
+    ],
   },
   {
     "id": "visuals",
@@ -617,7 +649,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__start": {
     "id": "navigation__carrot_tuning__start",
     "title": "Start / Engage",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [{
         "type": "section",
         "label": "Auto Start / Cruise"
@@ -639,7 +671,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__cruise": {
     "id": "navigation__carrot_tuning__cruise",
     "title": "Cruise & Following",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [
       {
         "type": "section",
@@ -929,7 +961,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__navi": {
     "id": "navigation__carrot_tuning__navi",
     "title": "Navigation",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [
       {
         "type": "section",
@@ -1138,7 +1170,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__speed": {
     "id": "navigation__carrot_tuning__speed",
     "title": "Turns & Curves",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [
       {
         "type": "section",
@@ -1440,7 +1472,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__tuning": {
     "id": "navigation__carrot_tuning__tuning",
     "title": "Lateral Tuning",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [{
         "type": "separator"
       },{
@@ -1498,7 +1530,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__display": {
     "id": "navigation__carrot_tuning__display",
     "title": "Display & Sound",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [{
         "type": "section",
         "label": "Steering Suspend"
@@ -1528,7 +1560,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__vehicle": {
     "id": "navigation__carrot_tuning__vehicle",
     "title": "Vehicle",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [{
         "type": "section",
         "label": "Radar / Tracks"
@@ -1574,7 +1606,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning__developer": {
     "id": "navigation__carrot_tuning__developer",
     "title": "Developer",
-    "parent": "navigation__carrot_tuning",
+    "parent": "carrot",
     "widgets": [{
         "type": "section",
         "label": "Hardware / Tests"

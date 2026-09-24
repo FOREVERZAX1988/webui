@@ -12,7 +12,7 @@ import { updateHomeScreen, showHomeLoading, refreshHomeScreen, bindHomeHeader, a
 import {
   updateSidebarMetrics, updateSidebarMode, updateSidebarRecording,
   updateSidebarEgpu,
-} from "./sidebar.js?v=1";
+} from "./sidebar.js?v=2";
 import { initBodyLayout, updateBodyLayout, stopBodyLayout } from "./body_layout.js";
 import { initDevPanel } from "./dev.js";
 import { initModelCanvas, showModelOverlay, scheduleDrawModelOverlay, setModelOverlayEnabled, hasOverlayGeometry } from "./model_canvas.js";
@@ -40,6 +40,7 @@ const panelTitle = $("#panel-title");
 let panels = [];
 let currentPanel = "device";
 let lastStarted = false;
+let carrotWebEnabled = false;
 let lastIsBody = false;
 let lastUiState = null;
 let devPc = false;
@@ -648,9 +649,10 @@ async function bootstrap() {
 
 function handleState(st) {
   lastUiState = st;
+  carrotWebEnabled = !!st.carrot_web_enabled;
   setGlobalState(st);
   updateSidebarMetrics(st);
-  updateSidebarMode(!!st.started);
+  updateSidebarMode(!!st.started, carrotWebEnabled);
   updateSidebarRecording(st);
   updateSidebarEgpu(st);
   updateScreenSaverState(st);
@@ -888,6 +890,10 @@ $("#btn-sidebar-bottom").addEventListener("click", async () => {
     cameraPreview = false;
     await stopRoadStream();
     setScreen("home");
+    return;
+  }
+  if (carrotWebEnabled && !lastStarted) {
+    window.open(`http://${location.hostname}:8088`, "_blank", "noopener,noreferrer");
     return;
   }
   if (lastStarted) {

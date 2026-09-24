@@ -65,6 +65,7 @@ PANEL_ICONS: dict[str, str] = {
   "steering": "sunnypilot/selfdrive/assets/offroad/icon_lateral.png",
   "cruise": "icons/speed_limit.png",
   "navigation": "sunnypilot/selfdrive/assets/offroad/icon_map.png",
+  "carrot": "sunnypilot/selfdrive/assets/offroad/icon_map.png",
   "visuals": "sunnypilot/selfdrive/assets/offroad/icon_visuals.png",
   "display": "sunnypilot/selfdrive/assets/offroad/icon_display.png",
   "storage": "selfdrive/assets/icons/metric.png",

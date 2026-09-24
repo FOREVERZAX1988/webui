@@ -615,6 +615,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     amap_enabled = bool(p.get_bool("AmapMapDataEnabled") or p.get_bool("AmapEnabled"))
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
+    carrot_web_enabled = p.get_bool("CarrotWebEnabled")
   except Exception:
     pass
 
@@ -1112,6 +1113,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "developer_ui": developer_ui,
     "dev_ui": dev_ui,
     "recording_audio": recording_audio,
+    "carrot_web_enabled": carrot_web_enabled,
     "torque_bar": torque_bar,
     "torque_utilization": torque_utilization,
     "steering_angle_deg": steering_angle_deg,

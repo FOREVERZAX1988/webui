@@ -96,7 +96,7 @@ class CarrotTuningLayoutTests(unittest.TestCase):
   separated by `separator` (the webui equivalent of LineSeparatorSP).
   """
 
-  ROOT = "navigation__carrot_tuning"
+  ROOT = "carrot"
 
   def test_root_uses_subpanel_rows_not_tabs(self):
     widgets = get_panel(self.ROOT)["widgets"]
