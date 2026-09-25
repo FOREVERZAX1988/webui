@@ -65,6 +65,12 @@ from webui.server.bridge.carrot_settings_backup_api import (
   update_setting_favorites,
   update_setting_profile,
 )
+from webui.server.bridge.param_changes_api import (
+  api_param_changes,
+  api_param_changes_verify,
+  api_param_fingerprint,
+  api_param_fingerprint_baseline,
+)
 from webui.server.bridge.offroad_guard import require_offroad
 from webui.server.bridge.osm_api import osm_delete_maps
 from webui.server.bridge.ws_handler import ws_opui_handler
@@ -113,6 +119,7 @@ async def api_param_get(request: web.Request) -> web.Response:
 
 
 async def api_param_put(request: web.Request) -> web.Response:
+  from webui.server.bridge.param_changes_service import append_param_change
   key = request.match_info.get("key", "")
   try:
     body = await request.json()
@@ -120,7 +127,14 @@ async def api_param_put(request: web.Request) -> web.Response:
     needs_cycle = bool(body.get("needs_cycle", False))
   except Exception:
     return json_response({"ok": False, "error": "invalid json"}, status=400)
-  return json_response(await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle))
+  # Read previous value for history tracking
+  prev_result = get_param(key)
+  previous = prev_result.get("value") if prev_result.get("ok") else None
+  result = await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle)
+  # Log to change history if value actually changed
+  if result.get("ok") and previous is not None and str(previous) != value:
+    append_param_change(key, previous, value, source="web_ui")
+  return json_response(result)
 
 
 async def api_param_delete(request: web.Request) -> web.Response:
@@ -680,6 +694,25 @@ async def api_carrot_favorites(_request: web.Request) -> web.Response:
   return json_response(read_setting_favorites())
 
 
+# ---------------------------------------------------------------------------
+# Carrot settings: param change history + fingerprint
+# ---------------------------------------------------------------------------
+async def api_carrot_param_changes(request: web.Request) -> web.Response:
+  return await api_param_changes(request)
+
+
+async def api_carrot_param_changes_verify(request: web.Request) -> web.Response:
+  return await api_param_changes_verify(request)
+
+
+async def api_carrot_param_fingerprint(request: web.Request) -> web.Response:
+  return await api_param_fingerprint(request)
+
+
+async def api_carrot_param_fingerprint_baseline(request: web.Request) -> web.Response:
+  return await api_param_fingerprint_baseline(request)
+
+
 async def api_carrot_favorites_update(request: web.Request) -> web.Response:
   try:
     body = await request.json()
@@ -772,6 +805,11 @@ def register_routes(app: web.Application) -> None:
   app.router.add_post("/api/opui/carrot/settings/profiles/{profile_id}/apply", api_carrot_profile_apply)
   app.router.add_get("/api/opui/carrot/settings/favorites", api_carrot_favorites)
   app.router.add_post("/api/opui/carrot/settings/favorites", api_carrot_favorites_update)
+  # Carrot settings: param change history + fingerprint
+  app.router.add_get("/api/opui/carrot/settings/param_changes", api_carrot_param_changes)
+  app.router.add_get("/api/opui/carrot/settings/param_changes/verify", api_carrot_param_changes_verify)
+  app.router.add_get("/api/opui/carrot/settings/param_fingerprint", api_carrot_param_fingerprint)
+  app.router.add_post("/api/opui/carrot/settings/param_fingerprint/baseline", api_carrot_param_fingerprint_baseline)
   app.router.add_post("/api/opui/agnos/install", api_agnos_install)
   app.router.add_post("/api/opui/agnos/reboot", api_agnos_reboot)
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)
