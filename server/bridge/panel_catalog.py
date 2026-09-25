@@ -177,6 +177,7 @@ PANELS: list[dict[str, Any]] = [
     "custom": "network",
     "widgets": [
       {"type": "subpanel", "target": "network__advanced", "label": "Advanced Network", "button": "ADVANCED"},
+      {"type": "subpanel", "target": "network__bluetooth", "label": "Bluetooth", "button": "BT"},
     ],
   },
   {
@@ -1858,6 +1859,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {"type": "bool", "param": "GsmMetered", "label": "Cellular Metered",
        "desc": "Prevent large data uploads when on a metered cellular connection"},
     ],
+  },
+  # Bluetooth HID remote subpanel — renders the CarrotBluetooth web panel
+  "network__bluetooth": {
+    "id": "network__bluetooth",
+    "title": "Bluetooth",
+    "parent": "network",
+    "custom": "bluetooth",
+    "widgets": [],
   },
   "cruise__longitudinal_mpc_tuning": {
     "id": "cruise__longitudinal_mpc_tuning",

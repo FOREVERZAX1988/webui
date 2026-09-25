@@ -4470,3 +4470,208 @@ body.opui-system-wait-open {
 .opui-camera-wrap.road-lite-on .opui-model-overlay {
   display: none !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Bluetooth HID remote panel
+   --------------------------------------------------------------------------- */
+.opui-bt-panel {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.opui-bt-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opui-bt-title {
+  font-size: 56px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.opui-bt-status {
+  font-size: 38px;
+  color: #aaa;
+}
+
+.opui-bt-error {
+  font-size: 36px;
+  color: #f55;
+}
+
+.opui-bt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.opui-bt-devices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opui-bt-empty {
+  font-size: 38px;
+  color: #888;
+  padding: 20px 0;
+}
+
+.opui-bt-device-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opui-bt-device-name {
+  font-size: 48px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.opui-bt-device-addr {
+  font-size: 34px;
+  color: #888;
+}
+
+.opui-bt-device-mapstatus {
+  font-size: 34px;
+  color: #7c7;
+}
+
+.opui-bt-device-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.opui-bt-prompt {
+  background: rgba(255, 200, 0, 0.1);
+  border: 1px solid rgba(255, 200, 0, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  font-size: 38px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opui-bt-prompt-input {
+  font-size: 44px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: #fff;
+  width: 200px;
+}
+
+.opui-bt-editor {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.opui-bt-editor-header {
+  font-size: 48px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.opui-bt-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 40px;
+  color: #ccc;
+}
+
+.opui-bt-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opui-bt-section-title {
+  font-size: 44px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 8px;
+}
+
+.opui-bt-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.opui-bt-mapping-btn-name {
+  width: 80px;
+  font-size: 38px;
+  color: #ccc;
+  flex-shrink: 0;
+}
+
+.opui-bt-mapping-gesture {
+  flex: 1;
+}
+
+.opui-bt-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.opui-bt-capture-status {
+  font-size: 36px;
+  color: #aaa;
+  padding: 8px 0;
+}
+
+/* Shared button styles used by Bluetooth panel */
+.opui-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 38px;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 70px;
+}
+
+.opui-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.opui-btn--primary { background: #4560e6; color: #fff; }
+.opui-btn--normal { background: rgba(255,255,255,0.12); color: #e0e0e0; }
+.opui-btn--danger { background: #e22c2c; color: #fff; }
+
+.opui-select {
+  font-size: 36px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: #fff;
+  min-width: 120px;
+}

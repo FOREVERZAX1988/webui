@@ -73,6 +73,7 @@ from webui.server.bridge.param_changes_api import (
 )
 from webui.server.bridge.offroad_guard import require_offroad
 from webui.server.bridge.osm_api import osm_delete_maps
+from webui.server.bridge.bluetooth_api import api_bluetooth_status, api_bluetooth_mutate
 from webui.server.bridge.ws_handler import ws_opui_handler
 
 
@@ -810,6 +811,9 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/carrot/settings/param_changes/verify", api_carrot_param_changes_verify)
   app.router.add_get("/api/opui/carrot/settings/param_fingerprint", api_carrot_param_fingerprint)
   app.router.add_post("/api/opui/carrot/settings/param_fingerprint/baseline", api_carrot_param_fingerprint_baseline)
+  # Bluetooth HID remote setup
+  app.router.add_get("/api/opui/bluetooth", api_bluetooth_status)
+  app.router.add_post("/api/opui/bluetooth/{operation}", api_bluetooth_mutate)
   app.router.add_post("/api/opui/agnos/install", api_agnos_install)
   app.router.add_post("/api/opui/agnos/reboot", api_agnos_reboot)
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)
