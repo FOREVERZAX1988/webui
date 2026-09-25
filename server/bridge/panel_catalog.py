@@ -17,8 +17,6 @@ from typing import Any
 #     (torque override, lagd, camera offset, longitudinal MPC tuning, lane change)
 #   - CarrotPilot has no equivalent at all
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
-  "CarrotCurveSpeedEnabled",
-  "CarrotHudInfoEnabled",
   # Cluster Map / Cluster HUD: exposed as the first step of porting CarrotPilot's
   # external-cluster subsystem. ClusterNaviMap* is already read by carrot_navi's
   # ClusterNaviMapParamReader; ClusterHud* drive the not-yet-ported renderer but are
@@ -358,7 +356,10 @@ PANELS: list[dict[str, Any]] = [
        "visible_if": {"param": "AmapMapDataEnabled", "eq": "1"},
        "desc": "Show how many traffic lights are on the route ahead. Display only; it never controls the car."},{"type": "separator"},{"type": "int", "param": "CarrotPanelOpacity", "label": "Carrot Nav Panel Opacity",
        "min": 10, "max": 100, "step": 5, "offroad_only": True,
-       "desc": "Opacity of the onroad Carrot navigation panel, in percent. Default 100."},{"type": "custom", "custom": "navigation_provider", "label": "Map Provider",
+       "desc": "Opacity of the onroad Carrot navigation panel, in percent. Default 100."},{"type": "select", "param": "CarrotPanelSide", "label": "Carrot Nav Panel Side",
+       "options": [{"label": "Left", "value": 0}, {"label": "Right", "value": 1}],
+       "default": 1, "offroad_only": True,
+       "desc": "Position of the onroad Carrot navigation panel. Default: Right (next to speed display)."},{"type": "custom", "custom": "navigation_provider", "label": "Map Provider",
        "desc": "Current map data source used for speed limits and road names. Amap requires an API key to be set above."},{"type": "custom", "custom": "carrot_navi_debug", "label": "Carrot Navi Debug",
        "desc": "View the last navigation event summary handled by CarrotManager."},{"type": "separator"},{"type": "bool", "param": "CarrotAtcBlinkerEnabled", "label": "Carrot ATC Turn Signal",
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
