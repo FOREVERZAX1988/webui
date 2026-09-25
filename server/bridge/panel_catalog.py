@@ -17,8 +17,6 @@ from typing import Any
 #     (torque override, lagd, camera offset, longitudinal MPC tuning, lane change)
 #   - CarrotPilot has no equivalent at all
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
-  "CarrotCurveSpeedEnabled",
-  "CarrotHudInfoEnabled",
   # Cluster Map / Cluster HUD: exposed as the first step of porting CarrotPilot's
   # external-cluster subsystem. ClusterNaviMap* is already read by carrot_navi's
   # ClusterNaviMapParamReader; ClusterHud* drive the not-yet-ported renderer but are
@@ -179,6 +177,7 @@ PANELS: list[dict[str, Any]] = [
     "custom": "network",
     "widgets": [
       {"type": "subpanel", "target": "network__advanced", "label": "Advanced Network", "button": "ADVANCED"},
+      {"type": "subpanel", "target": "network__bluetooth", "label": "Bluetooth", "button": "BT"},
     ],
   },
   {
@@ -358,7 +357,10 @@ PANELS: list[dict[str, Any]] = [
        "visible_if": {"param": "AmapMapDataEnabled", "eq": "1"},
        "desc": "Show how many traffic lights are on the route ahead. Display only; it never controls the car."},{"type": "separator"},{"type": "int", "param": "CarrotPanelOpacity", "label": "Carrot Nav Panel Opacity",
        "min": 10, "max": 100, "step": 5, "offroad_only": True,
-       "desc": "Opacity of the onroad Carrot navigation panel, in percent. Default 100."},{"type": "custom", "custom": "navigation_provider", "label": "Map Provider",
+       "desc": "Opacity of the onroad Carrot navigation panel, in percent. Default 100."},{"type": "select", "param": "CarrotPanelSide", "label": "Carrot Nav Panel Side",
+       "options": [{"label": "Left", "value": 0}, {"label": "Right", "value": 1}],
+       "default": 1, "offroad_only": True,
+       "desc": "Position of the onroad Carrot navigation panel. Default: Right (next to speed display)."},{"type": "custom", "custom": "navigation_provider", "label": "Map Provider",
        "desc": "Current map data source used for speed limits and road names. Amap requires an API key to be set above."},{"type": "custom", "custom": "carrot_navi_debug", "label": "Carrot Navi Debug",
        "desc": "View the last navigation event summary handled by CarrotManager."},{"type": "separator"},{"type": "bool", "param": "CarrotAtcBlinkerEnabled", "label": "Carrot ATC Turn Signal",
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
@@ -398,6 +400,9 @@ PANELS: list[dict[str, Any]] = [
       {"type": "separator"},
       {"type": "subpanel", "target": "navigation__carrot_tuning__developer", "label": "Developer",
        "desc": "Debug and diagnostic toggles. Use with caution.", "button": "CUSTOMIZE"},
+      {"type": "separator"},
+      {"type": "subpanel", "target": "carrot__egpu", "label": "eGPU",
+       "desc": "eGPU status and configuration.", "button": "EGPU"},
       {"type": "separator"},
       {"type": "action", "label": "Reset Carrot Tuning",
        "desc": "Restore every Carrot tuning parameter on this page to its compiled-in default.",
@@ -1857,6 +1862,22 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {"type": "bool", "param": "GsmMetered", "label": "Cellular Metered",
        "desc": "Prevent large data uploads when on a metered cellular connection"},
     ],
+  },
+  # eGPU status subpanel — mirrors sidebarSP eGPU icon state
+  "carrot__egpu": {
+    "id": "carrot__egpu",
+    "title": "eGPU",
+    "parent": "carrot",
+    "custom": "egpu",
+    "widgets": [],
+  },
+  # Bluetooth HID remote subpanel — renders the CarrotBluetooth web panel
+  "network__bluetooth": {
+    "id": "network__bluetooth",
+    "title": "Bluetooth",
+    "parent": "network",
+    "custom": "bluetooth",
+    "widgets": [],
   },
   "cruise__longitudinal_mpc_tuning": {
     "id": "cruise__longitudinal_mpc_tuning",

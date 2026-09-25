@@ -44,6 +44,28 @@ const LOCAL_FALLBACKS = {
     "webui_storage_scons_cache_confirm": (
       "Clearing the build cache frees space, but the next compile will take significantly longer. Continue?"
     ),
+    "eGPU / Big Model": "eGPU / Big Model",
+    "eGPU Not Active": "eGPU Not Active",
+    "eGPU Active": "eGPU Active",
+    "eGPU Failed": "eGPU Failed",
+    "eGPU Loading...": "eGPU Loading...",
+    "No eGPU (big model) is selected. The default model is running.": (
+      "No eGPU (big model) is selected. The default model is running."
+    ),
+    "eGPU big model is running and healthy.": "eGPU big model is running and healthy.",
+    "eGPU was selected but failed to start. Check device connection and model files.": (
+      "eGPU was selected but failed to start. Check device connection and model files."
+    ),
+    "eGPU big model is being loaded. This may take a moment.": (
+      "eGPU big model is being loaded. This may take a moment."
+    ),
+    "eGPU (Chestnut) not detected. Connect your eGPU hardware to enable.": (
+      "eGPU (Chestnut) not detected. Connect your eGPU hardware to enable."
+    ),
+    "Status Details": "Status Details",
+    "Current State": "Current State",
+    "eGPU Available": "eGPU Available",
+    "Description": "Description",
   },
   "zh-CHS": {
     "Projected": "投射",
@@ -859,6 +881,21 @@ const LOCAL_FALLBACKS = {
     "sunnylink": "sunnylink",
     "sunnypilot Longitudinal Control (Alpha)": "sunnypilot Longitudinal Control (Alpha)",
     "sunnypilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.": "sunnypilot 要求设备安装角度左右不超过 4°，上仰不超过 5°，下倾不超过 9°。",
+    "eGPU / Big Model": "eGPU / 大模型",
+    "eGPU Not Active": "eGPU 未激活",
+    "eGPU Active": "eGPU 运行中",
+    "eGPU Failed": "eGPU 失败",
+    "eGPU Loading...": "eGPU 加载中...",
+    "No eGPU (big model) is selected. The default model is running.": "未选择 eGPU（大模型），正在运行默认模型。",
+    "eGPU big model is running and healthy.": "eGPU 大模型运行正常。",
+    "eGPU was selected but failed to start. Check device connection and model files.": "eGPU 已被选中但启动失败，请检查设备连接和模型文件。",
+    "eGPU big model is being loaded. This may take a moment.": "eGPU 大模型正在加载中，请稍候。",
+    "eGPU (Chestnut) not detected. Connect your eGPU hardware to enable.": "未检测到 eGPU（Chestnut）硬件，请连接 eGPU 设备后启用。",
+    "Status Details": "状态详情",
+    "Current State": "当前状态",
+    "eGPU Available": "eGPU 可用",
+    "Description": "说明",
+  },
   "zh-CHT": {
     "Projected": "投射",
     "Advisory": "建議值",
@@ -1734,8 +1771,22 @@ const STATIC_UI_KEYS = {
   "Upload driver camera data to improve driver monitoring? You can change this later in Toggles.": "Upload driver camera data to improve driver monitoring? You can change this later in Toggles.",
   "Enable": "Enable",
   "Not now": "Not now",
-  "Headless (no display)": "Headless (no display)",
-};
+    "Headless (no display)": "Headless (no display)",
+    "eGPU / Big Model": "eGPU / 大模型",
+    "eGPU Not Active": "eGPU 未激活",
+    "eGPU Active": "eGPU 運行中",
+    "eGPU Failed": "eGPU 失敗",
+    "eGPU Loading...": "eGPU 載入中...",
+    "No eGPU (big model) is selected. The default model is running.": "未選擇 eGPU（大模型），正在運行默認模型。",
+    "eGPU big model is running and healthy.": "eGPU 大模型運行正常。",
+    "eGPU was selected but failed to start. Check device connection and model files.": "eGPU 已被選中但啟動失敗，請檢查設備連接和模型文件。",
+    "eGPU big model is being loaded. This may take a moment.": "eGPU 大模型正在載入中，請稍候。",
+    "eGPU (Chestnut) not detected. Connect your eGPU hardware to enable.": "未檢測到 eGPU（Chestnut）硬體，請連接 eGPU 設備後啟用。",
+    "Status Details": "狀態詳情",
+    "Current State": "當前狀態",
+    "eGPU Available": "eGPU 可用",
+    "Description": "說明",
+  };
 
 const STATIC_UI_TITLES = {
   "btn-sidebar-settings": "Settings",

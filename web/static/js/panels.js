@@ -1518,6 +1518,14 @@ export async function renderPanel(panelId, container, titleEl, options = {}) {
     await renderVehiclePanel(container, data);
     return;
   }
+  if (data.custom === "bluetooth") {
+    await renderBluetoothPanel(container, data);
+    return;
+  }
+  if (data.custom === "egpu") {
+    await renderEgpuPanel(container, data);
+    return;
+  }
 
   renderGenericPanel(container, data, panelId);
   updateDisplayDependencies(data);
@@ -3223,6 +3231,505 @@ async function renderNetworkAdvancedPanel(container, data) {
     else toast(res.error || t("Connect failed"));
   });
   container.appendChild(hiddenRow);
+}
+
+// ---------------------------------------------------------------------------
+// Bluetooth HID remote panel
+// ---------------------------------------------------------------------------
+
+const BT_ACTIONS = [
+  'none', 'accelCruise', 'decelCruise', 'gapAdjustCruise', 'lfaButton', 'cancel',
+  'accelCruiseLong', 'decelCruiseLong', 'gapAdjustCruiseLong', 'lfaButtonLong', 'cancelLong',
+  'laneLeft', 'laneRight', 'paddleDecel', 'carrotCruise',
+];
+const BT_MAPPING_BUTTONS = ['up', 'down', 'left', 'right', 'center', '1', '2'];
+const BT_GESTURES = ['single', 'double', 'long'];
+const BT_GESTURE_LABELS = { single: 'Short', double: 'Double', long: 'Long' };
+const BT_DEFAULTS = { up: 'accelCruise', down: 'decelCruise', left: 'laneLeft', right: 'laneRight', center: 'paddleDecel', '1': 'gapAdjustCruise', '2': 'none' };
+
+function btActionLabel(action) {
+  const labels = {
+    none: t('None'), accelCruise: t('Cruise +'), decelCruise: t('Cruise −'),
+    accelCruiseLong: t('Cruise + Long'), decelCruiseLong: t('Cruise − Long'),
+    gapAdjustCruise: t('Gap'), lfaButton: t('LFA'), lfaButtonLong: t('LFA Long'),
+    cancel: t('Cancel'), cancelLong: t('Cancel Long'),
+    laneLeft: t('Lane Left'), laneRight: t('Lane Right'),
+    paddleDecel: t('Paddle −'), carrotCruise: t('CarrotCruise'),
+  };
+  return labels[action] || action;
+}
+
+async function renderBluetoothPanel(container, data) {
+  container.innerHTML = '';
+  const root = document.createElement('div');
+  root.className = 'opui-bt-panel';
+  container.appendChild(root);
+
+  let state = null;
+  let selected = null;
+  let draft = null;
+  let dirty = false;
+  let seenEventIds = new Set();
+  let pollTimer = null;
+  let promptId = null;
+
+  function api(operation, reqData) {
+    if (operation) {
+      return apiPost(`/api/opui/bluetooth/${operation}`, reqData || {});
+    }
+    return apiGet('/api/opui/bluetooth');
+  }
+
+  async function refresh() {
+    try {
+      state = await api();
+      render();
+    } catch (e) {
+      console.error('Bluetooth poll error:', e);
+    }
+  }
+
+  function startPoll() {
+    stopPoll();
+    pollTimer = setInterval(refresh, 1000);
+  }
+
+  function stopPoll() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function render() {
+    if (!state) return;
+    root.innerHTML = '';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'opui-bt-header';
+
+    const title = document.createElement('div');
+    title.className = 'opui-bt-title';
+    title.textContent = t('Bluetooth Remotes');
+    header.appendChild(title);
+
+    // Status
+    const statusEl = document.createElement('div');
+    statusEl.className = 'opui-bt-status';
+    if (!state.available) statusEl.textContent = t('Bluetooth adapter unavailable');
+    else if (!state.runtime?.stationary) statusEl.textContent = t('Requires stationary & disengaged state');
+    else if (state.adapters?.some(a => a.discovering)) statusEl.textContent = t('Scanning...');
+    else statusEl.textContent = t('Ready');
+    header.appendChild(statusEl);
+
+    // Error
+    if (state.error) {
+      const errEl = document.createElement('div');
+      errEl.className = 'opui-bt-error';
+      errEl.textContent = state.error;
+      header.appendChild(errEl);
+    }
+
+    // Action buttons
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'opui-bt-actions';
+
+    const radioBtn = document.createElement('button');
+    radioBtn.type = 'button';
+    radioBtn.className = 'opui-btn opui-btn--normal';
+    radioBtn.textContent = state.radioEnabled ? t('Disable Bluetooth') : t('Enable Bluetooth');
+    radioBtn.disabled = !state.runtime?.stationary;
+    radioBtn.onclick = async () => {
+      try { await api('radio', { enabled: !state.radioEnabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    };
+    actionsEl.appendChild(radioBtn);
+
+    const scanBtn = document.createElement('button');
+    scanBtn.type = 'button';
+    scanBtn.className = 'opui-btn opui-btn--normal';
+    scanBtn.textContent = t('Scan (30s)');
+    scanBtn.disabled = !state.runtime?.stationary || state.adapters?.some(a => a.discovering);
+    scanBtn.onclick = async () => { try { await api('scan'); await refresh(); } catch (e) { toast(e.message); } };
+    actionsEl.appendChild(scanBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'opui-btn opui-btn--normal';
+    cancelBtn.textContent = t('Cancel');
+    cancelBtn.disabled = !state.adapters?.some(a => a.discovering);
+    cancelBtn.onclick = async () => { try { await api('cancel'); await refresh(); } catch (e) { toast(e.message); } };
+    actionsEl.appendChild(cancelBtn);
+
+    header.appendChild(actionsEl);
+    root.appendChild(header);
+
+    // Device list
+    const listEl = document.createElement('div');
+    listEl.className = 'opui-bt-devices';
+
+    if (!state.devices?.length) {
+      const empty = document.createElement('p');
+      empty.className = 'opui-bt-empty';
+      empty.textContent = t('Put your device in pairing mode and scan. Disconnect it from its previous phone if needed.');
+      listEl.appendChild(empty);
+    }
+
+    const sorted = [...(state.devices || [])].sort((a, b) => Number(b.paired) - Number(a.paired) || String(a.address).localeCompare(b.address));
+    for (const dev of sorted) {
+      const card = document.createElement('div');
+      card.className = 'opui-bt-device-card';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'opui-bt-device-name';
+      nameEl.textContent = dev.name || dev.address;
+      card.appendChild(nameEl);
+
+      const addrEl = document.createElement('div');
+      addrEl.className = 'opui-bt-device-addr';
+      const statusParts = [dev.address];
+      if (dev.connected) statusParts.push(t('Connected'));
+      else if (dev.paired) statusParts.push(t('Paired'));
+      if (dev.battery != null) statusParts.push(`Battery ${dev.battery}%`);
+      addrEl.textContent = statusParts.join(' · ');
+      card.appendChild(addrEl);
+
+      const cfg = state.config?.devices?.[dev.address];
+      if (cfg) {
+        const mapEl = document.createElement('div');
+        mapEl.className = 'opui-bt-device-mapstatus';
+        mapEl.textContent = `${t(cfg.enabled ? 'Mapping on' : 'Mapping off')}${state.runtime?.grabbed?.includes(dev.address) ? ' · ' + t('Receiving input') : ''}`;
+        card.appendChild(mapEl);
+      }
+
+      const devActions = document.createElement('div');
+      devActions.className = 'opui-bt-device-actions';
+
+      if (!dev.paired) {
+        const pairBtn = document.createElement('button');
+        pairBtn.type = 'button';
+        pairBtn.className = 'opui-btn opui-btn--primary';
+        pairBtn.textContent = t('Pair');
+        pairBtn.onclick = async () => { try { await api('pair', { address: dev.address }); await refresh(); } catch (e) { toast(e.message); } };
+        devActions.appendChild(pairBtn);
+      } else {
+        const connBtn = document.createElement('button');
+        connBtn.type = 'button';
+        connBtn.className = dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary';
+        connBtn.textContent = dev.connected ? t('Disconnect') : t('Connect');
+        connBtn.onclick = async () => { try { await api(dev.connected ? 'disconnect' : 'connect', { address: dev.address }); await refresh(); } catch (e) { toast(e.message); } };
+        devActions.appendChild(connBtn);
+
+        const forgetBtn = document.createElement('button');
+        forgetBtn.type = 'button';
+        forgetBtn.className = 'opui-btn opui-btn--danger';
+        forgetBtn.textContent = t('Forget');
+        forgetBtn.onclick = async () => {
+          if (!confirm(t('Forget this device?') + ` (${dev.name || dev.address})`)) return;
+          try { await api('forget', { address: dev.address }); if (selected === dev.address) { selected = null; draft = null; } await refresh(); }
+          catch (e) { toast(e.message); }
+        };
+        devActions.appendChild(forgetBtn);
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'opui-btn opui-btn--normal';
+        editBtn.textContent = t('Edit');
+        editBtn.onclick = () => selectDevice(dev);
+        devActions.appendChild(editBtn);
+      }
+
+      card.appendChild(devActions);
+      listEl.appendChild(card);
+    }
+    root.appendChild(listEl);
+
+    // Prompt (pairing confirmation)
+    if (state.prompt && state.prompt.id !== promptId) {
+      promptId = state.prompt.id;
+      const promptEl = document.createElement('div');
+      promptEl.className = 'opui-bt-prompt';
+      promptEl.innerHTML = `<b>${t('Pairing confirmation')}</b><br>${t('Enter the code shown on the other device')}: <b>${escapeHtml(state.prompt.value || '')}</b><br>`;
+      if (['RequestPinCode', 'RequestPasskey'].includes(state.prompt.kind)) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'opui-bt-prompt-input';
+        input.placeholder = 'PIN';
+        promptEl.appendChild(input);
+      }
+      const confirmBtn = document.createElement('button');
+      confirmBtn.type = 'button';
+      confirmBtn.className = 'opui-btn opui-btn--primary';
+      confirmBtn.textContent = t('Confirm');
+      confirmBtn.onclick = async () => { try { await api('answer', { id: state.prompt.id, value: true }); promptId = null; await refresh(); } catch (e) { toast(e.message); } };
+      promptEl.appendChild(confirmBtn);
+      const cancelPromptBtn = document.createElement('button');
+      cancelPromptBtn.type = 'button';
+      cancelPromptBtn.className = 'opui-btn opui-btn--normal';
+      cancelPromptBtn.textContent = t('Cancel');
+      cancelPromptBtn.onclick = async () => { try { await api('cancel'); promptId = null; await refresh(); } catch (e) { toast(e.message); } };
+      promptEl.appendChild(cancelPromptBtn);
+      root.appendChild(promptEl);
+    }
+
+    // Editor panel
+    if (draft) {
+      const editorEl = document.createElement('div');
+      editorEl.className = 'opui-bt-editor';
+
+      const editorHeader = document.createElement('div');
+      editorHeader.className = 'opui-bt-editor-header';
+      editorHeader.textContent = `${draft.name || selected} · ${selected}`;
+      editorEl.appendChild(editorHeader);
+
+      const backBtn = document.createElement('button');
+      backBtn.type = 'button';
+      backBtn.className = 'opui-btn opui-btn--normal';
+      backBtn.textContent = t('Back');
+      backBtn.onclick = () => { draft = null; dirty = false; render(); };
+      editorEl.appendChild(backBtn);
+
+      // Profile
+      const profileRow = document.createElement('div');
+      profileRow.className = 'opui-bt-row';
+      const profileLabel = document.createElement('label');
+      profileLabel.textContent = t('Profile');
+      const profileSel = document.createElement('select');
+      profileSel.className = 'opui-select';
+      for (const [v, label] of [['yiser-j6', 'Yiser-J6'], ['generic', t('Generic keyboard / HID')]]) {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = label;
+        if (draft.profile === v) opt.selected = true;
+        profileSel.appendChild(opt);
+      }
+      profileSel.onchange = () => {
+        draft.profile = profileSel.value;
+        draft.mapping = profileSel.value === 'yiser-j6' ? { ...BT_DEFAULTS } : {};
+        dirty = true;
+        render();
+      };
+      profileRow.appendChild(profileLabel);
+      profileRow.appendChild(profileSel);
+      editorEl.appendChild(profileRow);
+
+      // Enabled toggle
+      const enabledRow = document.createElement('div');
+      enabledRow.className = 'opui-bt-row';
+      const enabledLabel = document.createElement('label');
+      enabledLabel.textContent = t('Use Carrot mapping');
+      const enabledToggle = document.createElement('input');
+      enabledToggle.type = 'checkbox';
+      enabledToggle.checked = !!draft.enabled;
+      enabledToggle.onchange = () => { draft.enabled = enabledToggle.checked; dirty = true; };
+      enabledLabel.appendChild(enabledToggle);
+      enabledRow.appendChild(enabledLabel);
+      editorEl.appendChild(enabledRow);
+
+      // Mapping
+      const mappingTitle = document.createElement('div');
+      mappingTitle.className = 'opui-bt-section-title';
+      mappingTitle.textContent = t('Button Mapping');
+      editorEl.appendChild(mappingTitle);
+
+      for (const btnName of BT_MAPPING_BUTTONS) {
+        const row = document.createElement('div');
+        row.className = 'opui-bt-mapping-row';
+        const btnLabel = document.createElement('div');
+        btnLabel.className = 'opui-bt-mapping-btn-name';
+        btnLabel.textContent = t(btnName);
+        row.appendChild(btnLabel);
+
+        for (const gesture of BT_GESTURES) {
+          const token = `${btnName}_${gesture}`;
+          const gestureLabel = document.createElement('div');
+          gestureLabel.className = 'opui-bt-mapping-gesture';
+          const sel = document.createElement('select');
+          sel.className = 'opui-select';
+          for (const action of BT_ACTIONS) {
+            const opt = document.createElement('option');
+            opt.value = action;
+            opt.textContent = btActionLabel(action);
+            if ((draft.mapping?.[token] || 'none') === action) opt.selected = true;
+            sel.appendChild(opt);
+          }
+          sel.onchange = () => {
+            draft.mapping[token] = sel.value;
+            dirty = true;
+          };
+          gestureLabel.appendChild(sel);
+          row.appendChild(gestureLabel);
+        }
+        editorEl.appendChild(row);
+      }
+
+      // Editor actions
+      const editorActions = document.createElement('div');
+      editorActions.className = 'opui-bt-editor-actions';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'opui-btn opui-btn--primary';
+      saveBtn.textContent = t('Save');
+      saveBtn.onclick = async () => {
+        try {
+          await api('device-config', { address: selected, device: draft });
+          dirty = false;
+          toast(t('Saved'));
+          await refresh();
+        } catch (e) { toast(e.message); }
+      };
+      editorActions.appendChild(saveBtn);
+
+      const isLearning = state.runtime?.learning?.address === selected;
+      if (isLearning) {
+        const stopBtn = document.createElement('button');
+        stopBtn.type = 'button';
+        stopBtn.className = 'opui-btn opui-btn--danger';
+        stopBtn.textContent = t('Stop Test');
+        stopBtn.onclick = async () => { try { await api('learn', { address: selected, enabled: false }); await refresh(); } catch (e) { toast(e.message); } };
+        editorActions.appendChild(stopBtn);
+      } else {
+        const testBtn = document.createElement('button');
+        testBtn.type = 'button';
+        testBtn.className = 'opui-btn opui-btn--normal';
+        testBtn.textContent = t('Test / Learn');
+        testBtn.disabled = dirty;
+        testBtn.onclick = async () => {
+          try {
+            await api('learn', { address: selected, enabled: true });
+            toast(t('Test mode active'));
+            await refresh();
+          } catch (e) { toast(e.message); }
+        };
+        editorActions.appendChild(testBtn);
+      }
+
+      // Capture status
+      const learning = state.runtime?.learning;
+      const grabbed = state.runtime?.grabbed || [];
+      const captureStatus = document.createElement('div');
+      captureStatus.className = 'opui-bt-capture-status';
+      if (learning?.address === selected) {
+        captureStatus.textContent = `${t('Testing')} (${Math.max(0, Math.ceil((learning.until || 0) - (state.runtime?.time || 0)))}s)`;
+      } else if (dirty) {
+        captureStatus.textContent = t('Save your changes');
+      } else {
+        captureStatus.textContent = grabbed.includes(selected) ? t('Exclusive HID capture active') : t('Waiting for HID capture (check connection and mapping)');
+      }
+      editorActions.appendChild(captureStatus);
+
+      editorEl.appendChild(editorActions);
+      root.appendChild(editorEl);
+    }
+  }
+
+  function selectDevice(dev) {
+    if (dirty) { toast(t('Save your changes')); return; }
+    selected = dev.address;
+    const stored = state.config?.devices?.[selected];
+    if (stored) {
+      draft = { name: dev.name, profile: stored.profile || 'generic', enabled: stored.enabled || false, mapping: { ...(stored.mapping || {}) } };
+    } else {
+      const isYiser = /yiser-j6/i.test(dev.name || '');
+      draft = { name: dev.name, profile: isYiser ? 'yiser-j6' : 'generic', enabled: false, mapping: isYiser ? { ...BT_DEFAULTS } : {} };
+    }
+    dirty = false;
+    seenEventIds = new Set((state.runtime?.recent_events || []).map(e => e.id));
+    render();
+  }
+
+  // Initial render and start polling
+  await refresh();
+  startPoll();
+
+  // Cleanup on panel unload
+  const origUnload = container.closest('[data-panel]')?.dataset.panel;
+  const cleanup = () => { stopPoll(); };
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(container)) { cleanup(); observer.disconnect(); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+const EGPU_STATE_LABELS = {
+  gray: "eGPU Not Active",
+  green: "eGPU Active",
+  failed: "eGPU Failed",
+  loading: "eGPU Loading...",
+};
+
+const EGPU_STATE_DESCS = {
+  gray: "No eGPU (big model) is selected. The default model is running.",
+  green: "eGPU big model is running and healthy.",
+  failed: "eGPU was selected but failed to start. Check device connection and model files.",
+  loading: "eGPU big model is being loaded. This may take a moment.",
+};
+
+async function renderEgpuPanel(container, data) {
+  container.innerHTML = "";
+  const root = document.createElement("div");
+  root.className = "opui-egpu-panel";
+  container.appendChild(root);
+
+  const st = globalState?.device?.egpu_state;
+  const state = st?.state || "gray";
+
+  // Header
+  const header = document.createElement("div");
+  header.className = "opui-egpu-header";
+
+  const title = document.createElement("div");
+  title.className = "opui-egpu-title";
+  title.textContent = t("eGPU / Big Model");
+  header.appendChild(title);
+
+  const statusBadge = document.createElement("div");
+  statusBadge.className = `opui-egpu-status opui-egpu-status--${state}`;
+  statusBadge.textContent = t(EGPU_STATE_LABELS[state] || state);
+  header.appendChild(statusBadge);
+  root.appendChild(header);
+
+  // Description
+  const desc = document.createElement("div");
+  desc.className = "opui-egpu-desc";
+  desc.textContent = t(EGPU_STATE_DESCS[state] || "");
+  root.appendChild(desc);
+
+  // Chestnut info
+  if (!globalState?.device?.chestnutPresent) {
+    const warning = document.createElement("div");
+    warning.className = "opui-egpu-warning";
+    warning.textContent = t("eGPU (Chestnut) not detected. Connect your eGPU hardware to enable.");
+    root.appendChild(warning);
+  }
+
+  // State breakdown
+  const section = document.createElement("div");
+  section.className = "opui-egpu-section";
+
+  const sectionTitle = document.createElement("div");
+  sectionTitle.className = "opui-egpu-section-title";
+  sectionTitle.textContent = t("Status Details");
+  section.appendChild(sectionTitle);
+
+  const stateItems = [
+    { label: t("Current State"), value: t(EGPU_STATE_LABELS[state] || state) },
+    { label: t("eGPU Available"), value: globalState?.device?.chestnutPresent ? t("Yes") : t("No") },
+    { label: t("Description"), value: t(EGPU_STATE_DESCS[state] || "") },
+  ];
+
+  for (const item of stateItems) {
+    const row = document.createElement("div");
+    row.className = "opui-egpu-row";
+    const labelEl = document.createElement("span");
+    labelEl.className = "opui-egpu-row-label";
+    labelEl.textContent = item.label;
+    const valueEl = document.createElement("span");
+    valueEl.className = "opui-egpu-row-value";
+    valueEl.textContent = item.value;
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    section.appendChild(row);
+  }
+  root.appendChild(section);
 }
 
 async function renderTripsPanel(container, data) {
