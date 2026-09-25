@@ -1522,6 +1522,10 @@ export async function renderPanel(panelId, container, titleEl, options = {}) {
     await renderBluetoothPanel(container, data);
     return;
   }
+  if (data.custom === "egpu") {
+    await renderEgpuPanel(container, data);
+    return;
+  }
 
   renderGenericPanel(container, data, panelId);
   updateDisplayDependencies(data);
@@ -3643,6 +3647,89 @@ async function renderBluetoothPanel(container, data) {
     if (!document.body.contains(container)) { cleanup(); observer.disconnect(); }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+}
+
+const EGPU_STATE_LABELS = {
+  gray: "eGPU Not Active",
+  green: "eGPU Active",
+  failed: "eGPU Failed",
+  loading: "eGPU Loading...",
+};
+
+const EGPU_STATE_DESCS = {
+  gray: "No eGPU (big model) is selected. The default model is running.",
+  green: "eGPU big model is running and healthy.",
+  failed: "eGPU was selected but failed to start. Check device connection and model files.",
+  loading: "eGPU big model is being loaded. This may take a moment.",
+};
+
+async function renderEgpuPanel(container, data) {
+  container.innerHTML = "";
+  const root = document.createElement("div");
+  root.className = "opui-egpu-panel";
+  container.appendChild(root);
+
+  const st = globalState?.device?.egpu_state;
+  const state = st?.state || "gray";
+
+  // Header
+  const header = document.createElement("div");
+  header.className = "opui-egpu-header";
+
+  const title = document.createElement("div");
+  title.className = "opui-egpu-title";
+  title.textContent = t("eGPU / Big Model");
+  header.appendChild(title);
+
+  const statusBadge = document.createElement("div");
+  statusBadge.className = `opui-egpu-status opui-egpu-status--${state}`;
+  statusBadge.textContent = t(EGPU_STATE_LABELS[state] || state);
+  header.appendChild(statusBadge);
+  root.appendChild(header);
+
+  // Description
+  const desc = document.createElement("div");
+  desc.className = "opui-egpu-desc";
+  desc.textContent = t(EGPU_STATE_DESCS[state] || "");
+  root.appendChild(desc);
+
+  // Chestnut info
+  if (!globalState?.device?.chestnutPresent) {
+    const warning = document.createElement("div");
+    warning.className = "opui-egpu-warning";
+    warning.textContent = t("eGPU (Chestnut) not detected. Connect your eGPU hardware to enable.");
+    root.appendChild(warning);
+  }
+
+  // State breakdown
+  const section = document.createElement("div");
+  section.className = "opui-egpu-section";
+
+  const sectionTitle = document.createElement("div");
+  sectionTitle.className = "opui-egpu-section-title";
+  sectionTitle.textContent = t("Status Details");
+  section.appendChild(sectionTitle);
+
+  const stateItems = [
+    { label: t("Current State"), value: t(EGPU_STATE_LABELS[state] || state) },
+    { label: t("eGPU Available"), value: globalState?.device?.chestnutPresent ? t("Yes") : t("No") },
+    { label: t("Description"), value: t(EGPU_STATE_DESCS[state] || "") },
+  ];
+
+  for (const item of stateItems) {
+    const row = document.createElement("div");
+    row.className = "opui-egpu-row";
+    const labelEl = document.createElement("span");
+    labelEl.className = "opui-egpu-row-label";
+    labelEl.textContent = item.label;
+    const valueEl = document.createElement("span");
+    valueEl.className = "opui-egpu-row-value";
+    valueEl.textContent = item.value;
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    section.appendChild(row);
+  }
+  root.appendChild(section);
 }
 
 async function renderTripsPanel(container, data) {

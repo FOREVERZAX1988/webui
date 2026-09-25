@@ -401,6 +401,9 @@ PANELS: list[dict[str, Any]] = [
       {"type": "subpanel", "target": "navigation__carrot_tuning__developer", "label": "Developer",
        "desc": "Debug and diagnostic toggles. Use with caution.", "button": "CUSTOMIZE"},
       {"type": "separator"},
+      {"type": "subpanel", "target": "carrot__egpu", "label": "eGPU",
+       "desc": "eGPU status and configuration.", "button": "EGPU"},
+      {"type": "separator"},
       {"type": "action", "label": "Reset Carrot Tuning",
        "desc": "Restore every Carrot tuning parameter on this page to its compiled-in default.",
        "action": "carrot_tuning_reset", "confirm": "Reset all Carrot tuning parameters to defaults?", "button": "RESET"},
@@ -1859,6 +1862,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {"type": "bool", "param": "GsmMetered", "label": "Cellular Metered",
        "desc": "Prevent large data uploads when on a metered cellular connection"},
     ],
+  },
+  # eGPU status subpanel — mirrors sidebarSP eGPU icon state
+  "carrot__egpu": {
+    "id": "carrot__egpu",
+    "title": "eGPU",
+    "parent": "carrot",
+    "custom": "egpu",
+    "widgets": [],
   },
   # Bluetooth HID remote subpanel — renders the CarrotBluetooth web panel
   "network__bluetooth": {
