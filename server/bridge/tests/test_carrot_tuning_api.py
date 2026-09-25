@@ -32,7 +32,7 @@ _EXPECTED = {
 # The Cluster* / HUD-map params were removed from the panel: sp has no cluster
 # subsystem, so every one of them was registered, exposed, and read by nothing.
 # They stay in CARROT_TUNING_DEFAULTS (the API whitelist) but must NOT be visible.
-_CLUSTER_HIDDEN = {
+_CLUSTER_EXPOSED = {
   "ClusterNaviMapTheme", "ClusterNaviMapType", "ClusterNaviMapFps",
   "CarrotNaviHudMapProfile", "ClusterHud", "ClusterHudTheme",
 }
@@ -85,11 +85,21 @@ class CarrotTuningP3Tests(unittest.TestCase):
     missing = set(_EXPECTED) - panel_keys
     self.assertFalse(missing, f"panel_catalog missing params: {sorted(missing)}")
 
-  def test_cluster_params_are_not_visible(self):
-    """They have no consumer in sp, so showing them would advertise a dead knob."""
+  def test_cluster_params_visible_with_correct_types(self):
+    """Cluster knobs are now first-class settings (part 1 of the cluster port).
+
+    ClusterNaviMap* is read by carrot_navi's ClusterNaviMapParamReader;
+    ClusterHud* drive the not-yet-ported external renderer but are deliberately
+    exposed so the settings surface is complete and the values persist.
+    """
     panel_keys = set(panel_param_keys("navigation__carrot_tuning"))
-    leaked = _CLUSTER_HIDDEN & panel_keys
-    self.assertFalse(leaked, f"cluster params are exposed again: {sorted(leaked)}")
+    for key in _CLUSTER_EXPOSED:
+      self.assertIn(key, panel_keys, f"cluster param {key} not exposed")
+      kind = CARROT_TUNING_DEFAULTS[key][0]
+      self.assertEqual(kind, "bool" if key in {"ClusterHud", "ClusterHudDebug",
+                                               "ClusterHudMirror", "ClusterHudRadarDisplay",
+                                               "ClusterHudRadarSourceColor", "CarrotNaviHudMapProfile"}
+                       else "int", f"{key} kind should match its value type")
 
   def test_is_carrot_key_true_for_p3_params(self):
     for key in _EXPECTED:

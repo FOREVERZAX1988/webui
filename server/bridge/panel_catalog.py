@@ -19,26 +19,10 @@ from typing import Any
 CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CarrotCurveSpeedEnabled",
   "CarrotHudInfoEnabled",
-  "ClusterNaviMapTheme",
-  "ClusterNaviMapType",
-  "ClusterNaviMapFps",
-  "CarrotNaviHudMapProfile",
-  "ClusterHud",
-  "ClusterHudBrightness",
-  "ClusterHudCameraViewMode",
-  "ClusterHudCoreMode",
-  "ClusterHudDebug",
-  "ClusterHudEncoder",
-  "ClusterHudLiveFps",
-  "ClusterHudMirror",
-  "ClusterHudOrientation",
-  "ClusterHudPanelLayout",
-  "ClusterHudPriority",
-  "ClusterHudRadarDisplay",
-  "ClusterHudRadarInfo",
-  "ClusterHudRadarSourceColor",
-  "ClusterHudScreenMode",
-  "ClusterHudTheme",
+  # Cluster Map / Cluster HUD: exposed as the first step of porting CarrotPilot's
+  # external-cluster subsystem. ClusterNaviMap* is already read by carrot_navi's
+  # ClusterNaviMapParamReader; ClusterHud* drive the not-yet-ported renderer but are
+  # deliberately un-hidden so the settings surface is complete and the values persist.
   "CruiseMaxVals6",
   "CruiseMaxVals5",
   "CruiseMaxVals4",
@@ -1550,10 +1534,70 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "section",
         "label": "Cluster Map"
       },{
+        "type": "int", "param": "ClusterNaviMapTheme", "label": "Cluster Navigation Map Theme",
+        "desc": "0 = Auto, 1 = Dark, 2 = Light.", "min": 0, "max": 2, "step": 1
+      },{
+        "type": "int", "param": "ClusterNaviMapType", "label": "Cluster Navigation Map Type",
+        "desc": "Map style used on the external cluster.", "min": 0, "max": 10, "step": 1
+      },{
+        "type": "int", "param": "ClusterNaviMapFps", "label": "Cluster Navigation Map FPS",
+        "desc": "Refresh rate of the external cluster map, in frames per second.", "min": 1, "max": 60, "step": 1
+      },{
+        "type": "bool", "param": "CarrotNaviHudMapProfile", "label": "Cluster Map Profile",
+        "desc": "Enable the cluster map HUD profile overlay.", "default": 0
+      },{
         "type": "separator"
       },{
         "type": "section",
         "label": "Cluster HUD (external display required)"
+      },{
+        "type": "bool", "param": "ClusterHud", "label": "Cluster HUD",
+        "desc": "Master switch for the external cluster HUD renderer.", "default": 0
+      },{
+        "type": "int", "param": "ClusterHudBrightness", "label": "Cluster HUD Brightness",
+        "desc": "External cluster brightness, 0-100 percent.", "min": 0, "max": 100, "step": 1
+      },{
+        "type": "int", "param": "ClusterHudCameraViewMode", "label": "Cluster HUD Camera View Mode",
+        "desc": "0 = Default, 1 = Ego Bottom, 2 = Road Camera, 3 = Wide Camera, 4 = Auto Camera.", "min": 0, "max": 4, "step": 1
+      },{
+        "type": "int", "param": "ClusterHudCoreMode", "label": "Cluster HUD Core Mode",
+        "desc": "Core rendering mode of the external cluster.", "min": 0, "max": 10, "step": 1
+      },{
+        "type": "bool", "param": "ClusterHudDebug", "label": "Cluster HUD Debug",
+        "desc": "Show debug overlays on the external cluster.", "default": 0
+      },{
+        "type": "int", "param": "ClusterHudEncoder", "label": "Cluster HUD Encoder",
+        "desc": "0 = Auto, 1 = JPEG, 2 = Hardware H.264, 3 = Software H.264.", "min": 0, "max": 3, "step": 1
+      },{
+        "type": "int", "param": "ClusterHudLiveFps", "label": "Cluster HUD Live FPS",
+        "desc": "Live render target FPS for the external cluster.", "min": 1, "max": 60, "step": 1
+      },{
+        "type": "bool", "param": "ClusterHudMirror", "label": "Cluster HUD Mirror",
+        "desc": "Mirror the external cluster display horizontally.", "default": 0
+      },{
+        "type": "int", "param": "ClusterHudOrientation", "label": "Cluster HUD Orientation",
+        "desc": "Display orientation of the external cluster.", "min": 0, "max": 3, "step": 1
+      },{
+        "type": "int", "param": "ClusterHudPanelLayout", "label": "Cluster HUD Panel Layout",
+        "desc": "0 = Driving Left, 1 = Driving Right.", "min": 0, "max": 1, "step": 1
+      },{
+        "type": "int", "param": "ClusterHudPriority", "label": "Cluster HUD Priority",
+        "desc": "Scheduling priority of the cluster process.", "min": 0, "max": 100, "step": 1
+      },{
+        "type": "bool", "param": "ClusterHudRadarDisplay", "label": "Cluster HUD Radar Display",
+        "desc": "Draw radar tracks on the external cluster.", "default": 0
+      },{
+        "type": "int", "param": "ClusterHudRadarInfo", "label": "Cluster HUD Radar Info",
+        "desc": "0 = None, 1 = Vehicle Speed, 2 = Speed + Distance, 3 = All Speeds, 4 = All Speeds + Distance.", "min": 0, "max": 4, "step": 1
+      },{
+        "type": "bool", "param": "ClusterHudRadarSourceColor", "label": "Cluster HUD Radar Source Color",
+        "desc": "Color radar tracks by their detection source.", "default": 0
+      },{
+        "type": "int", "param": "ClusterHudScreenMode", "label": "Cluster HUD Screen Mode",
+        "desc": "0 = Default, 1 = Debug, 2 = Debug System, 3 = Debug Graph, 4 = Debug Graph Right, 5 = Trip Report, 6 = Navi.", "min": 0, "max": 6, "step": 1
+      },{
+        "type": "int", "param": "ClusterHudTheme", "label": "Cluster HUD Theme",
+        "desc": "0 = Auto, 1 = Dark, 2 = Light.", "min": 0, "max": 2, "step": 1
       }],
   },
 

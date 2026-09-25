@@ -47,11 +47,18 @@ class PanelCatalogParamTests(unittest.TestCase):
     "LatSuspendAngleDeg",
   }
 
-  # Removed from the panel: sp has no cluster subsystem, so these were registered,
-  # exposed in both UIs, and read by nothing.
-  _CLUSTER_HIDDEN = {
+  # Cluster params are intentionally exposed: ClusterNaviMap* is read by
+  # carrot_navi's ClusterNaviMapParamReader, and ClusterHud*/CarrotNaviHudMapProfile
+  # are the first step of porting CarrotPilot's external-cluster subsystem - the
+  # settings surface is complete and the values persist across sessions.
+  _CLUSTER_EXPOSED = {
     "ClusterNaviMapTheme", "ClusterNaviMapType", "ClusterNaviMapFps",
-    "CarrotNaviHudMapProfile", "ClusterHud", "ClusterHudTheme",
+    "ClusterHud", "ClusterHudTheme",
+    "ClusterHudBrightness", "ClusterHudCameraViewMode", "ClusterHudCoreMode",
+    "ClusterHudDebug", "ClusterHudEncoder", "ClusterHudLiveFps",
+    "ClusterHudMirror", "ClusterHudOrientation", "ClusterHudPanelLayout",
+    "ClusterHudPriority", "ClusterHudRadarDisplay", "ClusterHudRadarInfo",
+    "ClusterHudRadarSourceColor", "ClusterHudScreenMode",
   }
 
   def test_carrot_tuning_exposes_p1_params(self):
@@ -59,10 +66,11 @@ class PanelCatalogParamTests(unittest.TestCase):
     missing = self._P1_PARAMS - keys
     self.assertFalse(missing, f"navigation__carrot_tuning missing params: {sorted(missing)}")
 
-  def test_carrot_tuning_hides_cluster_params(self):
-    keys = set(panel_param_keys("navigation__carrot_tuning"))
-    leaked = self._CLUSTER_HIDDEN & keys
-    self.assertFalse(leaked, f"cluster params are exposed again: {sorted(leaked)}")
+  def test_carrot_tuning_exposes_cluster_params(self):
+    """Cluster knobs are now first-class settings (part 1 of the cluster port)."""
+    keys = set(panel_param_keys("navigation__carrot_tuning__display"))
+    missing = self._CLUSTER_EXPOSED - keys
+    self.assertFalse(missing, f"display panel missing cluster params: {sorted(missing)}")
 
 
 class CarrotTuningFullCoverageTests(unittest.TestCase):

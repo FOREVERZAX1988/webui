@@ -175,7 +175,7 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "ClusterHudCameraViewMode": ("int", 0),
   "ClusterHudCoreMode": ("int", 0),
   "ClusterHudDebug": ("bool", 0),
-  "ClusterHudEncoder": ("bool", 0),
+  "ClusterHudEncoder": ("int", 0),
   "ClusterHudLiveFps": ("int", 1),
   "ClusterHudMirror": ("bool", 0),
   "ClusterHudOrientation": ("int", 0),
