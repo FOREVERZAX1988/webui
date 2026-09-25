@@ -36,7 +36,7 @@ from openpilot.sunnypilot.carrot.bluetooth import (
   DEFAULT_MAPPING,
   RUNTIME,
   AddressValidator,
-  atomic_json,
+  AtomicJSON,
   config,
   read_json,
   validate_config,
@@ -110,7 +110,7 @@ def _cancel_pending(mac: str) -> None:
   if not isinstance(cancelled, dict):
     cancelled = {}
   cancelled[mac] = time.monotonic()
-  atomic_json(RUNTIME / 'cancelled.json', cancelled)
+  AtomicJSON(RUNTIME / 'cancelled.json', cancelled)
 
 
 # ---------------------------------------------------------------------------
@@ -180,7 +180,7 @@ async def api_bluetooth_mutate(request: web.Request) -> web.Response:
         if operation == 'forget':
           settings = config()
           settings['devices'].pop(mac, None)
-          atomic_json(CONFIG_PATH, settings)
+          AtomicJSON(CONFIG_PATH, settings)
 
       elif operation in ('config', 'device-config'):
         previous = config()
@@ -197,7 +197,7 @@ async def api_bluetooth_mutate(request: web.Request) -> web.Response:
         }
         if any(mac not in paired for mac in settings['devices']):
           raise ValueError('pair devices before configuring input')
-        atomic_json(CONFIG_PATH, settings)
+        AtomicJSON(CONFIG_PATH, settings)
         for mac, old in previous['devices'].items():
           if settings['devices'].get(mac) != old:
             _cancel_pending(mac)
@@ -208,7 +208,7 @@ async def api_bluetooth_mutate(request: web.Request) -> web.Response:
           raise ValueError('save the input profile first')
         if type(body.get('enabled')) is not bool:
           raise ValueError('enabled must be boolean')
-        atomic_json(
+        AtomicJSON(
           RUNTIME / 'learn.json',
           {'address': mac, 'until': time.monotonic() + 120} if body['enabled'] else {},
         )
