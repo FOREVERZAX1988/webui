@@ -1,7 +1,8 @@
 """Bluetooth setup HTTP API for webui.
 
-Stationary-only Bluetooth setup. HTTP can configure mappings and device management,
-but never fire vehicle commands (those go through the daemon's evdev reader).
+HTTP can configure mappings and device management (scan/pair/config/connect/disconnect).
+Vehicle command safety (accelCruise etc.) is enforced by the daemon's evdev reader
+via _guard_stationary() in bluetoothd, not here.
 
 Requires:
   - jeepney (D-Bus async, for BlueZ integration)
@@ -200,8 +201,12 @@ def _adapter_props_real(snapshot: dict) -> dict:
 
 
 async def api_bluetooth_mutate(request: web.Request) -> web.Response:
-  """POST /api/opui/bluetooth/{operation} — all state-changing operations."""
-  _guard_stationary(request)
+  """POST /api/opui/bluetooth/{operation} — all state-changing operations.
+
+  Note: This HTTP API handles Bluetooth configuration only (scan/pair/config).
+  Vehicle command safety is enforced by the daemon's evdev reader via
+  _guard_stationary() in bluetoothd, not here.
+  """
 
   if request.content_length is not None and request.content_length > 32768:
     raise web.HTTPRequestEntityTooLarge(max_size=32768, actual_size=request.content_length)
@@ -221,8 +226,6 @@ async def api_bluetooth_mutate(request: web.Request) -> web.Response:
   client, lock = _get_client()
 
   async with lock:
-    _guard_stationary(request)
-
     try:
       if operation == 'scan':
         await client.scan()
