@@ -155,30 +155,19 @@ PANELS: list[dict[str, Any]] = [
     ],
   },
   {
-    "id": "imu_calibration",
-    "title": "IMU Calibration",
-    "custom": "imu_calibration",
-    "widgets": [
-      {"type": "bool", "param": "ImuCalibrationEnabled", "label": "Use IMU Calibration",
-       "desc_i18n": "UseIMUCalibrationDescription",
-       "needs_cycle": True},
-      {"type": "action", "action": "imu_calibration_start", "label": "Start IMU Calibration", "button": "START",
-       "desc_i18n": "StartIMUCalibrationDescription",
-       "visible_if": {"param": "ImuCalibrationEnabled", "eq": "1"}},
-      {"type": "action", "action": "imu_calibration_reset", "label": "Reset IMU Calibration", "button": "RESET",
-       "desc_i18n": "ResetIMUCalibrationDescription",
-       "confirm": "Are you sure you want to clear the IMU calibration and switch back to stock calibration?",
-       "visible_if": {"param": "ImuCalibrationEnabled", "eq": "1"}},
-    ],
-  },
-  {
     "id": "network",
     "title": "Network",
     "custom": "network",
     "widgets": [
       {"type": "subpanel", "target": "network__advanced", "label": "Advanced Network", "button": "ADVANCED"},
-      {"type": "subpanel", "target": "network__bluetooth", "label": "Bluetooth", "button": "BT"},
     ],
+  },
+  {
+    "id": "bluetooth",
+    "title": "Bluetooth",
+    "custom": "bluetooth",
+    "icon": "icons/bluetooth.svg",
+    "widgets": [],
   },
   {
     "id": "sunnylink",
@@ -505,6 +494,23 @@ PANELS: list[dict[str, Any]] = [
     "title": "Data",
     "custom": "firehose",
     "widgets": [],
+  },
+  {
+    "id": "imu_calibration",
+    "title": "IMU Calibration",
+    "custom": "imu_calibration",
+    "widgets": [
+      {"type": "bool", "param": "ImuCalibrationEnabled", "label": "Use IMU Calibration",
+       "desc_i18n": "UseIMUCalibrationDescription",
+       "needs_cycle": True},
+      {"type": "action", "action": "imu_calibration_start", "label": "Start IMU Calibration", "button": "START",
+       "desc_i18n": "StartIMUCalibrationDescription",
+       "visible_if": {"param": "ImuCalibrationEnabled", "eq": "1"}},
+      {"type": "action", "action": "imu_calibration_reset", "label": "Reset IMU Calibration", "button": "RESET",
+       "desc_i18n": "ResetIMUCalibrationDescription",
+       "confirm": "Are you sure you want to clear the IMU calibration and switch back to stock calibration?",
+       "visible_if": {"param": "ImuCalibrationEnabled", "eq": "1"}},
+    ],
   },
   {
     "id": "developer",
@@ -1863,20 +1869,19 @@ SUBPANELS: dict[str, dict[str, Any]] = {
        "desc": "Prevent large data uploads when on a metered cellular connection"},
     ],
   },
+  "bluetooth__advanced": {
+    "id": "bluetooth__advanced",
+    "title": "Bluetooth Advanced",
+    "parent": "bluetooth",
+    "custom": "bluetooth_advanced",
+    "widgets": [],
+  },
   # eGPU status subpanel — mirrors sidebarSP eGPU icon state
   "carrot__egpu": {
     "id": "carrot__egpu",
     "title": "eGPU",
     "parent": "carrot",
     "custom": "egpu",
-    "widgets": [],
-  },
-  # Bluetooth HID remote subpanel — renders the CarrotBluetooth web panel
-  "network__bluetooth": {
-    "id": "network__bluetooth",
-    "title": "Bluetooth",
-    "parent": "network",
-    "custom": "bluetooth",
     "widgets": [],
   },
   "cruise__longitudinal_mpc_tuning": {
