@@ -926,7 +926,6 @@ const LOCAL_FALLBACKS = {
     "Stop": "停止",
     "Advanced": "高级",
     "Bluetooth adapter unavailable": "蓝牙适配器不可用",
-    "Requires stationary & disengaged state": "需要车辆静止且巡航已解除",
     "Scanning...": "搜索中...",
     "Bluetooth disabled": "蓝牙已禁用",
     "Ready": "就绪",

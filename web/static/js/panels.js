@@ -3350,7 +3350,7 @@ async function renderBluetoothPanel(container, data) {
 
   function renderHeader() {
     const discovering = isScanningActive();
-    const canAct = !!state.runtime?.stationary && state.available;
+    const canAct = state.available;
 
     const header = document.createElement('div');
     header.className = 'opui-bt-header';
@@ -3388,7 +3388,6 @@ async function renderBluetoothPanel(container, data) {
     else if (!state.hasUart) el.textContent = t('Bluetooth UART not exposed by this AGNOS kernel');
     else if (!state.hasBtpower) el.textContent = t('Bluetooth power node not detected');
     else if (!state.available) el.textContent = t('Bluetooth adapter unavailable');
-    else if (!state.runtime?.stationary) el.textContent = t('Requires stationary & disengaged state');
     else if (discovering) el.textContent = t('Scanning...');
     else if (!state.radioEnabled) el.textContent = t('Bluetooth disabled');
     else el.textContent = t('Ready');
@@ -3745,7 +3744,7 @@ async function renderBluetoothPanel(container, data) {
     }
 
     // Auto-scan once when entering a ready state
-    if (!autoScanned && state.radioEnabled && state.runtime?.stationary) {
+    if (!autoScanned && state.radioEnabled) {
       autoScanned = true;
       scanningUntil = Date.now() + 32000;
       api('scan').catch(() => {});
@@ -3835,7 +3834,7 @@ async function renderBluetoothAdvancedPanel(container, data) {
     if (panelRenderStale(gen) || !state) return;
     root.innerHTML = '';
 
-    const canAct = !!state.runtime?.stationary && state.available;
+    const canAct = state.available;
 
     // Bluetooth master switch
     const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
