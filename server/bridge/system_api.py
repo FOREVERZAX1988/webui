@@ -105,7 +105,10 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
       return {"ok": True, "action": action}
 
     if action == "osm_delete_maps":
-      p.put_bool("OsmDbDelete", True, block=True)
+      # Shared with the OSM panel and the storage panel: writing a param named
+      # OsmDbDelete never worked (it is registered nowhere and has no consumer).
+      from webui.server.bridge.osm_api import delete_downloaded_maps
+      delete_downloaded_maps()
       return {"ok": True, "action": action}
 
     if action == "network_set_apn":

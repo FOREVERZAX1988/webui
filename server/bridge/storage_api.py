@@ -486,19 +486,11 @@ def snapshot_storage(*, force: bool = False) -> dict[str, Any]:
   }
 
   try:
-    from openpilot.common.params import Params
-    p = Params()
-    active = (p.get("ActiveModel") or "").strip()
     model_root = (_CATEGORY_PATHS.get("models") or [""])[0]
-    if active and model_root and os.path.isdir(model_root):
-      active_path = os.path.join(model_root, active)
-      total_models = cat_bytes.get("models", 0)
-      active_size = _dir_bytes(active_path) if os.path.isdir(active_path) else 0
-      clearable["models_cache"] = max(0, total_models - active_size)
-    else:
-      clearable["models_cache"] = int(cat_bytes.get("models", 0))
+    active_files = _active_model_file_names() if model_root else set()
+    clearable["models_cache"] = _root_file_bytes(model_root, active_files) if model_root else 0
   except Exception:
-    clearable["models_cache"] = int(cat_bytes.get("models", 0))
+    clearable["models_cache"] = 0
 
   out = {
     "ok": True,
@@ -543,6 +535,62 @@ def _clear_dir_contents(path: str) -> int:
     except OSError:
       pass
   return freed
+
+
+def _active_model_file_names() -> set[str]:
+  """Artifact file names the selected model bundles keep on disk.
+
+  storage_api used to read a param literally named ``ActiveModel``.  No such param
+  is registered anywhere (params_keys.h is what Params validates against), so
+  Params raised UnknownKeyName and both the "models_cache" read-out and the clear
+  path failed before doing anything.
+
+  sunnypilot's ModelManagerSP records the answer in ModelManager_ActiveBundle and
+  ModelManager_ActiveBundleChestnut; ask get_selected_bundle() instead of
+  guessing.  An empty set means "cannot tell", so nothing is ever reported as
+  clearable that we cannot prove is unused.
+  """
+  try:
+    from openpilot.common.params import Params
+    from openpilot.sunnypilot.models.helpers import ACTIVE_BUNDLE_KEYS, get_selected_bundle
+
+    params = Params()
+    names: set[str] = set()
+    for source in ACTIVE_BUNDLE_KEYS:
+      bundle = get_selected_bundle(params, source)
+      for model in getattr(bundle, "models", None) or []:
+        artifact = getattr(model, "artifact", None)
+        file_name = getattr(artifact, "fileName", "") if artifact is not None else ""
+        if file_name:
+          names.add(file_name)
+    return names
+  except Exception:
+    return set()
+
+
+def _root_file_bytes(model_root: str, active_files: set[str]) -> int:
+  """Bytes of non-active files sitting directly in model_root.
+
+  ModelManagerSP.clear_model_cache() removes only *files* at the top level of
+  model_root and keeps the active bundles' artifacts, so this mirrors exactly what
+  a "clear models cache" would free.
+  """
+  total = 0
+  try:
+    entries = os.listdir(model_root)
+  except OSError:
+    return 0
+  for entry in entries:
+    base = entry.split(".chunk")[0] if ".chunk" in entry else entry
+    if base in active_files or entry in active_files:
+      continue
+    path = os.path.join(model_root, entry)
+    try:
+      if os.path.isfile(path):
+        total += os.path.getsize(path)
+    except OSError:
+      continue
+  return total
 
 
 def clear_storage(category: str) -> dict[str, Any]:
@@ -609,26 +657,24 @@ def clear_storage(category: str) -> dict[str, Any]:
           freed += size
 
     elif category == "maps":
-      from openpilot.common.params import Params
-      p = Params()
-      p.put_bool("OsmDbDelete", True, block=True)
+      # OsmDbDelete is registered nowhere and has no consumer, so this branch used
+      # to raise UnknownKeyName before deleting anything.  Use the same helper the
+      # OSM panel and the system action use (mirrors the device UI's OSM page).
+      from webui.server.bridge.osm_api import delete_downloaded_maps
+      freed += delete_downloaded_maps()
       for path in _CATEGORY_PATHS.get("maps", []):
         freed += _clear_dir_contents(path)
 
     elif category == "models_cache":
+      # Delegate instead of hand-deleting: the loop below keyed off "ActiveModel",
+      # a param registered nowhere, so it raised UnknownKeyName before deleting
+      # anything -- and even working it would have rmtree'd directories inside the
+      # live model root, which only ModelManagerSP should touch.
+      # ModelManager_ClearCache makes the owner drop the stale top-level artifacts
+      # while keeping the selected bundles' files, and it happens asynchronously,
+      # so report 0 freed here (the next scan shows the real number).
       from openpilot.common.params import Params
-      p = Params()
-      p.put_bool("ModelManager_ClearCache", True, block=True)
-      model_root = (_CATEGORY_PATHS.get("models") or [""])[0]
-      active = (p.get("ActiveModel") or "").strip()
-      if model_root and os.path.isdir(model_root):
-        for name in os.listdir(model_root):
-          if active and name == active:
-            continue
-          fp = os.path.join(model_root, name)
-          if os.path.isdir(fp):
-            freed += _dir_bytes(fp)
-            shutil.rmtree(fp, ignore_errors=True)
+      Params().put_bool("ModelManager_ClearCache", True, block=True)
 
     elif category == "logs":
       for path in _CATEGORY_PATHS.get("logs", []):
@@ -647,6 +693,9 @@ def clear_storage(category: str) -> dict[str, Any]:
       return {"ok": False, "error": f"unknown category: {category}"}
 
     _invalidate_cache()
-    return {"ok": True, "category": category, "freed_bytes": freed}
+    result = {"ok": True, "category": category, "freed_bytes": freed}
+    if category == "models_cache":
+      result["deferred"] = True
+    return result
   except Exception as exc:
     return {"ok": False, "error": str(exc)}

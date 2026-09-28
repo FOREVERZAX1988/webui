@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import threading
 import time
 from pathlib import Path
@@ -340,14 +341,53 @@ def osm_panel_custom() -> dict[str, Any]:
   return {"ok": True, "size": size, "progress": prog, "values": values}
 
 
+def delete_downloaded_maps() -> int:
+  """Delete every downloaded OSM map and reset the download bookkeeping.
+
+  Mirrors the device UI's OSM page (layouts/settings/osm.py::_do_delete_maps),
+  which is the implementation that actually works on the car.  Returns the number
+  of bytes freed.
+
+  The webui used to set a boolean param named ``OsmDbDelete`` instead.  No such
+  param exists in params_keys.h -- not in this fork, not upstream -- and nothing
+  consumes it, so ``Params.check_key()`` raised UnknownKeyName and every webui
+  "delete maps" entry point failed while the device UI worked fine.
+  """
+  from openpilot.common.hardware.hw import Paths
+  from openpilot.common.params import Params
+
+  freed = _calculate_map_size_bytes()
+  offline = Path(Paths.mapd_root()) / "offline"
+  if offline.exists():
+    shutil.rmtree(offline, ignore_errors=True)
+
+  params = Params()
+  for key in ("OsmDownloadedDate", "OsmLocal", "OsmLocationName", "OsmLocationTitle",
+              "OsmStateName", "OsmStateTitle"):
+    try:
+      params.remove(key)
+    except Exception:
+      pass
+  params.put_bool("OsmDbUpdatesCheck", False, block=True)
+
+  # A half-finished download from a prior session must not auto-resume after the
+  # user explicitly asked to wipe everything (same reasoning as the device UI).
+  mem_params = _shm_params()
+  for key in ("OSMDownloadLocations", "OSMDownloadBounds"):
+    try:
+      mem_params.remove(key)
+    except Exception:
+      pass
+  return freed
+
+
 def osm_delete_maps() -> dict[str, Any]:
   if os.environ.get("WEBUI_DEV_PC") == "1":
     return {"ok": True, "dev_pc": True}
   try:
-    from openpilot.common.params import Params
-    Params().put_bool("OsmDbDelete", True, block=True)
+    freed = delete_downloaded_maps()
     _SIZE_CACHE["ts"] = 0.0
     _refresh_size_cache_async()
-    return {"ok": True}
+    return {"ok": True, "freed_mb": round(freed / (1024 ** 2), 2)}
   except Exception as exc:
     return {"ok": False, "error": str(exc)}
