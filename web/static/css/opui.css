@@ -4542,36 +4542,100 @@ body.opui-system-wait-open {
   padding: 20px 0;
 }
 
-.opui-bt-device-card {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 20px;
+.opui-bt-device-wrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+}
+
+.opui-bt-device-row {
+  width: 100%;
+  min-height: 130px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.opui-bt-device-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.opui-bt-device-row.paired .opui-bt-device-name,
+.opui-bt-device-row.connected .opui-bt-device-name {
+  color: #7ec2ff;
+}
+
+.opui-bt-device-sep {
+  height: 1px;
+  margin-left: 20px;
+  margin-right: 20px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.opui-bt-device-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .opui-bt-device-name {
-  font-size: 48px;
+  font-size: 46px;
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.opui-bt-device-addr {
-  font-size: 34px;
+.opui-bt-device-meta {
+  font-size: 32px;
   color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .opui-bt-device-mapstatus {
-  font-size: 34px;
+  font-size: 30px;
   color: #7c7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opui-bt-device-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.opui-bt-device-signal {
+  font-size: 32px;
+  color: #8ab4f8;
+  min-width: 120px;
+  text-align: right;
 }
 
 .opui-bt-device-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+  align-items: center;
+  gap: 12px;
+}
+
+.opui-bt-device-actions .opui-btn--compact {
+  height: 72px;
+  padding: 0 24px;
+  font-size: 32px;
+  border-radius: 14px;
 }
 
 .opui-bt-prompt {
@@ -5101,9 +5165,9 @@ body.opui-system-wait-open {
   border: 1px solid rgba(255,255,255,0.2);
   background: rgba(255,255,255,0.08);
   color: #fff;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
-  max-width: none;
+  max-width: 58%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

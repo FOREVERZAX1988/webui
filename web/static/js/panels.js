@@ -3151,20 +3151,6 @@ async function renderBluetoothPanel(container, data) {
     root.appendChild(header);
   }
 
-  function renderStatusLine() {
-    const discovering = isScanningActive();
-    const el = document.createElement('div');
-    el.className = 'opui-bt-status-line';
-    if (!state.hasUart && !state.hasBtpower) el.textContent = t('Bluetooth radio hardware not detected');
-    else if (!state.hasUart) el.textContent = t('Bluetooth UART not exposed by this AGNOS kernel');
-    else if (!state.hasBtpower) el.textContent = t('Bluetooth power node not detected');
-    else if (!state.available) el.textContent = t('Bluetooth adapter unavailable');
-    else if (discovering) el.textContent = t('Scanning...');
-    else if (!state.radioEnabled) el.textContent = t('Bluetooth disabled');
-    else el.textContent = t('Ready');
-    root.appendChild(el);
-  }
-
   function makeRow(title, desc, control) {
     const row = document.createElement('div');
     row.className = 'opui-sp-row opui-sp-row--control-inline';
@@ -3209,29 +3195,14 @@ async function renderBluetoothPanel(container, data) {
     return label;
   }
 
-  function renderMainControls() {
-    const canAct = state.available;
+  function renderDevice(dev, isLast) {
     const wrap = document.createElement('div');
-    wrap.className = 'opui-bt-main-controls';
+    wrap.className = 'opui-bt-device-wrap';
 
-    const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
-      try { await api('radio', { enabled }); await refresh(); }
-      catch (e) { toast(e.message); }
-    });
-    wrap.appendChild(makeRow(t('Bluetooth'), t('Turn Bluetooth radio on or off.'), masterToggle));
-
-    const discToggle = makeToggle(!!state.discoverable, !canAct || !state.radioEnabled, async (enabled) => {
-      try { await api('discoverable', { enabled }); await refresh(); }
-      catch (e) { toast(e.message); }
-    });
-    wrap.appendChild(makeRow(t('Discoverable'), t('Allow other devices to find this device.'), discToggle));
-
-    root.appendChild(wrap);
-  }
-
-  function renderDevice(dev) {
-    const card = document.createElement('div');
-    card.className = 'opui-bt-device-card' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'opui-bt-device-row' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
+    row.onclick = () => selectDevice(dev);
 
     const main = document.createElement('div');
     main.className = 'opui-bt-device-main';
@@ -3247,7 +3218,7 @@ async function renderBluetoothPanel(container, data) {
     if (dev.connected) badges.push(t('Connected'));
     else if (dev.paired) badges.push(t('Paired'));
     if (dev.battery != null) badges.push(`${t('Battery')} ${dev.battery}%`);
-    metaEl.innerHTML = `${escapeHtml(dev.address)}${badges.length ? ' · ' + escapeHtml(badges.join(' · ')) : ''}`;
+    metaEl.textContent = `${dev.address}${badges.length ? ' · ' + badges.join(' · ') : ''}`;
     main.appendChild(metaEl);
 
     const cfg = state.config?.devices?.[dev.address];
@@ -3258,29 +3229,35 @@ async function renderBluetoothPanel(container, data) {
       main.appendChild(mapEl);
     }
 
-    card.appendChild(main);
+    row.appendChild(main);
+
+    const right = document.createElement('div');
+    right.className = 'opui-bt-device-right';
 
     const signal = document.createElement('div');
     signal.className = 'opui-bt-device-signal';
     signal.textContent = rssiText(dev.rssi);
+    right.appendChild(signal);
 
     const actions = document.createElement('div');
     actions.className = 'opui-bt-device-actions';
 
     if (!dev.paired) {
-      actions.appendChild(makeBtn(t('Pair'), 'opui-btn opui-btn--primary', async () => {
+      actions.appendChild(makeBtn(t('Pair'), 'opui-btn opui-btn--primary opui-btn--compact', async (e) => {
+        e.stopPropagation();
         const ok = await showConfirm(t('Pair with "{}"?').replace('{}', dev.name || dev.address));
         if (!ok) return;
         try { await api('pair', { address: dev.address }); await refresh(); }
         catch (e) { toast(e.message); }
       }));
     } else {
-      actions.appendChild(makeBtn(dev.connected ? t('Disconnect') : t('Connect'), dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary', async () => {
+      actions.appendChild(makeBtn(dev.connected ? t('Disconnect') : t('Connect'), (dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary') + ' opui-btn--compact', async (e) => {
+        e.stopPropagation();
         try { await api(dev.connected ? 'disconnect' : 'connect', { address: dev.address }); await refresh(); }
         catch (e) { toast(e.message); }
       }));
-      actions.appendChild(makeBtn(t('Edit'), 'opui-btn opui-btn--normal', () => selectDevice(dev)));
-      actions.appendChild(makeBtn(t('Forget'), 'opui-btn opui-btn--danger', async () => {
+      actions.appendChild(makeBtn(t('Forget'), 'opui-btn opui-btn--danger opui-btn--compact', async (e) => {
+        e.stopPropagation();
         const ok = await showConfirm(t('Forget "{}"?').replace('{}', dev.name || dev.address));
         if (!ok) return;
         try { await api('forget', { address: dev.address }); if (selected === dev.address) { selected = null; draft = null; } await refresh(); }
@@ -3288,12 +3265,16 @@ async function renderBluetoothPanel(container, data) {
       }));
     }
 
-    const right = document.createElement('div');
-    right.className = 'opui-bt-device-right';
-    right.appendChild(signal);
     right.appendChild(actions);
-    card.appendChild(right);
-    return card;
+    row.appendChild(right);
+    wrap.appendChild(row);
+
+    if (!isLast) {
+      const sep = document.createElement('div');
+      sep.className = 'opui-bt-device-sep';
+      wrap.appendChild(sep);
+    }
+    return wrap;
   }
 
   function renderDeviceList() {
@@ -3310,7 +3291,7 @@ async function renderBluetoothPanel(container, data) {
       title.className = 'opui-bt-device-group-title';
       title.textContent = t('Paired devices');
       group.appendChild(title);
-      for (const dev of paired) group.appendChild(renderDevice(dev));
+      for (let i = 0; i < paired.length; i++) group.appendChild(renderDevice(paired[i], i === paired.length - 1 && !found.length));
       listEl.appendChild(group);
     }
 
@@ -3321,7 +3302,7 @@ async function renderBluetoothPanel(container, data) {
       title.className = 'opui-bt-device-group-title';
       title.textContent = t('Available devices');
       group.appendChild(title);
-      for (const dev of found) group.appendChild(renderDevice(dev));
+      for (let i = 0; i < found.length; i++) group.appendChild(renderDevice(found[i], i === found.length - 1));
       listEl.appendChild(group);
     }
 
@@ -3570,8 +3551,6 @@ async function renderBluetoothPanel(container, data) {
     }
 
     renderHeader();
-    renderStatusLine();
-    renderMainControls();
     if (!draft) {
       renderDeviceList();
       handlePrompt();
@@ -3671,6 +3650,20 @@ async function renderBluetoothAdvancedPanel(container, data) {
     root.innerHTML = '';
 
     const canAct = state.available;
+
+    // Bluetooth master toggle
+    const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
+      try { await api('radio', { enabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    });
+    root.appendChild(makeRow(t('Bluetooth'), t('Turn Bluetooth radio on or off.'), masterToggle));
+
+    // Discoverable toggle
+    const discToggle = makeToggle(!!state.discoverable, !canAct || !state.radioEnabled, async (enabled) => {
+      try { await api('discoverable', { enabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    });
+    root.appendChild(makeRow(t('Discoverable'), t('Allow other devices to find this device.'), discToggle));
 
     // Device name: value on the left, single Edit/Save button on the right.
     const nameWrap = document.createElement('div');
