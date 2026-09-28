@@ -1989,7 +1989,10 @@ function renderChoiceRow(w) {
   row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
   row.dataset.param = w.param;
   row.dataset.widget = "choice";
-  const opts = (w.options || []).map((o) => t(o));
+  const opts = (w.options || []).map((o) => {
+    const label = typeof o === "object" && o != null ? String(o.label || o.value) : String(o);
+    return t(label);
+  });
   let idx = parseInt(w.value, 10);
   if (Number.isNaN(idx)) idx = 0;
 
