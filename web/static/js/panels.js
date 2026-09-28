@@ -1435,6 +1435,9 @@ function applyPanelTitle(panelId, titleEl, data, options = {}) {
 }
 
 export async function renderPanel(panelId, container, titleEl, options = {}) {
+  // Invalidate in-flight custom panel renders whenever we switch panels or
+  // refresh, so stale async work cannot append duplicate content.
+  beginPanelRender();
   const prevPanel = currentPanelRef;
   if (container && prevPanel && prevPanel !== panelId && container.childNodes.length) {
     stashPanelDom(prevPanel, container);
@@ -4830,12 +4833,13 @@ function createMpcOptionRow(cfg, value, disabled) {
 }
 
 async function renderLongitudinalMpcTuningPanel(container) {
-  container.innerHTML = "";
+  const gen = beginPanelRender();
   const disabled = !globalState.has_longitudinal_control;
 
   const batch = await apiPost("/api/opui/params/batch", {
     keys: LONGITUDINAL_MPC_TUNING_PARAMS.map((c) => c.param),
   });
+  if (panelRenderStale(gen)) return;
   const values = batch?.ok ? (batch.params || {}) : {};
 
   const wrap = document.createElement("div");
@@ -4864,6 +4868,7 @@ async function renderLongitudinalMpcTuningPanel(container) {
   resetWrap.appendChild(resetBtn);
   wrap.appendChild(resetWrap);
 
+  container.innerHTML = "";
   container.appendChild(wrap);
 }
 
