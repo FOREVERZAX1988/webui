@@ -4366,7 +4366,7 @@ body.opui-system-wait-open {
   display: contents;
 }
 
-/* ===== Text-input dialog (showTextInput, e.g. Amap API key) ===== */
+/* ===== Text-input dialog (showTextInput, e.g. custom string params) ===== */
 .opui-modal-card--textinput {
   width: min(1100px, calc(100% - 160px));
   min-width: 0;

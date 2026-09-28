@@ -97,7 +97,6 @@ SIM: dict[str, Any] = {
   "agnos_sim_rebooting": False,
   "agnos_sim_reboot_until": 0.0,
   "is_body": False,
-  "amap_enabled": True,
   "carrot_road_limit": 120,
   "car_speed_limit": 120,
   "map_speed_limit": 120,
@@ -251,7 +250,7 @@ def _mock_road_model(s: dict[str, Any]) -> dict[str, Any]:
   if s.get("edge_missing_demo"):
     edges = [None, None]
 
-  # Amap lane-line semantics (AmapLineType): 0 unknown · 1 solid white ·
+  # Carrot 7714 v2 lane-line semantics: 0 unknown · 1 solid white ·
   # 2 dashed white · 3 solid yellow · 4 double yellow · 5 botts dots · 6 edge.
   line_kinds = [0, 0, 0, 0]
   if s.get("lane_kinds_demo", True):
@@ -437,7 +436,7 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
       "speed_limit_assist_active": bool(s.get("speed_limit_assist")),
       "speed_limit_sources": {
         "car": {"value": s.get("car_speed_limit"), "valid": s.get("car_speed_limit") is not None},
-        "map": {"value": s.get("map_speed_limit", s.get("speed_limit")), "valid": True, "provider": "高德" if s.get("amap_enabled") else "OSM"},
+        "map": {"value": s.get("map_speed_limit", s.get("speed_limit")), "valid": True, "provider": "OSM"},
         "carrot": {"value": s.get("carrot_road_limit"), "valid": s.get("carrot_road_limit") is not None, "sdi_value": None, "sdi_distance": 0.},
         "merged": {"value": s.get("speed_limit"), "source": s.get("speed_limit_source", "map")},
       },
