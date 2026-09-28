@@ -74,69 +74,6 @@ def _safe_kph(value: Any) -> int | None:
   return round(ms * 3.6)
 
 
-def _speed_limit_sources(sm: Any, v_ego_ms: float) -> dict[str, Any]:
-  """Return the raw speed-limit values from each source, plus the merged
-  resolver result if longitudinalPlanSP is present."""
-  sources: dict[str, Any] = {
-    "car": {"value": None, "valid": False},
-    "map": {"value": None, "valid": False, "provider": "OSM"},
-    "carrot": {"value": None, "valid": False},
-    "merged": {"value": None, "source": None},
-  }
-
-  try:
-    if sm.valid.get("carStateSP"):
-      cs_sp = sm["carStateSP"]
-      car_kph = _safe_kph(cs_sp.speedLimit)
-      sources["car"]["value"] = car_kph
-      sources["car"]["valid"] = car_kph is not None
-  except Exception:
-    pass
-
-  try:
-    if sm.valid.get("liveMapDataSP"):
-      lm = sm["liveMapDataSP"]
-      if bool(lm.speedLimitValid):
-        map_kph = _safe_kph(lm.speedLimit)
-        sources["map"]["value"] = map_kph
-        sources["map"]["valid"] = map_kph is not None
-      if bool(lm.speedLimitAheadValid):
-        ahead_kph = _safe_kph(lm.speedLimitAhead)
-        sources["map"]["ahead_value"] = ahead_kph
-        sources["map"]["ahead_distance"] = float(lm.speedLimitAheadDistance)
-  except Exception:
-    pass
-
-  try:
-    if sm.valid.get("carrotManSP"):
-      cm = sm["carrotManSP"]
-      active = bool(int(cm.activeCarrot)) if hasattr(cm, "activeCarrot") else False
-      road_kph = _safe_kph(cm.nRoadLimitSpeed) if hasattr(cm, "nRoadLimitSpeed") else None
-      sdi_kph = _safe_kph(cm.xSpdLimit) if hasattr(cm, "xSpdLimit") else None
-      sdi_dist = float(cm.xSpdDist) if hasattr(cm, "xSpdDist") else 0.
-      sources["carrot"]["value"] = road_kph
-      sources["carrot"]["valid"] = active and road_kph is not None
-      sources["carrot"]["sdi_value"] = sdi_kph
-      sources["carrot"]["sdi_distance"] = sdi_dist
-  except Exception:
-    pass
-
-  try:
-    if sm.valid.get("longitudinalPlanSP"):
-      lp_sp = sm["longitudinalPlanSP"]
-      assist = getattr(lp_sp, "speedLimit", None)
-      resolver = getattr(assist, "resolver", None) if assist else None
-      if resolver is not None:
-        merged_ms = float(getattr(resolver, "speedLimit", 0) or 0)
-        if merged_ms > 0.:
-          sources["merged"]["value"] = round(merged_ms * 3.6)
-          sources["merged"]["source"] = str(getattr(resolver, "source", "")).split(".")[-1]
-  except Exception:
-    pass
-
-  return sources
-
-
 def _sunnylink_metric() -> dict[str, str]:
   try:
     from openpilot.common.params import Params
@@ -831,31 +768,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         }
       except Exception as e:
         sp_hud["carrot_instruction"] = {"valid": False, "error": f"{type(e).__name__}: {e}"}
-    # Unified longitudinal control diagnostics.
-    if sm.valid.get("longitudinalPlanSP"):
-      lp_sp = sm["longitudinalPlanSP"]
-      src_enum = getattr(lp_sp, "longitudinalPlanSource", None)
-      sp_hud["longitudinal_source"] = str(src_enum).split(".")[-1] if src_enum is not None else ""
-      carrot_plan = getattr(lp_sp, "carrot", None)
-      if carrot_plan is not None and getattr(carrot_plan, "active", False):
-        conv = 3.6 if is_metric else 2.23694
-        sp_hud["carrot_plan"] = {
-          "x_state": str(getattr(carrot_plan, "xState", "")),
-          "driving_mode": str(getattr(carrot_plan, "drivingMode", "")),
-          "v_target": round(float(getattr(carrot_plan, "vTarget", 0) or 0) * conv),
-          "a_target": round(float(getattr(carrot_plan, "aTarget", 0) or 0), 2),
-          "stop_dist": round(float(getattr(carrot_plan, "stopDist", 0) or 0), 1),
-        }
-      traffic_light = getattr(lp_sp, "trafficLight", None)
-      if traffic_light is not None:
-        tl_state_enum = getattr(traffic_light, "lightState", None)
-        tl_src_enum = getattr(traffic_light, "source", None)
-        sp_hud["traffic_light"] = {
-          "state": str(tl_state_enum).split(".")[-1] if tl_state_enum is not None else "",
-          "source": str(tl_src_enum).split(".")[-1] if tl_src_enum is not None else "",
-          "confidence": round(float(getattr(traffic_light, "confidence", 0) or 0), 2),
-          "distance": round(float(getattr(traffic_light, "distance", 0) or 0), 1),
-        }
     try:
       if car_ctx.pcm_cruise_speed is not None:
         sp_hud["pcm_cruise_speed"] = bool(car_ctx.pcm_cruise_speed)
@@ -866,10 +778,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if arrow:
         sp_hud["pre_active_arrow"] = arrow
 
-    # Raw speed-limit sources for the Speed Limit panel diagnostics. These are
-    # read directly from cereal so the UI can show what each source thinks the
-    # limit is, even when the resolver has chosen a different source.
-    sp_hud["speed_limit_sources"] = _speed_limit_sources(sm, speed_ms)
   except Exception:
     pass
 

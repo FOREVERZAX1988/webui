@@ -432,10 +432,6 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."
     ),
-    "Carrot Nav Panel Side": "Carrot Nav Panel Side",
-    "Place the onroad Carrot navigation panel on the left or right side of the screen.": (
-      "Place the onroad Carrot navigation panel on the left or right side of the screen."
-    ),
     "Carrot Driving Mode": "Carrot Driving Mode",
     "Carrot driving style preset.": "Carrot driving style preset.",
     "Traffic Light Assist": "Traffic Light Assist",
@@ -1032,10 +1028,6 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Enable Carrot Navi v2 (7714)": "启用 Carrot Navi v2 (7714)",
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "使用 7714 WebSocket v2 富导航流（红绿灯、车道、复杂路口图像）。"
-    ),
-    "Carrot Nav Panel Side": "Carrot 导航面板位置",
-    "Place the onroad Carrot navigation panel on the left or right side of the screen.": (
-      "将 Carrot 导航面板放在屏幕左侧或右侧。"
     ),
     "Carrot Driving Mode": "Carrot 驾驶模式",
     "Carrot driving style preset.": "Carrot 驾驶风格预设。",
