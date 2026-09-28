@@ -17,7 +17,7 @@
 |------|-----|------|
 | 数据 | `SpeedLimitResolver` 合并 carrot 导航限速到 `map` 源；SDI 走 `LIMIT_ADAPT_ACC` 前瞻语义；carrot 包新鲜度/数值合理性门控 | ✅ |
 | 数据 | `plannerd` 订阅 `carrotManSP`（`ignore_alive`） | ✅ |
-| 数据 | `state_api` 输出 `sp_hud.speed_limit_sources`（车机/地图/Carrot/生效）与顶层 `amap_provider` | ✅ |
+| 数据 | `state_api` 输出 `sp_hud.speed_limit_sources`（车机/地图/Carrot/生效）；Amap Web 已移除，无 `amap_provider` | ✅ |
 | 数据 | `state_api` 盲区/转向灯改读 `carState`（原 `SelfdriveStateSP` 字段不存在） | ✅ |
 | 数据 | `radarTracks` 加入 `STATE_HUB_SERVICES`，`state_api` 输出 `radar_tracks` | ✅ |
 | HUD | road-lite：导航带移到时速下方居中、字号放大；移除单独限速徽标；SLA 圆环接管 | ✅ |

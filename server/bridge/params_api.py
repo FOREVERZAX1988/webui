@@ -37,9 +37,6 @@ _CUSTOM_PANEL_PARAMS: dict[str, list[str]] = {
     "OsmStateTitle",
     "OsmDownloadedDate",
   ],
-  "navigation": [
-    "AmapApiKey",
-  ],
 }
 
 def _param_type_names() -> dict[Any, str]:

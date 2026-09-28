@@ -137,15 +137,6 @@ def _speed_limit_sources(sm: Any, v_ego_ms: float) -> dict[str, Any]:
   return sources
 
 
-def _amap_has_key() -> bool:
-  try:
-    from openpilot.common.params import Params
-    key = Params().get("AmapApiKey") or ""
-    return bool(key.strip())
-  except Exception:
-    return False
-
-
 def _sunnylink_metric() -> dict[str, str]:
   try:
     from openpilot.common.params import Params
@@ -608,11 +599,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     screensaver_enabled = p.get_bool("ScreenSaverEnabled")
     screensaver_timeout_sec = int(p.get("ScreenSaverTimeout", return_default=True) or 300)
     speed_limit_mode = int(p.get("SpeedLimitMode", return_default=True) or 0)
-    # AmapMapDataEnabled is what the UI actually toggles; AmapEnabled is the deprecated
-    # param that mapd_mode migrates from, kept as a fallback for installs that have not
-    # run the migration. Reading only AmapEnabled made the panel report "OSM" while Amap
-    # was in fact the active provider.
-    amap_enabled = bool(p.get_bool("AmapMapDataEnabled") or p.get_bool("AmapEnabled"))
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
     carrot_web_enabled = p.get_bool("CarrotWebEnabled")
@@ -1105,7 +1091,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "sp_hud": sp_hud,
     "dm_arc": dm_arc,
     "speed_limit_mode": speed_limit_mode,
-    "amap_provider": "高德" if (amap_enabled and _amap_has_key()) else "OSM",
     "turn_signals": turn_signals,
     "blindspot": blindspot,
     "rocket_fuel_enabled": rocket_fuel_enabled,

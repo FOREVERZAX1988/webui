@@ -493,7 +493,6 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "confidence_ball": {"target": float(s.get("confidence_target", 0.72)), "ui_status": s.get("ui_status", "engaged")} if s["started"] else None,
     "dev_ui": _mock_dev_ui(s) if s["started"] and int(s.get("developer_ui", 0)) > 0 else None,
     "speed_limit_mode": int(s.get("speed_limit_mode", 1)),
-    "amap_provider": "高德" if s.get("amap_enabled") else "OSM",
     "car_control_enabled": False,
     "is_cruise_set": bool(s["started"]) and s["set_speed_kmh"] > 0,
     "is_cruise_available": True,
