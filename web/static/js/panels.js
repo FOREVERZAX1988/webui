@@ -1614,13 +1614,16 @@ function renderAlwaysOffroadRow(active) {
 function prunePanelWidgets(widgets, panelData) {
   const kept = [];
   for (const w of widgets || []) {
+    // A separator may carry visible_if too (e.g. a divider that only belongs with a
+    // group that is itself conditionally shown); honour it before the dedupe logic,
+    // otherwise the divider survives while every row around it is hidden.
+    if (!widgetVisible(w, panelData)) continue;
     if (w.type === "separator") {
       if (!kept.length) continue;
       if (kept[kept.length - 1].type === "separator") continue;
       kept.push(w);
       continue;
     }
-    if (!widgetVisible(w, panelData)) continue;
     kept.push(w);
   }
   while (kept.length && kept[kept.length - 1].type === "separator") kept.pop();
