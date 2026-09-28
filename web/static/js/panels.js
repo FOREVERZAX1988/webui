@@ -3162,6 +3162,70 @@ async function renderBluetoothPanel(container, data) {
     root.appendChild(el);
   }
 
+  function makeRow(title, desc, control) {
+    const row = document.createElement('div');
+    row.className = 'opui-sp-row opui-sp-row--control-inline';
+    const text = document.createElement('div');
+    text.className = 'opui-sp-row-text';
+    const t1 = document.createElement('div');
+    t1.className = 'opui-sp-row-title';
+    t1.textContent = title;
+    text.appendChild(t1);
+    if (desc) {
+      const t2 = document.createElement('div');
+      t2.className = 'opui-sp-row-desc';
+      t2.textContent = desc;
+      text.appendChild(t2);
+    }
+    row.appendChild(text);
+    const ctrlWrap = document.createElement('div');
+    ctrlWrap.className = 'opui-sp-row-control';
+    ctrlWrap.appendChild(control);
+    row.appendChild(ctrlWrap);
+    return row;
+  }
+
+  function makeToggle(checked, disabled, onChange) {
+    const label = document.createElement('label');
+    label.className = 'opui-sp-toggle' + (checked ? ' on' : '') + (disabled ? ' disabled' : '');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = checked;
+    input.disabled = disabled;
+    input.addEventListener('change', () => {
+      label.classList.toggle('on', input.checked);
+      onChange(input.checked);
+    });
+    const track = document.createElement('span');
+    track.className = 'opui-sp-toggle-track';
+    const thumb = document.createElement('span');
+    thumb.className = 'opui-sp-toggle-thumb';
+    track.appendChild(thumb);
+    label.appendChild(input);
+    label.appendChild(track);
+    return label;
+  }
+
+  function renderMainControls() {
+    const canAct = state.available;
+    const wrap = document.createElement('div');
+    wrap.className = 'opui-bt-main-controls';
+
+    const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
+      try { await api('radio', { enabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    });
+    wrap.appendChild(makeRow(t('Bluetooth'), t('Turn Bluetooth radio on or off.'), masterToggle));
+
+    const discToggle = makeToggle(!!state.discoverable, !canAct || !state.radioEnabled, async (enabled) => {
+      try { await api('discoverable', { enabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    });
+    wrap.appendChild(makeRow(t('Discoverable'), t('Allow other devices to find this device.'), discToggle));
+
+    root.appendChild(wrap);
+  }
+
   function renderDevice(dev) {
     const card = document.createElement('div');
     card.className = 'opui-bt-device-card' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
@@ -3504,6 +3568,7 @@ async function renderBluetoothPanel(container, data) {
 
     renderHeader();
     renderStatusLine();
+    renderMainControls();
     if (!draft) {
       renderDeviceList();
       handlePrompt();
@@ -3603,20 +3668,6 @@ async function renderBluetoothAdvancedPanel(container, data) {
     root.innerHTML = '';
 
     const canAct = state.available;
-
-    // Bluetooth master switch
-    const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
-      try { await api('radio', { enabled }); await refresh(); }
-      catch (e) { toast(e.message); }
-    });
-    root.appendChild(makeRow(t('Bluetooth'), t('Turn Bluetooth radio on or off.'), masterToggle));
-
-    // Discoverable toggle
-    const discToggle = makeToggle(!!state.discoverable, !canAct || !state.radioEnabled, async (enabled) => {
-      try { await api('discoverable', { enabled }); await refresh(); }
-      catch (e) { toast(e.message); }
-    });
-    root.appendChild(makeRow(t('Discoverable'), t('Allow other devices to find this device.'), discToggle));
 
     // Device name: value on the left, single Edit/Save button on the right.
     const nameWrap = document.createElement('div');
