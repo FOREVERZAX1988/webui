@@ -13,6 +13,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Changes": "Changes",
     "Current": "Current",
     "Available": "Available",
+    "Bluetooth": "Bluetooth",
+    "Carrot": "Carrot",
+    "Data": "Data",
+    "Storage": "Storage",
     "This updates only the Web UI files, not openpilot firmware.": (
       "This updates only the Web UI files, not openpilot firmware."
     ),
@@ -428,10 +432,6 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."
     ),
-    "Carrot Nav Panel Side": "Carrot Nav Panel Side",
-    "Place the onroad Carrot navigation panel on the left or right side of the screen.": (
-      "Place the onroad Carrot navigation panel on the left or right side of the screen."
-    ),
     "Carrot Driving Mode": "Carrot Driving Mode",
     "Carrot driving style preset.": "Carrot driving style preset.",
     "Traffic Light Assist": "Traffic Light Assist",
@@ -603,6 +603,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Web UI": "Web UI",
     "Local": "本地",
     "Cloud": "云端",
+    "Bluetooth": "蓝牙",
+    "Carrot": "Carrot",
+    "Data": "数据",
+    "Storage": "存储",
     "Loading...": "加载中...",
     "Web UI update available": "有 Web UI 更新",
     "Web UI is up to date": "Web UI 已是最新版本",
@@ -1025,10 +1029,6 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "使用 7714 WebSocket v2 富导航流（红绿灯、车道、复杂路口图像）。"
     ),
-    "Carrot Nav Panel Side": "Carrot 导航面板位置",
-    "Place the onroad Carrot navigation panel on the left or right side of the screen.": (
-      "将 Carrot 导航面板放在屏幕左侧或右侧。"
-    ),
     "Carrot Driving Mode": "Carrot 驾驶模式",
     "Carrot driving style preset.": "Carrot 驾驶风格预设。",
     "Traffic Light Assist": "红绿灯辅助",
@@ -1200,6 +1200,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Web UI": "Web UI",
     "Local": "本機",
     "Cloud": "雲端",
+    "Bluetooth": "藍牙",
+    "Carrot": "Carrot",
+    "Data": "資料",
+    "Storage": "儲存",
     "Loading...": "載入中...",
     "Web UI update available": "有 Web UI 更新",
     "Web UI is up to date": "Web UI 已是最新版本",

@@ -1,7 +1,8 @@
 """Bluetooth setup HTTP API for webui.
 
-Stationary-only Bluetooth setup. HTTP can configure mappings and device management,
-but never fire vehicle commands (those go through the daemon's evdev reader).
+HTTP can configure mappings and device management (scan/pair/config/connect/disconnect).
+Vehicle command safety (accelCruise etc.) is enforced by the daemon's evdev reader
+via _guard_stationary() in bluetoothd, not here.
 
 Requires:
   - jeepney (D-Bus async, for BlueZ integration)
@@ -25,6 +26,7 @@ Endpoints exposed via routes/__init__.py:
 from __future__ import annotations
 
 import asyncio
+import os
 import time
 from urllib.parse import urlsplit
 
@@ -63,6 +65,35 @@ def _get_client() -> tuple[Bluez, asyncio.Lock]:
 # Helpers
 # ---------------------------------------------------------------------------
 
+async def _has_bluez() -> bool:
+  """Check whether the bluetoothd daemon binary is present."""
+  process = await asyncio.create_subprocess_exec(
+    'bash', '-c', 'command -v bluetoothd',
+    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+  )
+  try:
+    stdout, _ = await asyncio.wait_for(process.communicate(), 3)
+    return process.returncode == 0 and bool(stdout.strip())
+  except TimeoutError:
+    process.kill()
+    await process.wait()
+    return False
+
+
+async def _service_running() -> bool:
+  """Check whether the bluetooth systemd service is active."""
+  process = await asyncio.create_subprocess_exec(
+    'systemctl', 'is-active', '--quiet', 'bluetooth',
+    stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+  )
+  try:
+    return await asyncio.wait_for(process.wait(), 3) == 0
+  except TimeoutError:
+    process.kill()
+    await process.wait()
+    return False
+
+
 async def _radio_enabled() -> bool:
   """Check if the Bluetooth radio is enabled via /data/bluetooth/ENABLED."""
   process = await asyncio.create_subprocess_exec(
@@ -75,6 +106,8 @@ async def _radio_enabled() -> bool:
     process.kill()
     await process.wait()
     return False
+
+
 
 
 def _runtime_status() -> dict:
@@ -119,25 +152,61 @@ def _cancel_pending(mac: str) -> None:
 
 async def api_bluetooth_status(request: web.Request) -> web.Response:
   """GET /api/opui/bluetooth — full status snapshot."""
+  has_bluez = await _has_bluez()
+  service_running = await _service_running() if has_bluez else False
+
   result: dict = {
     'runtime': _runtime_status(),
     'config': config(),
     'actions': ACTIONS,
     'defaults': DEFAULT_MAPPING,
+    'hasBluez': has_bluez,
+    'serviceRunning': service_running,
     'radioEnabled': await _radio_enabled(),
+    'discoverable': False,
+    'localName': None,
+    'hasUart': os.path.exists('/dev/ttyHS1'),
+    'hasBtpower': os.path.exists('/dev/btpower'),
   }
+
   client, _ = _get_client()
   try:
-    result.update(await client.snapshot())
-    result['available'] = True
+    snapshot = await client.snapshot()
+    result.update(snapshot)
+    result['available'] = len(snapshot.get('adapters', [])) > 0
+    result.update(_adapter_props_real(snapshot))
   except Exception as exc:
-    result.update(available=False, error=str(exc), devices=[], adapters=[])
+    error_str = str(exc)
+    # DBus service unavailable — provide a clean user-facing message
+    if "ServiceUnknown" in error_str or "org.bluez" in error_str:
+      if not has_bluez:
+        error_str = "Bluetooth is not installed."
+      elif not service_running:
+        error_str = "Bluetooth service is stopped."
+      else:
+        error_str = "Bluetooth adapter not found."
+    result.update(available=False, error=error_str, devices=[], adapters=[])
   return web.json_response(result)
 
 
+def _adapter_props_real(snapshot: dict) -> dict:
+  """Extract localName/discoverable/radioEnabled from the first adapter."""
+  for adapter in snapshot.get('adapters', []):
+    return {
+      'localName': adapter.get('name') or adapter.get('alias'),
+      'discoverable': bool(adapter.get('discoverable')),
+      'radioEnabled': bool(adapter.get('powered')),
+    }
+  return {}
+
+
 async def api_bluetooth_mutate(request: web.Request) -> web.Response:
-  """POST /api/opui/bluetooth/{operation} — all state-changing operations."""
-  _guard_stationary(request)
+  """POST /api/opui/bluetooth/{operation} — all state-changing operations.
+
+  Note: This HTTP API handles Bluetooth configuration only (scan/pair/config).
+  Vehicle command safety is enforced by the daemon's evdev reader via
+  _guard_stationary() in bluetoothd, not here.
+  """
 
   if request.content_length is not None and request.content_length > 32768:
     raise web.HTTPRequestEntityTooLarge(max_size=32768, actual_size=request.content_length)
@@ -157,8 +226,6 @@ async def api_bluetooth_mutate(request: web.Request) -> web.Response:
   client, lock = _get_client()
 
   async with lock:
-    _guard_stationary(request)
-
     try:
       if operation == 'scan':
         await client.scan()
@@ -241,6 +308,57 @@ async def api_bluetooth_mutate(request: web.Request) -> web.Response:
             raise ValueError('radio operation timed out') from None
           if proc.returncode:
             raise ValueError(error.decode(errors='replace')[:500])
+
+      elif operation == 'install':
+        proc = await asyncio.create_subprocess_exec(
+          'sudo', '-n', 'bash', '-c',
+          'apt-get update && apt-get install -y bluez && systemctl start bluetooth',
+          stdout=asyncio.subprocess.PIPE,
+          stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+          _, error = await asyncio.wait_for(proc.communicate(), 180)
+        except TimeoutError:
+          proc.kill()
+          await proc.wait()
+          raise ValueError('bluez installation timed out') from None
+        if proc.returncode:
+          raise ValueError(error.decode(errors='replace')[:1000])
+
+      elif operation == 'service':
+        if type(body.get('start')) is not bool:
+          raise ValueError('start must be boolean')
+        command = ['sudo', '-n', 'systemctl', 'start', 'bluetooth'] if body['start'] else ['sudo', '-n', 'systemctl', 'stop', 'bluetooth']
+        proc = await asyncio.create_subprocess_exec(
+          *command,
+          stdout=asyncio.subprocess.DEVNULL,
+          stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+          _, error = await asyncio.wait_for(proc.communicate(), 30)
+        except TimeoutError:
+          proc.kill()
+          await proc.wait()
+          raise ValueError('service operation timed out') from None
+        if proc.returncode:
+          raise ValueError(error.decode(errors='replace')[:500])
+
+      elif operation == 'name':
+        name = str(body.get('name', '')).strip()
+        if not 1 <= len(name) <= 248:
+          raise ValueError('device name must be 1 to 248 characters')
+        adapters = [p for p, interfaces in (await client.objects()).items() if 'org.bluez.Adapter1' in interfaces]
+        if not adapters:
+          raise ValueError('Bluetooth adapter unavailable')
+        await client.call(adapters[0], 'org.freedesktop.DBus.Properties', 'Set', 'ssv', ('org.bluez.Adapter1', 'Alias', ('s', name)))
+
+      elif operation == 'discoverable':
+        if type(body.get('enabled')) is not bool:
+          raise ValueError('enabled must be boolean')
+        adapters = [p for p, interfaces in (await client.objects()).items() if 'org.bluez.Adapter1' in interfaces]
+        if not adapters:
+          raise ValueError('Bluetooth adapter unavailable')
+        await client.call(adapters[0], 'org.freedesktop.DBus.Properties', 'Set', 'ssv', ('org.bluez.Adapter1', 'Discoverable', ('b', body['enabled'])))
 
       else:
         raise web.HTTPNotFound()

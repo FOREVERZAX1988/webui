@@ -2,7 +2,7 @@ import { apiGet, apiPost } from "./api.js";
 import {
   loadPanelList, renderPanel, setGlobalState, setHomeState, setSubpanelNavigator,
   applyPanelSync, syncDrivingPersonality, notifyPanelWatch, applyPanelCustom, clearPanelDomCache,
-} from "./panels.js?v=113";
+} from "./panels.js?v=116";
 import {
   startRoadStream, stopRoadStream, updateOnroadHud, bindExperimentalButton, bindCameraSwitcher, prewarmWebrtc, isCameraPlaying, isRoadStreaming, updateStreamDeviceState, onDocumentVisibilityChange, isOverlayAllowed, shouldDrawModelOverlay, getOverlayFpsHint, isPreviewStreamEnabled, applyPreviewOffUi, stopOnroadHudAnimLoop,
 } from "./onroad.js?v=120";
@@ -17,7 +17,7 @@ import { initBodyLayout, updateBodyLayout, stopBodyLayout } from "./body_layout.
 import { initDevPanel } from "./dev.js";
 import { initModelCanvas, showModelOverlay, scheduleDrawModelOverlay, setModelOverlayEnabled, hasOverlayGeometry } from "./model_canvas.js";
 import { initRoadLite } from "./road_lite.js";
-import { loadI18n, translatePanelTitle, syncStaticUiStrings, tr } from "./i18n.js";
+import { loadI18n, translatePanelTitle, syncStaticUiStrings, tr } from "./i18n.js?v=3";
 import { initOnboarding, bindOnboardingDialog } from "./onboarding.js";
 import { initWebUiUpdate, refreshWebUiUpdateI18n } from "./webui_update.js";
 import { initSystemWaitOverlay } from "./system_wait_overlay.js";
@@ -749,7 +749,7 @@ function setupWebSocket() {
   });
   opuiWs.on("i18n", async (msg) => {
     if (msg?.data?.ok) {
-      const { applyI18nPayload } = await import("./i18n.js");
+      const { applyI18nPayload } = await import("./i18n.js?v=3");
       if (applyI18nPayload(msg.data, true)) {
         clearPanelDomCache();
         renderNav();

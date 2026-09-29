@@ -74,78 +74,6 @@ def _safe_kph(value: Any) -> int | None:
   return round(ms * 3.6)
 
 
-def _speed_limit_sources(sm: Any, v_ego_ms: float) -> dict[str, Any]:
-  """Return the raw speed-limit values from each source, plus the merged
-  resolver result if longitudinalPlanSP is present."""
-  sources: dict[str, Any] = {
-    "car": {"value": None, "valid": False},
-    "map": {"value": None, "valid": False, "provider": "OSM"},
-    "carrot": {"value": None, "valid": False},
-    "merged": {"value": None, "source": None},
-  }
-
-  try:
-    if sm.valid.get("carStateSP"):
-      cs_sp = sm["carStateSP"]
-      car_kph = _safe_kph(cs_sp.speedLimit)
-      sources["car"]["value"] = car_kph
-      sources["car"]["valid"] = car_kph is not None
-  except Exception:
-    pass
-
-  try:
-    if sm.valid.get("liveMapDataSP"):
-      lm = sm["liveMapDataSP"]
-      if bool(lm.speedLimitValid):
-        map_kph = _safe_kph(lm.speedLimit)
-        sources["map"]["value"] = map_kph
-        sources["map"]["valid"] = map_kph is not None
-      if bool(lm.speedLimitAheadValid):
-        ahead_kph = _safe_kph(lm.speedLimitAhead)
-        sources["map"]["ahead_value"] = ahead_kph
-        sources["map"]["ahead_distance"] = float(lm.speedLimitAheadDistance)
-  except Exception:
-    pass
-
-  try:
-    if sm.valid.get("carrotManSP"):
-      cm = sm["carrotManSP"]
-      active = bool(int(cm.activeCarrot)) if hasattr(cm, "activeCarrot") else False
-      road_kph = _safe_kph(cm.nRoadLimitSpeed) if hasattr(cm, "nRoadLimitSpeed") else None
-      sdi_kph = _safe_kph(cm.xSpdLimit) if hasattr(cm, "xSpdLimit") else None
-      sdi_dist = float(cm.xSpdDist) if hasattr(cm, "xSpdDist") else 0.
-      sources["carrot"]["value"] = road_kph
-      sources["carrot"]["valid"] = active and road_kph is not None
-      sources["carrot"]["sdi_value"] = sdi_kph
-      sources["carrot"]["sdi_distance"] = sdi_dist
-  except Exception:
-    pass
-
-  try:
-    if sm.valid.get("longitudinalPlanSP"):
-      lp_sp = sm["longitudinalPlanSP"]
-      assist = getattr(lp_sp, "speedLimit", None)
-      resolver = getattr(assist, "resolver", None) if assist else None
-      if resolver is not None:
-        merged_ms = float(getattr(resolver, "speedLimit", 0) or 0)
-        if merged_ms > 0.:
-          sources["merged"]["value"] = round(merged_ms * 3.6)
-          sources["merged"]["source"] = str(getattr(resolver, "source", "")).split(".")[-1]
-  except Exception:
-    pass
-
-  return sources
-
-
-def _amap_has_key() -> bool:
-  try:
-    from openpilot.common.params import Params
-    key = Params().get("AmapApiKey") or ""
-    return bool(key.strip())
-  except Exception:
-    return False
-
-
 def _sunnylink_metric() -> dict[str, str]:
   try:
     from openpilot.common.params import Params
@@ -377,9 +305,8 @@ def _road_model(sm: Any) -> dict[str, Any] | None:
     lines = [_sample_y(l) for l in model.laneLines]
 
     # Lane-line style. ``line_types`` keeps its original 0/1 meaning (0 dashed,
-    # 1 solid); ``line_kinds`` carries the richer Amap codes for the two lines
-    # bracketing the ego lane (see AmapLineType in
-    # openpilot/sunnypilot/selfdrive/car/amap_fusion.py):
+    # 1 solid); ``line_kinds`` carries the richer Carrot 7714 v2 lane codes for
+    # the two lines bracketing the ego lane (see CarrotNaviSP.laneCurrent):
     #   0 unknown · 1 solid white · 2 dashed white · 3 solid yellow
     #   4 double yellow · 5 botts dots · 6 road edge
     # Order matches model.laneLines: [outer left, inner left, inner right, outer right].
@@ -594,7 +521,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   developer_ui = int(car_ctx.developer_ui or 0)
   torque_bar = car_ctx.torque_bar
   speed_limit_mode = 0
-  amap_enabled = False
   carrot_panel_side = 0
   carrot_panel_opacity = 100
   turn_signals = car_ctx.turn_signals
@@ -608,11 +534,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     screensaver_enabled = p.get_bool("ScreenSaverEnabled")
     screensaver_timeout_sec = int(p.get("ScreenSaverTimeout", return_default=True) or 300)
     speed_limit_mode = int(p.get("SpeedLimitMode", return_default=True) or 0)
-    # AmapMapDataEnabled is what the UI actually toggles; AmapEnabled is the deprecated
-    # param that mapd_mode migrates from, kept as a fallback for installs that have not
-    # run the migration. Reading only AmapEnabled made the panel report "OSM" while Amap
-    # was in fact the active provider.
-    amap_enabled = bool(p.get_bool("AmapMapDataEnabled") or p.get_bool("AmapEnabled"))
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
     carrot_web_enabled = p.get_bool("CarrotWebEnabled")
@@ -716,8 +637,8 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if sp_hud["speed_limit_ahead_valid"]:
         sp_hud["speed_limit_ahead"] = round(float(getattr(lmd, "speedLimitAhead", 0) or 0) * conv)
         sp_hud["speed_limit_ahead_dist"] = float(getattr(lmd, "speedLimitAheadDistance", 0) or 0)
-    # Carrot 7714 v2 lane-line edge bars (mirrors GUI AmapLaneIndicators).
-    if amap_enabled and sm.valid.get("carStateSP"):
+    # Carrot 7714 v2 lane-line edge bars (mirrors GUI CarrotLaneIndicators).
+    if sm.valid.get("carStateSP"):
       cssp = sm["carStateSP"]
       sp_hud["amap_lines"] = {
         "valid": bool(getattr(cssp, "carrotLaneValid", False)),
@@ -847,31 +768,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         }
       except Exception as e:
         sp_hud["carrot_instruction"] = {"valid": False, "error": f"{type(e).__name__}: {e}"}
-    # Unified longitudinal control diagnostics.
-    if sm.valid.get("longitudinalPlanSP"):
-      lp_sp = sm["longitudinalPlanSP"]
-      src_enum = getattr(lp_sp, "longitudinalPlanSource", None)
-      sp_hud["longitudinal_source"] = str(src_enum).split(".")[-1] if src_enum is not None else ""
-      carrot_plan = getattr(lp_sp, "carrot", None)
-      if carrot_plan is not None and getattr(carrot_plan, "active", False):
-        conv = 3.6 if is_metric else 2.23694
-        sp_hud["carrot_plan"] = {
-          "x_state": str(getattr(carrot_plan, "xState", "")),
-          "driving_mode": str(getattr(carrot_plan, "drivingMode", "")),
-          "v_target": round(float(getattr(carrot_plan, "vTarget", 0) or 0) * conv),
-          "a_target": round(float(getattr(carrot_plan, "aTarget", 0) or 0), 2),
-          "stop_dist": round(float(getattr(carrot_plan, "stopDist", 0) or 0), 1),
-        }
-      traffic_light = getattr(lp_sp, "trafficLight", None)
-      if traffic_light is not None:
-        tl_state_enum = getattr(traffic_light, "lightState", None)
-        tl_src_enum = getattr(traffic_light, "source", None)
-        sp_hud["traffic_light"] = {
-          "state": str(tl_state_enum).split(".")[-1] if tl_state_enum is not None else "",
-          "source": str(tl_src_enum).split(".")[-1] if tl_src_enum is not None else "",
-          "confidence": round(float(getattr(traffic_light, "confidence", 0) or 0), 2),
-          "distance": round(float(getattr(traffic_light, "distance", 0) or 0), 1),
-        }
     try:
       if car_ctx.pcm_cruise_speed is not None:
         sp_hud["pcm_cruise_speed"] = bool(car_ctx.pcm_cruise_speed)
@@ -882,10 +778,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if arrow:
         sp_hud["pre_active_arrow"] = arrow
 
-    # Raw speed-limit sources for the Speed Limit panel diagnostics. These are
-    # read directly from cereal so the UI can show what each source thinks the
-    # limit is, even when the resolver has chosen a different source.
-    sp_hud["speed_limit_sources"] = _speed_limit_sources(sm, speed_ms)
   except Exception:
     pass
 
@@ -1105,7 +997,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "sp_hud": sp_hud,
     "dm_arc": dm_arc,
     "speed_limit_mode": speed_limit_mode,
-    "amap_provider": "高德" if (amap_enabled and _amap_has_key()) else "OSM",
     "turn_signals": turn_signals,
     "blindspot": blindspot,
     "rocket_fuel_enabled": rocket_fuel_enabled,
