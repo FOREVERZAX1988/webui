@@ -333,7 +333,7 @@ PANELS: list[dict[str, Any]] = [
     "id": "navigation",
     "title": "Navigation",
     "widgets": [{"type": "bool", "param": "OsmMapDataEnabled", "label": "Enable OSM Map Data", "offroad_only": True,
-       "desc": "Use offline OSM map data for speed limits and road names. It is the only map-data provider left on the device (Amap Web was removed upstream), so turning it off leaves speed limits and road names to Carrot navigation alone - the offline data can be years out of date."},{"type": "bool", "param": "CarrotAmapBlindSpotEnabled", "label": "Enable Amap Blind Spot Data", "offroad_only": True,
+       "desc": "Use offline OSM map data for speed limits and road names. It is the only map-data provider left on the device (Amap Web was removed upstream), so turning it off leaves speed limits and road names to Carrot navigation alone - the offline data can be years out of date."},{"type": "bool", "param": "CarrotAmapBlindSpotEnabled", "label": "Enable Carrot Blind Spot Data", "offroad_only": True,
        "desc": "Parse blind-spot / LiDAR / extBlinker fields from the 7706 UDP stream."},{"type": "bool", "param": "CarrotEnabled", "label": "Enable Carrot Navigation", "offroad_only": True,
        "desc": "Use Carrot navigation data for map-based features."},{"type": "bool", "param": "CarrotNaviV2Enabled", "label": "Enable Carrot Navi v2 (7714)", "offroad_only": True,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
