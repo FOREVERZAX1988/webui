@@ -13,3 +13,4 @@ __pycache__/
 node_modules/
 dist/
 tls/
+server/bridge/data/cache/

@@ -41,30 +41,52 @@ def _bundled_regions(region_type: str) -> dict[str, Any] | None:
     return None
 
 
-def _disk_cache_path(region_type: str) -> Path:
-  key = (region_type or "Country").lower()
-  return _CACHE_DIR / f"osm_{key}_regions.json"
+def _cache_file_name(cache_key: str) -> str:
+  # Callers pass the "<region_type>:<country>" cache key built in osm_fetch_regions, so
+  # it has to be sanitized first: the raw key wrote files called
+  # "osm_country:_regions.json", and ":" is illegal on exFAT/FAT32 (SD cards) and
+  # breaks Windows-side tooling that inspects the runtime cache.
+  key = (cache_key or "Country").lower().strip()
+  for char in (":", "/", "\\", " ", "*", "?", '"', "<", ">", "|"):
+    key = key.replace(char, "-")
+  key = key.strip("-.") or "country"
+  return f"osm_{key}_regions.json"
 
 
-def _load_disk_cache(region_type: str) -> dict[str, Any] | None:
-  path = _disk_cache_path(region_type)
-  if not path.is_file():
-    return None
-  try:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("ok"):
-      data["cached"] = True
-      return data
-  except Exception:
-    pass
+def _disk_cache_path(cache_key: str) -> Path:
+  return _CACHE_DIR / _cache_file_name(cache_key)
+
+
+def _legacy_disk_cache_path(cache_key: str) -> Path:
+  # Pre-sanitization name (e.g. "osm_country:_regions.json"): read it once so a cache
+  # written by an older build is not wasted, then drop it on the next save.
+  return _CACHE_DIR / f"osm_{(cache_key or 'Country').lower()}_regions.json"
+
+
+def _load_disk_cache(cache_key: str) -> dict[str, Any] | None:
+  legacy = _legacy_disk_cache_path(cache_key)
+  for path in (_disk_cache_path(cache_key), legacy):
+    if not path.is_file():
+      continue
+    try:
+      data = json.loads(path.read_text(encoding="utf-8"))
+      if data.get("ok"):
+        data["cached"] = True
+        return data
+    except Exception:
+      pass
   return None
 
 
-def _save_disk_cache(region_type: str, data: dict[str, Any]) -> None:
+def _save_disk_cache(cache_key: str, data: dict[str, Any]) -> None:
   try:
     _CACHE_DIR.mkdir(parents=True, exist_ok=True)
     payload = {k: v for k, v in data.items() if k not in ("bundled", "cached", "full")}
-    _disk_cache_path(region_type).write_text(json.dumps(payload), encoding="utf-8")
+    path = _disk_cache_path(cache_key)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    legacy = _legacy_disk_cache_path(cache_key)
+    if legacy != path:
+      legacy.unlink(missing_ok=True)
   except Exception:
     pass
 

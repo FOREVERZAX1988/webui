@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import Any
 
 LAUNCH_MARKER = "start_webui"
+# Bump when START_WEBUI_FN changes so already-installed launch scripts get re-patched.
+# v2: pydeps-aware probe + time-bounded network fallback (see
+# openpilot/system/tests/test_launch_boot_bootstrap.py).
+WEBUI_BOOTSTRAP_MARKER = "webui-bootstrap-v2"
 
 START_WEBUI_FN = r'''  start_webui() {
     local root="$DIR"
@@ -25,14 +29,18 @@ START_WEBUI_FN = r'''  start_webui() {
     local py_path="$root"
     [ -d "$venv_site" ] && py_path="$py_path:$venv_site"
     [ -d "$pydeps" ] && py_path="$py_path:$pydeps"
-    # AGNOS rootfs is read-only; install aiohttp into $pydeps on first boot.
-    if ! "$web_py" -c "import aiohttp" 2>/dev/null; then
+    # webui-bootstrap-v2
+    # AGNOS rootfs is read-only; install aiohttp into $pydeps on first boot. The probe
+    # must see $pydeps, and the network fallback is time-bounded: this runs before
+    # ./manager.py, so a half-working network here would stall the UI behind the logo.
+    if ! PYTHONPATH="$py_path" "$web_py" -c "import aiohttp" 2>/dev/null; then
       if [ -d "$pydeps" ] || mkdir -p "$pydeps" 2>/dev/null; then
         if ! "$web_py" -c "import pip" 2>/dev/null; then
-          curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null && \
+          curl -fsSL --connect-timeout 5 --max-time 20 https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null && \
             "$web_py" /tmp/get-pip.py --target="$pydeps" --no-warn-script-location >> /tmp/webui.log 2>&1 || true
         fi
-        PYTHONPATH="$py_path" "$web_py" -m pip install --target="$pydeps" aiohttp >> /tmp/webui.log 2>&1 || true
+        PYTHONPATH="$py_path" "$web_py" -m pip install --target="$pydeps" --timeout 5 --retries 0 \
+          --disable-pip-version-check aiohttp >> /tmp/webui.log 2>&1 || true
         py_path="$root"
         [ -d "$venv_site" ] && py_path="$py_path:$venv_site"
         py_path="$py_path:$pydeps"
@@ -71,7 +79,10 @@ def find_launch_script(root: Path) -> Path | None:
 def _upgrade_start_webui(content: str) -> tuple[str, bool]:
   if LAUNCH_MARKER not in content:
     return content, False
-  if ".pydeps" in content and "WEBUI_TLS=1" in content:
+  # Keyed on the version marker, not on "looks patched": an old-style script patched by
+  # an earlier build carries .pydeps/WEBUI_TLS but still has the unbounded probe, and it
+  # must be upgraded too.
+  if WEBUI_BOOTSTRAP_MARKER in content:
     return content, False
   if '[ ! -f "$root/webui/webuid.py" ]' not in content:
     return content, False
