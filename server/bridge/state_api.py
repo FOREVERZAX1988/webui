@@ -368,9 +368,8 @@ def _road_model(sm: Any) -> dict[str, Any] | None:
     lines = [_sample_y(l) for l in model.laneLines]
 
     # Lane-line style. ``line_types`` keeps its original 0/1 meaning (0 dashed,
-    # 1 solid); ``line_kinds`` carries the richer Amap codes for the two lines
-    # bracketing the ego lane (see AmapLineType in
-    # openpilot/sunnypilot/selfdrive/car/amap_fusion.py):
+    # 1 solid); ``line_kinds`` carries the richer Carrot 7714 v2 lane codes for
+    # the two lines bracketing the ego lane (see CarrotNaviSP.laneCurrent):
     #   0 unknown · 1 solid white · 2 dashed white · 3 solid yellow
     #   4 double yellow · 5 botts dots · 6 road edge
     # Order matches model.laneLines: [outer left, inner left, inner right, outer right].
@@ -701,10 +700,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if sp_hud["speed_limit_ahead_valid"]:
         sp_hud["speed_limit_ahead"] = round(float(getattr(lmd, "speedLimitAhead", 0) or 0) * conv)
         sp_hud["speed_limit_ahead_dist"] = float(getattr(lmd, "speedLimitAheadDistance", 0) or 0)
-    # Carrot 7714 v2 lane-line edge bars. These used to be gated on AmapMapDataEnabled,
-    # the Amap Web provider switch that no longer exists - so the bars were permanently
-    # off. The payload carries its own validity (carrotLaneValid), which is what the HUD
-    # checks before drawing anything.
+    # Carrot 7714 v2 lane-line edge bars (mirrors GUI CarrotLaneIndicators).
     if sm.valid.get("carStateSP"):
       cssp = sm["carStateSP"]
       sp_hud["amap_lines"] = {
@@ -874,6 +870,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     # read directly from cereal so the UI can show what each source thinks the
     # limit is, even when the resolver has chosen a different source.
     sp_hud["speed_limit_sources"] = _speed_limit_sources(sm, speed_ms)
+
   except Exception:
     pass
 

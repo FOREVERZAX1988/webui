@@ -1435,6 +1435,9 @@ function applyPanelTitle(panelId, titleEl, data, options = {}) {
 }
 
 export async function renderPanel(panelId, container, titleEl, options = {}) {
+  // Invalidate in-flight custom panel renders whenever we switch panels or
+  // refresh, so stale async work cannot append duplicate content.
+  beginPanelRender();
   const prevPanel = currentPanelRef;
   if (container && prevPanel && prevPanel !== panelId && container.childNodes.length) {
     stashPanelDom(prevPanel, container);
@@ -1611,13 +1614,16 @@ function renderAlwaysOffroadRow(active) {
 function prunePanelWidgets(widgets, panelData) {
   const kept = [];
   for (const w of widgets || []) {
+    // A separator may carry visible_if too (e.g. a divider that only belongs with a
+    // group that is itself conditionally shown); honour it before the dedupe logic,
+    // otherwise the divider survives while every row around it is hidden.
+    if (!widgetVisible(w, panelData)) continue;
     if (w.type === "separator") {
       if (!kept.length) continue;
       if (kept[kept.length - 1].type === "separator") continue;
       kept.push(w);
       continue;
     }
-    if (!widgetVisible(w, panelData)) continue;
     kept.push(w);
   }
   while (kept.length && kept[kept.length - 1].type === "separator") kept.pop();
@@ -1984,7 +1990,10 @@ function renderChoiceRow(w) {
   row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
   row.dataset.param = w.param;
   row.dataset.widget = "choice";
-  const opts = (w.options || []).map((o) => t(o));
+  const opts = (w.options || []).map((o) => {
+    const label = typeof o === "object" && o != null ? String(o.label || o.value) : String(o);
+    return t(label);
+  });
   let idx = parseInt(w.value, 10);
   if (Number.isNaN(idx)) idx = 0;
 
@@ -2523,7 +2532,7 @@ function renderSshKeysBlock() {
   return row;
 }
 
-/* Speed-limit source diagnostics: show the raw values from car, map (OSM/Amap)
+/* Speed-limit source diagnostics: show the raw values from car, map (OSM)
    and carrot navigation, plus the merged resolver result. This is read-only. */
 function renderSpeedLimitSourcesRow(w) {
   const row = document.createElement("div");
@@ -2664,60 +2673,6 @@ function renderCarrotNaviDebugRow(w) {
       ${summary}`;
     await showHtml({ title: t("Carrot Navi Debug"), html });
   });
-  if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
-  return row;
-}
-
-/* Traffic-light fusion read-out: shows fused state and source. */
-function renderTrafficLightFusionRow(w) {
-  const row = document.createElement("div");
-  row.className = "opui-sp-row opui-sp-row--readonly";
-  row.dataset.custom = "traffic_light_fusion";
-  row.innerHTML = `
-    <div class="opui-sp-row-text" style="width:100%">
-      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
-      <div class="opui-tl-fusion" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;color:rgba(240,244,255,0.85)">
-        <div class="opui-tl-item" data-key="state"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>状态 <b>--</b></div>
-        <div class="opui-tl-item" data-key="source"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>来源 <b>--</b></div>
-        <div class="opui-tl-item" data-key="distance"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>距离 <b>--</b></div>
-        <div class="opui-tl-item" data-key="confidence"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>置信度 <b>--</b></div>
-      </div>
-    </div>`;
-  const items = {
-    state: row.querySelector('[data-key="state"]'),
-    source: row.querySelector('[data-key="source"]'),
-    distance: row.querySelector('[data-key="distance"]'),
-    confidence: row.querySelector('[data-key="confidence"]'),
-  };
-  const stateColors = {
-    red: "#ef4444",
-    redconfirmed: "#ef4444",
-    green: "#22c55e",
-    greenconfirmed: "#22c55e",
-  };
-  const update = () => {
-    const st = opuiWs.lastState;
-    const tl = st?.sp_hud?.traffic_light;
-    const labels = { state: "状态", source: "来源", distance: "距离", confidence: "置信度" };
-    const values = {
-      state: tl?.state || "--",
-      source: tl?.source || "--",
-      distance: tl?.distance != null ? `${tl.distance} m` : "--",
-      confidence: tl?.confidence != null ? `${tl.confidence}` : "--",
-    };
-    for (const key of Object.keys(items)) {
-      const el = items[key];
-      if (!el) continue;
-      const dot = el.querySelector(".opui-tl-dot");
-      const hasData = tl != null && tl.state != null && tl.state !== "";
-      const color = key === "state" ? (stateColors[(tl?.state || "").toLowerCase()] || "#888") : (hasData ? "#4ade80" : "#888");
-      if (dot) dot.style.background = color;
-      el.innerHTML = `<span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px"></span>${labels[key]} <b style="font-weight:700">${values[key]}</b>`;
-    }
-  };
-  const off = opuiWs.on("state", update);
-  row._cleanup = off;
-  update();
   if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
   return row;
 }
@@ -3304,23 +3259,58 @@ async function renderBluetoothPanel(container, data) {
     root.appendChild(header);
   }
 
-  function renderStatusLine() {
-    const discovering = isScanningActive();
-    const el = document.createElement('div');
-    el.className = 'opui-bt-status-line';
-    if (!state.hasUart && !state.hasBtpower) el.textContent = t('Bluetooth radio hardware not detected');
-    else if (!state.hasUart) el.textContent = t('Bluetooth UART not exposed by this AGNOS kernel');
-    else if (!state.hasBtpower) el.textContent = t('Bluetooth power node not detected');
-    else if (!state.available) el.textContent = t('Bluetooth adapter unavailable');
-    else if (discovering) el.textContent = t('Scanning...');
-    else if (!state.radioEnabled) el.textContent = t('Bluetooth disabled');
-    else el.textContent = t('Ready');
-    root.appendChild(el);
+  function makeRow(title, desc, control) {
+    const row = document.createElement('div');
+    row.className = 'opui-sp-row opui-sp-row--control-inline';
+    const text = document.createElement('div');
+    text.className = 'opui-sp-row-text';
+    const t1 = document.createElement('div');
+    t1.className = 'opui-sp-row-title';
+    t1.textContent = title;
+    text.appendChild(t1);
+    if (desc) {
+      const t2 = document.createElement('div');
+      t2.className = 'opui-sp-row-desc';
+      t2.textContent = desc;
+      text.appendChild(t2);
+    }
+    row.appendChild(text);
+    const ctrlWrap = document.createElement('div');
+    ctrlWrap.className = 'opui-sp-row-control';
+    ctrlWrap.appendChild(control);
+    row.appendChild(ctrlWrap);
+    return row;
   }
 
-  function renderDevice(dev) {
-    const card = document.createElement('div');
-    card.className = 'opui-bt-device-card' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
+  function makeToggle(checked, disabled, onChange) {
+    const label = document.createElement('label');
+    label.className = 'opui-sp-toggle' + (checked ? ' on' : '') + (disabled ? ' disabled' : '');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = checked;
+    input.disabled = disabled;
+    input.addEventListener('change', () => {
+      label.classList.toggle('on', input.checked);
+      onChange(input.checked);
+    });
+    const track = document.createElement('span');
+    track.className = 'opui-sp-toggle-track';
+    const thumb = document.createElement('span');
+    thumb.className = 'opui-sp-toggle-thumb';
+    track.appendChild(thumb);
+    label.appendChild(input);
+    label.appendChild(track);
+    return label;
+  }
+
+  function renderDevice(dev, isLast) {
+    const wrap = document.createElement('div');
+    wrap.className = 'opui-bt-device-wrap';
+
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'opui-bt-device-row' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
+    row.onclick = () => selectDevice(dev);
 
     const main = document.createElement('div');
     main.className = 'opui-bt-device-main';
@@ -3336,7 +3326,7 @@ async function renderBluetoothPanel(container, data) {
     if (dev.connected) badges.push(t('Connected'));
     else if (dev.paired) badges.push(t('Paired'));
     if (dev.battery != null) badges.push(`${t('Battery')} ${dev.battery}%`);
-    metaEl.innerHTML = `${escapeHtml(dev.address)}${badges.length ? ' · ' + escapeHtml(badges.join(' · ')) : ''}`;
+    metaEl.textContent = `${dev.address}${badges.length ? ' · ' + badges.join(' · ') : ''}`;
     main.appendChild(metaEl);
 
     const cfg = state.config?.devices?.[dev.address];
@@ -3347,29 +3337,35 @@ async function renderBluetoothPanel(container, data) {
       main.appendChild(mapEl);
     }
 
-    card.appendChild(main);
+    row.appendChild(main);
+
+    const right = document.createElement('div');
+    right.className = 'opui-bt-device-right';
 
     const signal = document.createElement('div');
     signal.className = 'opui-bt-device-signal';
     signal.textContent = rssiText(dev.rssi);
+    right.appendChild(signal);
 
     const actions = document.createElement('div');
     actions.className = 'opui-bt-device-actions';
 
     if (!dev.paired) {
-      actions.appendChild(makeBtn(t('Pair'), 'opui-btn opui-btn--primary', async () => {
+      actions.appendChild(makeBtn(t('Pair'), 'opui-btn opui-btn--primary opui-btn--compact', async (e) => {
+        e.stopPropagation();
         const ok = await showConfirm(t('Pair with "{}"?').replace('{}', dev.name || dev.address));
         if (!ok) return;
         try { await api('pair', { address: dev.address }); await refresh(); }
         catch (e) { toast(e.message); }
       }));
     } else {
-      actions.appendChild(makeBtn(dev.connected ? t('Disconnect') : t('Connect'), dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary', async () => {
+      actions.appendChild(makeBtn(dev.connected ? t('Disconnect') : t('Connect'), (dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary') + ' opui-btn--compact', async (e) => {
+        e.stopPropagation();
         try { await api(dev.connected ? 'disconnect' : 'connect', { address: dev.address }); await refresh(); }
         catch (e) { toast(e.message); }
       }));
-      actions.appendChild(makeBtn(t('Edit'), 'opui-btn opui-btn--normal', () => selectDevice(dev)));
-      actions.appendChild(makeBtn(t('Forget'), 'opui-btn opui-btn--danger', async () => {
+      actions.appendChild(makeBtn(t('Forget'), 'opui-btn opui-btn--danger opui-btn--compact', async (e) => {
+        e.stopPropagation();
         const ok = await showConfirm(t('Forget "{}"?').replace('{}', dev.name || dev.address));
         if (!ok) return;
         try { await api('forget', { address: dev.address }); if (selected === dev.address) { selected = null; draft = null; } await refresh(); }
@@ -3377,12 +3373,16 @@ async function renderBluetoothPanel(container, data) {
       }));
     }
 
-    const right = document.createElement('div');
-    right.className = 'opui-bt-device-right';
-    right.appendChild(signal);
     right.appendChild(actions);
-    card.appendChild(right);
-    return card;
+    row.appendChild(right);
+    wrap.appendChild(row);
+
+    if (!isLast) {
+      const sep = document.createElement('div');
+      sep.className = 'opui-bt-device-sep';
+      wrap.appendChild(sep);
+    }
+    return wrap;
   }
 
   function renderDeviceList() {
@@ -3399,7 +3399,7 @@ async function renderBluetoothPanel(container, data) {
       title.className = 'opui-bt-device-group-title';
       title.textContent = t('Paired devices');
       group.appendChild(title);
-      for (const dev of paired) group.appendChild(renderDevice(dev));
+      for (let i = 0; i < paired.length; i++) group.appendChild(renderDevice(paired[i], i === paired.length - 1 && !found.length));
       listEl.appendChild(group);
     }
 
@@ -3410,7 +3410,7 @@ async function renderBluetoothPanel(container, data) {
       title.className = 'opui-bt-device-group-title';
       title.textContent = t('Available devices');
       group.appendChild(title);
-      for (const dev of found) group.appendChild(renderDevice(dev));
+      for (let i = 0; i < found.length; i++) group.appendChild(renderDevice(found[i], i === found.length - 1));
       listEl.appendChild(group);
     }
 
@@ -3659,7 +3659,6 @@ async function renderBluetoothPanel(container, data) {
     }
 
     renderHeader();
-    renderStatusLine();
     if (!draft) {
       renderDeviceList();
       handlePrompt();
@@ -3760,7 +3759,7 @@ async function renderBluetoothAdvancedPanel(container, data) {
 
     const canAct = state.available;
 
-    // Bluetooth master switch
+    // Bluetooth master toggle
     const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
       try { await api('radio', { enabled }); await refresh(); }
       catch (e) { toast(e.message); }
@@ -4754,12 +4753,13 @@ function createMpcOptionRow(cfg, value, disabled) {
 }
 
 async function renderLongitudinalMpcTuningPanel(container) {
-  container.innerHTML = "";
+  const gen = beginPanelRender();
   const disabled = !globalState.has_longitudinal_control;
 
   const batch = await apiPost("/api/opui/params/batch", {
     keys: LONGITUDINAL_MPC_TUNING_PARAMS.map((c) => c.param),
   });
+  if (panelRenderStale(gen)) return;
   const values = batch?.ok ? (batch.params || {}) : {};
 
   const wrap = document.createElement("div");
@@ -4788,6 +4788,7 @@ async function renderLongitudinalMpcTuningPanel(container) {
   resetWrap.appendChild(resetBtn);
   wrap.appendChild(resetWrap);
 
+  container.innerHTML = "";
   container.appendChild(wrap);
 }
 
