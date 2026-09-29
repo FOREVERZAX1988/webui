@@ -3303,6 +3303,13 @@ async function renderBluetoothPanel(container, data) {
     return label;
   }
 
+  async function doConfirmPair(dev) {
+    const ok = await showConfirm(t('Pair with "{}"?').replace('{}', dev.name || dev.address));
+    if (!ok) return;
+    try { await api('pair', { address: dev.address }); await refresh(); }
+    catch (e) { toast(e.message); }
+  }
+
   function renderDevice(dev, isLast) {
     const wrap = document.createElement('div');
     wrap.className = 'opui-bt-device-wrap';
@@ -3310,7 +3317,16 @@ async function renderBluetoothPanel(container, data) {
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'opui-bt-device-row' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
-    row.onclick = () => selectDevice(dev);
+    // Tapping the row: a paired device opens the editor; an unpaired device asks
+    // to confirm pairing first (mirrors the native GUI - never jump straight into
+    // the mapping screen for something that isn't paired yet).
+    row.onclick = () => {
+      if (dev.paired) {
+        selectDevice(dev);
+      } else {
+        doConfirmPair(dev);
+      }
+    };
 
     const main = document.createElement('div');
     main.className = 'opui-bt-device-main';
@@ -3353,10 +3369,7 @@ async function renderBluetoothPanel(container, data) {
     if (!dev.paired) {
       actions.appendChild(makeBtn(t('Pair'), 'opui-btn opui-btn--primary opui-btn--compact', async (e) => {
         e.stopPropagation();
-        const ok = await showConfirm(t('Pair with "{}"?').replace('{}', dev.name || dev.address));
-        if (!ok) return;
-        try { await api('pair', { address: dev.address }); await refresh(); }
-        catch (e) { toast(e.message); }
+        await doConfirmPair(dev);
       }));
     } else {
       actions.appendChild(makeBtn(dev.connected ? t('Disconnect') : t('Connect'), (dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary') + ' opui-btn--compact', async (e) => {
