@@ -415,6 +415,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Carrot Planner / Cruise": "Carrot Planner / Cruise",
     "Navi Speed / Sound": "Navi Speed / Sound",
     "Enable Carrot Navi v2 (7714)": "Enable Carrot Navi v2 (7714)",
+    "Carrot ATC Turn Signal": "Carrot ATC Turn Signal",
+    "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default.": (
+      "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default."
+    ),
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."
     ),
@@ -1002,6 +1006,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Carrot Planner / Cruise": "Carrot 规划 / 巡航",
     "Navi Speed / Sound": "导航限速 / 音量",
     "Enable Carrot Navi v2 (7714)": "启用 Carrot Navi v2 (7714)",
+    "Carrot ATC Turn Signal": "Carrot ATC 转向灯",
+    "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default.": (
+      "让 Carrot App 的转弯指令充当转向灯。该信号会到达车辆真实转向灯，因此默认关闭。"
+    ),
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "使用 7714 WebSocket v2 富导航流（红绿灯、车道、复杂路口图像）。"
     ),
@@ -1180,6 +1188,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Web UI": "Web UI",
     "Local": "本機",
     "Cloud": "雲端",
+    "Carrot ATC Turn Signal": "Carrot ATC 方向燈",
+    "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default.": (
+      "讓 Carrot App 的轉彎指令充當方向燈。該信號會到達車輛真實方向燈，因此預設關閉。"
+    ),
     "Loading...": "載入中...",
     "Web UI update available": "有 Web UI 更新",
     "Web UI is up to date": "Web UI 已是最新版本",
