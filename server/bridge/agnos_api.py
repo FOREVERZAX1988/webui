@@ -18,14 +18,19 @@ _DEV_PARTITIONS = ("xbl", "abl", "boot", "system", "vendor")
 
 
 def _openpilot_dir() -> Path:
+  """Directory that holds the openpilot python package (cereal, common, ...)."""
   try:
     from openpilot.common.basedir import BASEDIR
-    return Path(BASEDIR)
+    base = Path(BASEDIR)
   except Exception:
-    root = Path(os.environ.get("OPENPILOT_ROOT") or Path(__file__).resolve().parents[3])
-    if (root / "openpilot").is_dir():
-      return root / "openpilot"
-    return root
+    base = Path(os.environ.get("OPENPILOT_ROOT") or Path(__file__).resolve().parents[3])
+
+  # Monorepo layouts expose BASEDIR as the repo root, with the package one level down
+  # (BASEDIR/openpilot). Honor that, otherwise _agnos_py() points at a path that does not
+  # exist and the install thread dies with FileNotFoundError before agnos.py is ever run.
+  if (base / "openpilot" / "common").is_dir():
+    return base / "openpilot"
+  return base
 
 
 def _is_dev_pc() -> bool:
