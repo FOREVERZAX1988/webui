@@ -3,7 +3,34 @@
 from __future__ import annotations
 
 import threading
+import time
 from typing import Any
+
+# HARDWARE.booted() shells out to `sudo cat /sys/kernel/debug/msm_vidc/core0/info`; this gate
+# is evaluated by the state hub ~10 times per second, so remember the verdict for a moment.
+_BOOTED_TTL_SEC = 2.0
+_BOOTED_LOCK = threading.Lock()
+_BOOTED_VALUE = True
+_BOOTED_TS = 0.0
+
+
+def _device_booted() -> bool:
+  """HARDWARE.booted() with a short-lived cache."""
+  global _BOOTED_VALUE, _BOOTED_TS
+
+  now = time.monotonic()
+  if now - _BOOTED_TS < _BOOTED_TTL_SEC:
+    return _BOOTED_VALUE
+
+  try:
+    from openpilot.common.hardware import HARDWARE
+    value = bool(HARDWARE.booted())
+  except Exception:
+    return True
+
+  with _BOOTED_LOCK:
+    _BOOTED_VALUE, _BOOTED_TS = value, now
+  return value
 
 # User-facing messages (i18n keys on the client).
 BLOCKER_MESSAGES: dict[str, str] = {
@@ -96,11 +123,7 @@ def evaluate_startup_gates(p: Any, ds: Any | None = None) -> dict[str, bool]:
     "device_booted": True,
     "not_always_offroad": not offroad_mode,
   }
-  try:
-    from openpilot.common.hardware import HARDWARE
-    startup["device_booted"] = HARDWARE.booted()
-  except Exception:
-    pass
+  startup["device_booted"] = _device_booted()
 
   onroad = {
     "ignition": False,

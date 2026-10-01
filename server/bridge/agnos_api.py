@@ -156,6 +156,52 @@ def _dev_agnos_snapshot() -> dict[str, Any]:
   }
 
 
+# verify_agnos_update() re-hashes every full_check partition of the target slot (~400 ms of
+# block IO per call) and the home screen asks for this status every couple of seconds, so
+# remember the answer and only re-verify when the manifest or the install job state changes.
+_VERIFY_TTL_SEC = 60.0
+_VERIFY_LOCK = threading.Lock()
+_VERIFY_CACHE: tuple[tuple, float, bool, str] | None = None
+
+
+def _verify_cache_key(manifest: str) -> tuple:
+  def _stamp(path: str) -> float:
+    try:
+      return os.stat(path).st_mtime
+    except OSError:
+      return 0.0
+
+  # the job state file is rewritten on every install progress change, which invalidates the
+  # cached verdict right away instead of waiting for the TTL
+  return manifest, _stamp(manifest), _stamp(str(_state_path()))
+
+
+def _verify_ready_to_reboot(manifest: str) -> tuple[bool, str]:
+  """(ready_to_reboot, error) for the inactive slot, cached for _VERIFY_TTL_SEC."""
+  global _VERIFY_CACHE
+
+  if not os.path.isfile(manifest):
+    return False, ""
+
+  key = _verify_cache_key(manifest)
+  now = time.monotonic()
+  with _VERIFY_LOCK:
+    cached = _VERIFY_CACHE
+  if cached is not None and cached[0] == key and (now - cached[1]) < _VERIFY_TTL_SEC:
+    return cached[2], cached[3]
+
+  ready, error = False, ""
+  try:
+    from openpilot.common.hardware.comma.agnos import get_target_slot_number, verify_agnos_update
+    ready = bool(verify_agnos_update(manifest, get_target_slot_number()))
+  except Exception as exc:
+    error = str(exc)
+
+  with _VERIFY_LOCK:
+    _VERIFY_CACHE = (key, now, ready, error)
+  return ready, error
+
+
 def _agnos_pending_status() -> dict[str, Any]:
   """Shared AGNOS update detection for /api/opui/agnos and home screen."""
   if _is_dev_pc():
@@ -184,15 +230,7 @@ def _agnos_pending_status() -> dict[str, Any]:
   current = _read_version("/VERSION")
   target = _target_agnos_version()
   manifest = resolve_agnos_manifest()
-  ready_to_reboot = False
-  verify_error = ""
-
-  if os.path.isfile(manifest):
-    try:
-      from openpilot.common.hardware.comma.agnos import get_target_slot_number, verify_agnos_update
-      ready_to_reboot = verify_agnos_update(manifest, get_target_slot_number())
-    except Exception as exc:
-      verify_error = str(exc)
+  ready_to_reboot, verify_error = _verify_ready_to_reboot(manifest)
 
   version_mismatch = bool(target) and current != target
   # Show UI only when the OS version string lags. If /VERSION already matches
