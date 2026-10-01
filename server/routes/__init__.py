@@ -52,7 +52,28 @@ from webui.server.bridge.i18n_api import snapshot_i18n
 from webui.server.bridge.webui_update_api import apply_webui_update, dismiss_webui_update, snapshot_webui_update
 from webui.server.bridge.developer_api import developer_error_log
 from webui.server.bridge.carrot_navi_api import snapshot_carrot_crossroad, snapshot_carrot_navi_debug
+from webui.server.bridge.carrot_settings_backup_api import (
+  apply_setting_profile,
+  build_params_qr_backup,
+  create_setting_profile,
+  delete_setting_profile,
+  export_params_backup,
+  preview_setting_profile,
+  read_setting_favorites,
+  read_setting_profiles,
+  restore_params_backup,
+  update_setting_favorites,
+  update_setting_profile,
+)
+from webui.server.bridge.param_changes_api import (
+  api_param_changes,
+  api_param_changes_verify,
+  api_param_fingerprint,
+  api_param_fingerprint_baseline,
+)
+from webui.server.bridge.offroad_guard import require_offroad
 from webui.server.bridge.osm_api import osm_delete_maps
+from webui.server.bridge.bluetooth_api import api_bluetooth_status, api_bluetooth_mutate
 from webui.server.bridge.ws_handler import ws_opui_handler
 
 
@@ -99,6 +120,7 @@ async def api_param_get(request: web.Request) -> web.Response:
 
 
 async def api_param_put(request: web.Request) -> web.Response:
+  from webui.server.bridge.param_changes_service import append_param_change
   key = request.match_info.get("key", "")
   try:
     body = await request.json()
@@ -106,7 +128,14 @@ async def api_param_put(request: web.Request) -> web.Response:
     needs_cycle = bool(body.get("needs_cycle", False))
   except Exception:
     return json_response({"ok": False, "error": "invalid json"}, status=400)
-  return json_response(await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle))
+  # Read previous value for history tracking
+  prev_result = get_param(key)
+  previous = prev_result.get("value") if prev_result.get("ok") else None
+  result = await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle)
+  # Log to change history if value actually changed
+  if result.get("ok") and previous is not None and str(previous) != value:
+    append_param_change(key, previous, value, source="web_ui")
+  return json_response(result)
 
 
 async def api_param_delete(request: web.Request) -> web.Response:
@@ -556,6 +585,143 @@ async def api_headless_mode_put(request: web.Request) -> web.Response:
   return json_response(await asyncio.to_thread(apply_headless_mode, mode))
 
 
+# ---------------------------------------------------------------------------
+# Carrot settings: backup / restore / profiles / favorites
+# ---------------------------------------------------------------------------
+async def api_carrot_settings_backup(_request: web.Request) -> web.Response:
+  return json_response(export_params_backup())
+
+
+async def api_carrot_settings_backup_qr(_request: web.Request) -> web.Response:
+  return json_response(build_params_qr_backup())
+
+
+async def api_carrot_settings_restore(request: web.Request) -> web.Response:
+  # Security: restore writes arbitrary Params — offroad only, validated keys.
+  guard = require_offroad()
+  if guard is not None:
+    return json_response(guard, status=403)
+  try:
+    body = await request.json()
+    values = body.get("values", {}) if isinstance(body, dict) else {}
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  return json_response(restore_params_backup(values))
+
+
+async def api_carrot_profiles(_request: web.Request) -> web.Response:
+  return json_response(read_setting_profiles())
+
+
+async def api_carrot_profile_create(request: web.Request) -> web.Response:
+  try:
+    body = await request.json()
+    name = str(body.get("name", "")) if isinstance(body, dict) else ""
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  try:
+    profile = create_setting_profile(name)
+  except ValueError as exc:
+    code = str(exc)
+    message = {
+      "PROFILE_NAME_REQUIRED": "missing profile name",
+      "PROFILE_LIMIT": "profile limit reached",
+    }.get(code, code)
+    return json_response({"ok": False, "error": code, "message": message}, status=400)
+  return json_response({"ok": True, **profile})
+
+
+async def api_carrot_profile_update(request: web.Request) -> web.Response:
+  profile_id = request.match_info.get("profile_id", "")
+  try:
+    body = await request.json()
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  try:
+    profile = update_setting_profile(profile_id, body)
+  except ValueError as exc:
+    code = str(exc)
+    message = {
+      "PROFILE_NAME_REQUIRED": "missing profile name",
+      "PROFILE_NO_VALUES": "no valid values to save",
+    }.get(code, code)
+    return json_response({"ok": False, "error": code, "message": message}, status=400)
+  except KeyError:
+    return json_response({"ok": False, "error": "profile not found"}, status=404)
+  return json_response({"ok": True, **profile})
+
+
+async def api_carrot_profile_delete(request: web.Request) -> web.Response:
+  profile_id = request.match_info.get("profile_id", "")
+  try:
+    delete_setting_profile(profile_id)
+  except KeyError:
+    return json_response({"ok": False, "error": "profile not found"}, status=404)
+  return json_response({"ok": True})
+
+
+async def api_carrot_profile_preview(request: web.Request) -> web.Response:
+  profile_id = request.match_info.get("profile_id", "")
+  try:
+    body = await request.json()
+    values = body.get("values") if isinstance(body, dict) else None
+  except Exception:
+    values = None
+  try:
+    return json_response(preview_setting_profile(profile_id, values))
+  except KeyError:
+    return json_response({"ok": False, "error": "profile not found"}, status=404)
+
+
+async def api_carrot_profile_apply(request: web.Request) -> web.Response:
+  # Security: apply writes Params — offroad only.
+  guard = require_offroad()
+  if guard is not None:
+    return json_response(guard, status=403)
+  profile_id = request.match_info.get("profile_id", "")
+  try:
+    body = await request.json()
+    values = body.get("values") if isinstance(body, dict) else None
+  except Exception:
+    values = None
+  try:
+    result = apply_setting_profile(profile_id, values)
+  except KeyError:
+    return json_response({"ok": False, "error": "profile not found"}, status=404)
+  return json_response({"ok": True, **result})
+
+
+async def api_carrot_favorites(_request: web.Request) -> web.Response:
+  return json_response(read_setting_favorites())
+
+
+# ---------------------------------------------------------------------------
+# Carrot settings: param change history + fingerprint
+# ---------------------------------------------------------------------------
+async def api_carrot_param_changes(request: web.Request) -> web.Response:
+  return await api_param_changes(request)
+
+
+async def api_carrot_param_changes_verify(request: web.Request) -> web.Response:
+  return await api_param_changes_verify(request)
+
+
+async def api_carrot_param_fingerprint(request: web.Request) -> web.Response:
+  return await api_param_fingerprint(request)
+
+
+async def api_carrot_param_fingerprint_baseline(request: web.Request) -> web.Response:
+  return await api_param_fingerprint_baseline(request)
+
+
+async def api_carrot_favorites_update(request: web.Request) -> web.Response:
+  try:
+    body = await request.json()
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  return json_response({"ok": True, **update_setting_favorites(body)})
+
+
 def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/bootstrap", api_bootstrap)
   app.router.add_get("/api/opui/headless-mode", api_headless_mode_get)
@@ -628,6 +794,26 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/carrot/crossroad", api_carrot_crossroad)
   app.router.add_get("/api/opui/carrot/navi_debug", api_carrot_navi_debug)
   app.router.add_get("/api/opui/carrot/media", api_carrot_media)
+  # Carrot settings: backup / restore / profiles / favorites
+  app.router.add_get("/api/opui/carrot/settings/backup", api_carrot_settings_backup)
+  app.router.add_get("/api/opui/carrot/settings/backup/qr", api_carrot_settings_backup_qr)
+  app.router.add_post("/api/opui/carrot/settings/restore", api_carrot_settings_restore)
+  app.router.add_get("/api/opui/carrot/settings/profiles", api_carrot_profiles)
+  app.router.add_post("/api/opui/carrot/settings/profiles", api_carrot_profile_create)
+  app.router.add_put("/api/opui/carrot/settings/profiles/{profile_id}", api_carrot_profile_update)
+  app.router.add_delete("/api/opui/carrot/settings/profiles/{profile_id}", api_carrot_profile_delete)
+  app.router.add_post("/api/opui/carrot/settings/profiles/{profile_id}/preview", api_carrot_profile_preview)
+  app.router.add_post("/api/opui/carrot/settings/profiles/{profile_id}/apply", api_carrot_profile_apply)
+  app.router.add_get("/api/opui/carrot/settings/favorites", api_carrot_favorites)
+  app.router.add_post("/api/opui/carrot/settings/favorites", api_carrot_favorites_update)
+  # Carrot settings: param change history + fingerprint
+  app.router.add_get("/api/opui/carrot/settings/param_changes", api_carrot_param_changes)
+  app.router.add_get("/api/opui/carrot/settings/param_changes/verify", api_carrot_param_changes_verify)
+  app.router.add_get("/api/opui/carrot/settings/param_fingerprint", api_carrot_param_fingerprint)
+  app.router.add_post("/api/opui/carrot/settings/param_fingerprint/baseline", api_carrot_param_fingerprint_baseline)
+  # Bluetooth HID remote setup
+  app.router.add_get("/api/opui/bluetooth", api_bluetooth_status)
+  app.router.add_post("/api/opui/bluetooth/{operation}", api_bluetooth_mutate)
   app.router.add_post("/api/opui/agnos/install", api_agnos_install)
   app.router.add_post("/api/opui/agnos/reboot", api_agnos_reboot)
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)
@@ -642,6 +828,14 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/params/toggles", api_toggles_legacy)
 
   app.router.add_static("/static/", path=str(WEB_DIR), name="static")
+
+  async def _disable_static_cache(_request: web.Request, response: web.StreamResponse) -> None:
+    path = _request.path
+    if path == "/" or path.startswith("/static/"):
+      response.headers.setdefault("Cache-Control", "no-cache, no-store, must-revalidate")
+      response.headers.setdefault("Pragma", "no-cache")
+      response.headers.setdefault("Expires", "0")
+  app.on_response_prepare.append(_disable_static_cache)
 
   async def index(_request: web.Request) -> web.FileResponse:
     return web.FileResponse(WEB_DIR / "index.html")

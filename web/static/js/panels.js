@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPut, toast } from "./api.js";
-import { loadI18n, tr } from "./i18n.js";
+import { loadI18n, tr } from "./i18n.js?v=3";
 import { getQualityPreference, setQualityPreference, QUALITY_LEVELS } from "./webrtc_stream_adaptive.js";
 import {
   getWebCodecsPreference, setWebCodecsPreference, webCodecsCapable, webCodecsCapability, getStreamDecodePath,
@@ -211,6 +211,20 @@ const MADS_STEERING_MODE_DESCS = [
   "Pause: ALC will pause when the brake pedal is pressed.",
   "Disengage: ALC will disengage when the brake pedal is pressed.",
 ];
+
+const EGPU_STATE_LABELS = {
+  gray: "eGPU Not Active",
+  green: "eGPU Active",
+  failed: "eGPU Failed",
+  loading: "eGPU Loading...",
+};
+
+const EGPU_STATE_DESCS = {
+  gray: "No eGPU (big model) is selected. The default model is running.",
+  green: "eGPU big model is running and healthy.",
+  failed: "eGPU was selected but failed to start. Check device connection and model files.",
+  loading: "eGPU big model is being loaded. This may take a moment.",
+};
 
 function platformDisplayText(value) {
   if (value == null || value === "") return "";
@@ -1317,20 +1331,9 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
     const max = w.max ?? 100;
     let val = kind === "option" ? resolveOptionIndex(w, w.value) : parseInt(w.value, 10);
     if (Number.isNaN(val)) val = min;
-    const valueEl = el.querySelector(".opui-option-value, .opui-int-control span, .opui-int-control input");
-    if (valueEl) {
-      let text;
-      if (kind === "option") {
-        text = formatOptionLabel(w, w.value, panelData);
-      } else {
-        const vm = w.value_map || {};
-        text = String(Object.keys(vm).length > 0 ? (vm[String(val)] ?? val) : val);
-      }
-      if (valueEl.tagName === "INPUT") {
-        if (document.activeElement !== valueEl) valueEl.value = text;  // don't clobber mid-typing
-      } else {
-        valueEl.textContent = text;
-      }
+    const span = el.querySelector(".opui-option-value, .opui-int-control span");
+    if (span) {
+      span.textContent = kind === "option" ? formatOptionLabel(w, w.value, panelData) : String(val);
     }
     const minus = el.querySelector(".opui-option-bar button:first-child, .opui-int-control button:first-child");
     const plus = el.querySelector(".opui-option-bar button:last-child, .opui-int-control button:last-child");
@@ -1432,6 +1435,9 @@ function applyPanelTitle(panelId, titleEl, data, options = {}) {
 }
 
 export async function renderPanel(panelId, container, titleEl, options = {}) {
+  // Invalidate in-flight custom panel renders whenever we switch panels or
+  // refresh, so stale async work cannot append duplicate content.
+  beginPanelRender();
   const prevPanel = currentPanelRef;
   if (container && prevPanel && prevPanel !== panelId && container.childNodes.length) {
     stashPanelDom(prevPanel, container);
@@ -1529,6 +1535,18 @@ export async function renderPanel(panelId, container, titleEl, options = {}) {
     await renderVehiclePanel(container, data);
     return;
   }
+  if (data.custom === "bluetooth") {
+    await renderBluetoothPanel(container, data);
+    return;
+  }
+  if (data.custom === "bluetooth_advanced") {
+    await renderBluetoothAdvancedPanel(container, data);
+    return;
+  }
+  if (data.custom === "egpu") {
+    await renderEgpuPanel(container, data);
+    return;
+  }
 
   renderGenericPanel(container, data, panelId);
   updateDisplayDependencies(data);
@@ -1596,13 +1614,16 @@ function renderAlwaysOffroadRow(active) {
 function prunePanelWidgets(widgets, panelData) {
   const kept = [];
   for (const w of widgets || []) {
+    // A separator may carry visible_if too (e.g. a divider that only belongs with a
+    // group that is itself conditionally shown); honour it before the dedupe logic,
+    // otherwise the divider survives while every row around it is hidden.
+    if (!widgetVisible(w, panelData)) continue;
     if (w.type === "separator") {
       if (!kept.length) continue;
       if (kept[kept.length - 1].type === "separator") continue;
       kept.push(w);
       continue;
     }
-    if (!widgetVisible(w, panelData)) continue;
     kept.push(w);
   }
   while (kept.length && kept[kept.length - 1].type === "separator") kept.pop();
@@ -1757,9 +1778,6 @@ function renderWidget(w, panelData) {
       return renderAlwaysOffroadRow(active);
     }
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
-    if (w.custom === "speed_limit_sources") return renderSpeedLimitSourcesRow(w);
-    if (w.custom === "longitudinal_source") return renderLongitudinalSourceRow(w);
-    if (w.custom === "traffic_light_fusion") return renderTrafficLightFusionRow(w);
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
     if (w.custom === "device_calibration") return null;
     return null;
@@ -1969,7 +1987,10 @@ function renderChoiceRow(w) {
   row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
   row.dataset.param = w.param;
   row.dataset.widget = "choice";
-  const opts = (w.options || []).map((o) => t(o));
+  const opts = (w.options || []).map((o) => {
+    const label = typeof o === "object" && o != null ? String(o.label || o.value) : String(o);
+    return t(label);
+  });
   let idx = parseInt(w.value, 10);
   if (Number.isNaN(idx)) idx = 0;
 
@@ -2011,9 +2032,7 @@ function renderIntRow(w) {
   const step = w.step ?? 1;
   const valueMap = w.value_map || {};
   const hasMap = Object.keys(valueMap).length > 0;
-  // The value box is a text input so a number can be typed directly instead of tapping
-  // -/+ (step is 1, so e.g. 1024 -> 7706 used to need ~6700 taps). Same save path as +/-.
-  const displayOf = (v) => String(hasMap ? (valueMap[String(v)] ?? v) : v);
+  const displayVal = hasMap ? (valueMap[String(val)] ?? val) : val;
 
   row.innerHTML = `
     <div class="opui-sp-row-text">
@@ -2024,11 +2043,8 @@ function renderIntRow(w) {
   const minus = document.createElement("button");
   minus.type = "button";
   minus.textContent = "−";
-  const input = document.createElement("input");
-  input.type = "text";
-  input.inputMode = "numeric";
-  input.className = "opui-int-input";
-  input.value = displayOf(val);
+  const span = document.createElement("span");
+  span.textContent = String(displayVal);
   const plus = document.createElement("button");
   plus.type = "button";
   plus.textContent = "+";
@@ -2036,37 +2052,15 @@ function renderIntRow(w) {
   const save = async (v) => {
     v = Math.max(min, Math.min(max, v));
     const store = hasMap ? (valueMap[String(v)] ?? v) : v;
-    input.value = displayOf(v);
+    span.textContent = String(hasMap ? (valueMap[String(v)] ?? v) : v);
     const res = await putParam(w.param, String(store));
     if (!res.ok) toast(res.error || t("Save failed"));
   };
 
-  const commitTyped = async () => {
-    // Typed text is in the displayed domain; map it back onto the control value (+/- key space).
-    const raw = String(input.value).trim().replace(/\s+/g, "");
-    if (raw === "" || raw === displayOf(val)) { input.value = displayOf(val); return; }
-    const typed = Number(raw);
-    if (!Number.isFinite(typed)) { input.value = displayOf(val); return; }
-    let target;
-    if (hasMap) {
-      const key = Object.keys(valueMap).find((k) => Math.abs(Number(valueMap[k]) - typed) < 1e-6);
-      if (key === undefined) { input.value = displayOf(val); return; }  // not an offered value: revert
-      target = parseInt(key, 10);
-    } else {
-      target = Math.round(typed);
-    }
-    val = Math.max(min, Math.min(max, target));
-    await save(val);
-  };
-
   minus.addEventListener("click", () => { val = Math.max(min, val - step); save(val); });
   plus.addEventListener("click", () => { val = Math.min(max, val + step); save(val); });
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); input.blur(); }  // blur commits
-  });
-  input.addEventListener("blur", () => { commitTyped(); });
 
-  ctrl.append(minus, input, plus);
+  ctrl.append(minus, span, plus);
   row.appendChild(ctrl);
   return row;
 }
@@ -2154,7 +2148,23 @@ function renderSubpanelRow(w) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "opui-simple-btn";
-  btn.textContent = t(w.label || w.button);
+  // `label` names the destination, `desc` explains it. When a desc is present the
+  // button becomes a title/description block so subpanel entries can read like the
+  // native settings rows (title + description) instead of a bare button.
+  const desc = w.desc ? t(w.desc) : "";
+  if (desc) {
+    btn.classList.add("opui-simple-btn--with-desc");
+    const title = document.createElement("span");
+    title.className = "opui-simple-btn-title";
+    title.textContent = t(w.label || w.button);
+    const sub = document.createElement("span");
+    sub.className = "opui-simple-btn-desc";
+    sub.textContent = desc;
+    btn.appendChild(title);
+    btn.appendChild(sub);
+  } else {
+    btn.textContent = t(w.label || w.button);
+  }
   if (w.target) btn.dataset.subpanel = w.target;
   if (w.offroad_only) btn.dataset.offroadOnly = "1";
   if (w.requires?.param) {
@@ -2519,111 +2529,6 @@ function renderSshKeysBlock() {
   return row;
 }
 
-/* Speed-limit source diagnostics: show the raw values from car, map (OSM)
-   and carrot navigation, plus the merged resolver result. This is read-only. */
-function renderSpeedLimitSourcesRow(w) {
-  const row = document.createElement("div");
-  row.className = "opui-sp-row opui-sp-row--readonly";
-  row.dataset.custom = "speed_limit_sources";
-  row.innerHTML = `
-    <div class="opui-sp-row-text" style="width:100%">
-      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
-      <div class="opui-sla-sources" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:13px;color:rgba(240,244,255,0.85)">
-        <div class="opui-sla-source" data-src="car"><span class="opui-sla-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>车机 <b>--</b></div>
-        <div class="opui-sla-source" data-src="map"><span class="opui-sla-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>地图 <b>--</b></div>
-        <div class="opui-sla-source" data-src="carrot"><span class="opui-sla-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>Carrot <b>--</b></div>
-        <div class="opui-sla-source" data-src="merged"><span class="opui-sla-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>生效 <b>--</b></div>
-      </div>
-    </div>`;
-  const srcEls = {
-    car: row.querySelector('[data-src="car"]'),
-    map: row.querySelector('[data-src="map"]'),
-    carrot: row.querySelector('[data-src="carrot"]'),
-    merged: row.querySelector('[data-src="merged"]'),
-  };
-  const update = () => {
-    const st = opuiWs.lastState;
-    const sources = st?.sp_hud?.speed_limit_sources;
-    if (!sources) return;
-    const labels = { car: "车机", map: "地图", carrot: "Carrot", merged: "生效" };
-    for (const key of Object.keys(srcEls)) {
-      const el = srcEls[key];
-      if (!el) continue;
-      const info = sources[key] || {};
-      const val = info.value;
-      const isActive = key === "merged" ? (sources.merged?.source && val != null)
-                                        : info.valid && val != null;
-      const dot = el.querySelector(".opui-sla-dot");
-      if (dot) dot.style.background = isActive ? "#4ade80" : "#888";
-      const extra = key === "map" && info.provider ? ` (${escapeHtml(info.provider)})`
-                   : key === "merged" && info.source ? ` (${escapeHtml(info.source)})`
-                   : "";
-      const text = val != null ? `${val} <span style="opacity:.7;font-weight:400">${extra}</span>`
-                                : `-- <span style="opacity:.5;font-weight:400">${extra}</span>`;
-      el.innerHTML = `<span class="opui-sla-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isActive ? "#4ade80" : "#888"};margin-right:6px"></span>${labels[key]} <b style="font-weight:700">${text}</b>`;
-    }
-  };
-  const off = opuiWs.on("state", update);
-  row._cleanup = off;
-  update();
-  if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
-  return row;
-}
-
-/* Longitudinal source read-out: shows which arbitration source currently wins. */
-function renderLongitudinalSourceRow(w) {
-  const row = document.createElement("div");
-  row.className = "opui-sp-row opui-sp-row--readonly";
-  row.dataset.custom = "longitudinal_source";
-  row.innerHTML = `
-    <div class="opui-sp-row-text" style="width:100%">
-      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
-      <div class="opui-long-source" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;color:rgba(240,244,255,0.85)">
-        <div class="opui-long-source-item" data-key="source"><span class="opui-long-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>来源 <b>--</b></div>
-        <div class="opui-long-source-item" data-key="carrot_active"><span class="opui-long-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>Carrot <b>--</b></div>
-        <div class="opui-long-source-item" data-key="carrot_v_target"><span class="opui-long-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>目标车速 <b>--</b></div>
-        <div class="opui-long-source-item" data-key="carrot_stop_dist"><span class="opui-long-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>停车距离 <b>--</b></div>
-      </div>
-    </div>`;
-  const items = {
-    source: row.querySelector('[data-key="source"]'),
-    carrot_active: row.querySelector('[data-key="carrot_active"]'),
-    carrot_v_target: row.querySelector('[data-key="carrot_v_target"]'),
-    carrot_stop_dist: row.querySelector('[data-key="carrot_stop_dist"]'),
-  };
-  const update = () => {
-    const st = opuiWs.lastState;
-    const src = st?.sp_hud?.longitudinal_source || "";
-    const cp = st?.sp_hud?.carrot_plan;
-    const isCarrot = src.toLowerCase() === "carrot";
-    const labels = {
-      source: "来源",
-      carrot_active: "Carrot",
-      carrot_v_target: "目标车速",
-      carrot_stop_dist: "停车距离",
-    };
-    const values = {
-      source: src || "--",
-      carrot_active: cp?.active ? "active" : (cp ? "inactive" : "--"),
-      carrot_v_target: cp?.v_target != null ? `${cp.v_target}` : "--",
-      carrot_stop_dist: cp?.stop_dist != null ? `${cp.stop_dist} m` : "--",
-    };
-    for (const key of Object.keys(items)) {
-      const el = items[key];
-      if (!el) continue;
-      const dot = el.querySelector(".opui-long-dot");
-      const active = key === "source" ? isCarrot : (cp?.active && key.startsWith("carrot"));
-      if (dot) dot.style.background = active ? "#4ade80" : "#888";
-      el.innerHTML = `<span class="opui-long-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${active ? "#4ade80" : "#888"};margin-right:6px"></span>${labels[key]} <b style="font-weight:700">${values[key]}</b>`;
-    }
-  };
-  const off = opuiWs.on("state", update);
-  row._cleanup = off;
-  update();
-  if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
-  return row;
-}
-
 /* Carrot navi debug viewer: opens a modal showing the last handled navi event
    summary written by CarrotManager to the CarrotNaviDebug Param. */
 function renderCarrotNaviDebugRow(w) {
@@ -2660,60 +2565,6 @@ function renderCarrotNaviDebugRow(w) {
       ${summary}`;
     await showHtml({ title: t("Carrot Navi Debug"), html });
   });
-  if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
-  return row;
-}
-
-/* Traffic-light fusion read-out: shows fused state and source. */
-function renderTrafficLightFusionRow(w) {
-  const row = document.createElement("div");
-  row.className = "opui-sp-row opui-sp-row--readonly";
-  row.dataset.custom = "traffic_light_fusion";
-  row.innerHTML = `
-    <div class="opui-sp-row-text" style="width:100%">
-      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
-      <div class="opui-tl-fusion" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;color:rgba(240,244,255,0.85)">
-        <div class="opui-tl-item" data-key="state"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>状态 <b>--</b></div>
-        <div class="opui-tl-item" data-key="source"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>来源 <b>--</b></div>
-        <div class="opui-tl-item" data-key="distance"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>距离 <b>--</b></div>
-        <div class="opui-tl-item" data-key="confidence"><span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px"></span>置信度 <b>--</b></div>
-      </div>
-    </div>`;
-  const items = {
-    state: row.querySelector('[data-key="state"]'),
-    source: row.querySelector('[data-key="source"]'),
-    distance: row.querySelector('[data-key="distance"]'),
-    confidence: row.querySelector('[data-key="confidence"]'),
-  };
-  const stateColors = {
-    red: "#ef4444",
-    redconfirmed: "#ef4444",
-    green: "#22c55e",
-    greenconfirmed: "#22c55e",
-  };
-  const update = () => {
-    const st = opuiWs.lastState;
-    const tl = st?.sp_hud?.traffic_light;
-    const labels = { state: "状态", source: "来源", distance: "距离", confidence: "置信度" };
-    const values = {
-      state: tl?.state || "--",
-      source: tl?.source || "--",
-      distance: tl?.distance != null ? `${tl.distance} m` : "--",
-      confidence: tl?.confidence != null ? `${tl.confidence}` : "--",
-    };
-    for (const key of Object.keys(items)) {
-      const el = items[key];
-      if (!el) continue;
-      const dot = el.querySelector(".opui-tl-dot");
-      const hasData = tl != null && tl.state != null && tl.state !== "";
-      const color = key === "state" ? (stateColors[(tl?.state || "").toLowerCase()] || "#888") : (hasData ? "#4ade80" : "#888");
-      if (dot) dot.style.background = color;
-      el.innerHTML = `<span class="opui-tl-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px"></span>${labels[key]} <b style="font-weight:700">${values[key]}</b>`;
-    }
-  };
-  const off = opuiWs.on("state", update);
-  row._cleanup = off;
-  update();
   if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
   return row;
 }
@@ -3169,6 +3020,807 @@ async function renderNetworkAdvancedPanel(container, data) {
     else toast(res.error || t("Connect failed"));
   });
   container.appendChild(hiddenRow);
+}
+
+// ---------------------------------------------------------------------------
+// Bluetooth HID remote panel
+// ---------------------------------------------------------------------------
+
+const BT_ACTIONS = [
+  'none', 'accelCruise', 'decelCruise', 'gapAdjustCruise', 'lfaButton', 'cancel',
+  'accelCruiseLong', 'decelCruiseLong', 'gapAdjustCruiseLong', 'lfaButtonLong', 'cancelLong',
+  'laneLeft', 'laneRight', 'paddleDecel', 'carrotCruise',
+];
+const BT_MAPPING_BUTTONS = ['up', 'down', 'left', 'right', 'center', '1', '2'];
+const BT_GESTURES = ['single', 'double', 'long'];
+const BT_GESTURE_LABELS = { single: 'Short', double: 'Double', long: 'Long' };
+const BT_DEFAULTS = { up: 'accelCruise', down: 'decelCruise', left: 'laneLeft', right: 'laneRight', center: 'paddleDecel', '1': 'gapAdjustCruise', '2': 'none' };
+
+function btActionLabel(action) {
+  const labels = {
+    none: t('None'), accelCruise: t('Cruise +'), decelCruise: t('Cruise −'),
+    accelCruiseLong: t('Cruise + Long'), decelCruiseLong: t('Cruise − Long'),
+    gapAdjustCruise: t('Gap'), lfaButton: t('LFA'), lfaButtonLong: t('LFA Long'),
+    cancel: t('Cancel'), cancelLong: t('Cancel Long'),
+    laneLeft: t('Lane Left'), laneRight: t('Lane Right'),
+    paddleDecel: t('Paddle −'), carrotCruise: t('CarrotCruise'),
+  };
+  return labels[action] || action;
+}
+
+async function renderBluetoothPanel(container, data) {
+  const gen = beginPanelRender();
+  container.innerHTML = '';
+  const root = document.createElement('div');
+  root.className = 'opui-bt-panel';
+  container.appendChild(root);
+
+  let state = null;
+  let selected = null;
+  let draft = null;
+  let dirty = false;
+  let pollTimer = null;
+  let promptId = null;
+  let autoScanned = false;
+  let installing = false;
+  let scanningUntil = 0;
+
+  const api = (op, payload) => op ? apiPost(`/api/opui/bluetooth/${op}`, payload || {}) : apiGet('/api/opui/bluetooth');
+
+  function isScanningActive() {
+    return (state.adapters?.some(a => a.discovering) || false) && Date.now() < scanningUntil;
+  }
+
+  async function refresh() {
+    try {
+      state = await api();
+      render();
+    } catch (e) {
+      console.error('Bluetooth poll error:', e);
+    }
+  }
+
+  function startPoll() {
+    stopPoll();
+    pollTimer = setInterval(refresh, 1000);
+  }
+
+  function stopPoll() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function makeBtn(text, cls, onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = cls;
+    btn.textContent = text;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function renderEmptyState({ icon, title, desc, actionText, action, actionDisabled = false }) {
+    const wrap = document.createElement('div');
+    wrap.className = 'opui-bt-empty-state';
+    wrap.innerHTML = `
+      <div class="opui-bt-empty-icon">${escapeHtml(icon)}</div>
+      <div class="opui-bt-empty-title">${escapeHtml(title)}</div>
+      <div class="opui-bt-empty-desc">${escapeHtml(desc)}</div>
+    `;
+    if (actionText) {
+      const btn = makeBtn(actionText, 'opui-btn opui-btn--primary opui-bt-empty-btn', action);
+      btn.disabled = actionDisabled;
+      wrap.appendChild(btn);
+    }
+    root.appendChild(wrap);
+  }
+
+  function rssiText(rssi) {
+    if (rssi == null) return '';
+    return `${rssi} dBm`;
+  }
+
+  function renderHeader() {
+    const discovering = isScanningActive();
+    const canAct = state.available;
+
+    const header = document.createElement('div');
+    header.className = 'opui-bt-header';
+
+    const scanBtn = makeBtn(discovering ? t('Stop') : t('Scan'), 'opui-bt-scan-btn', async () => {
+      scanBtn.disabled = true;
+      try {
+        if (discovering) {
+          scanningUntil = 0;
+          await api('cancel');
+        } else {
+          scanningUntil = Date.now() + 32000;
+          await api('scan');
+        }
+        await refresh();
+      } catch (e) { toast(e.message); }
+    });
+    scanBtn.disabled = !canAct || (!discovering && !state.radioEnabled);
+    header.appendChild(scanBtn);
+
+    const advBtn = makeBtn(t('Advanced'), 'opui-bt-adv-btn', () => {
+      if (onNavigateSubpanel) onNavigateSubpanel('bluetooth__advanced');
+    });
+    advBtn.disabled = !state.available;
+    header.appendChild(advBtn);
+
+    root.appendChild(header);
+  }
+
+  function makeRow(title, desc, control) {
+    const row = document.createElement('div');
+    row.className = 'opui-sp-row opui-sp-row--control-inline';
+    const text = document.createElement('div');
+    text.className = 'opui-sp-row-text';
+    const t1 = document.createElement('div');
+    t1.className = 'opui-sp-row-title';
+    t1.textContent = title;
+    text.appendChild(t1);
+    if (desc) {
+      const t2 = document.createElement('div');
+      t2.className = 'opui-sp-row-desc';
+      t2.textContent = desc;
+      text.appendChild(t2);
+    }
+    row.appendChild(text);
+    const ctrlWrap = document.createElement('div');
+    ctrlWrap.className = 'opui-sp-row-control';
+    ctrlWrap.appendChild(control);
+    row.appendChild(ctrlWrap);
+    return row;
+  }
+
+  function makeToggle(checked, disabled, onChange) {
+    const label = document.createElement('label');
+    label.className = 'opui-sp-toggle' + (checked ? ' on' : '') + (disabled ? ' disabled' : '');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = checked;
+    input.disabled = disabled;
+    input.addEventListener('change', () => {
+      label.classList.toggle('on', input.checked);
+      onChange(input.checked);
+    });
+    const track = document.createElement('span');
+    track.className = 'opui-sp-toggle-track';
+    const thumb = document.createElement('span');
+    thumb.className = 'opui-sp-toggle-thumb';
+    track.appendChild(thumb);
+    label.appendChild(input);
+    label.appendChild(track);
+    return label;
+  }
+
+  async function doConfirmPair(dev) {
+    const ok = await showConfirm(t('Pair with "{}"?').replace('{}', dev.name || dev.address));
+    if (!ok) return;
+    try { await api('pair', { address: dev.address }); await refresh(); }
+    catch (e) { toast(e.message); }
+  }
+
+  function renderDevice(dev, isLast) {
+    const wrap = document.createElement('div');
+    wrap.className = 'opui-bt-device-wrap';
+
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'opui-bt-device-row' + (dev.paired ? ' paired' : '') + (dev.connected ? ' connected' : '');
+    // Tapping the row: a paired device opens the editor; an unpaired device asks
+    // to confirm pairing first (mirrors the native GUI - never jump straight into
+    // the mapping screen for something that isn't paired yet).
+    row.onclick = () => {
+      if (dev.paired) {
+        selectDevice(dev);
+      } else {
+        doConfirmPair(dev);
+      }
+    };
+
+    const main = document.createElement('div');
+    main.className = 'opui-bt-device-main';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'opui-bt-device-name';
+    nameEl.textContent = dev.name || dev.address;
+    main.appendChild(nameEl);
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'opui-bt-device-meta';
+    const badges = [];
+    if (dev.connected) badges.push(t('Connected'));
+    else if (dev.paired) badges.push(t('Paired'));
+    if (dev.battery != null) badges.push(`${t('Battery')} ${dev.battery}%`);
+    metaEl.textContent = `${dev.address}${badges.length ? ' · ' + badges.join(' · ') : ''}`;
+    main.appendChild(metaEl);
+
+    const cfg = state.config?.devices?.[dev.address];
+    if (cfg) {
+      const mapEl = document.createElement('div');
+      mapEl.className = 'opui-bt-device-mapstatus';
+      mapEl.textContent = `${t(cfg.enabled ? 'Mapping on' : 'Mapping off')}${state.runtime?.grabbed?.includes(dev.address) ? ' · ' + t('Receiving input') : ''}`;
+      main.appendChild(mapEl);
+    }
+
+    row.appendChild(main);
+
+    const right = document.createElement('div');
+    right.className = 'opui-bt-device-right';
+
+    const signal = document.createElement('div');
+    signal.className = 'opui-bt-device-signal';
+    signal.textContent = rssiText(dev.rssi);
+    right.appendChild(signal);
+
+    const actions = document.createElement('div');
+    actions.className = 'opui-bt-device-actions';
+
+    if (!dev.paired) {
+      actions.appendChild(makeBtn(t('Pair'), 'opui-btn opui-btn--primary opui-btn--compact', async (e) => {
+        e.stopPropagation();
+        await doConfirmPair(dev);
+      }));
+    } else {
+      actions.appendChild(makeBtn(dev.connected ? t('Disconnect') : t('Connect'), (dev.connected ? 'opui-btn opui-btn--normal' : 'opui-btn opui-btn--primary') + ' opui-btn--compact', async (e) => {
+        e.stopPropagation();
+        try { await api(dev.connected ? 'disconnect' : 'connect', { address: dev.address }); await refresh(); }
+        catch (e) { toast(e.message); }
+      }));
+      actions.appendChild(makeBtn(t('Forget'), 'opui-btn opui-btn--danger opui-btn--compact', async (e) => {
+        e.stopPropagation();
+        const ok = await showConfirm(t('Forget "{}"?').replace('{}', dev.name || dev.address));
+        if (!ok) return;
+        try { await api('forget', { address: dev.address }); if (selected === dev.address) { selected = null; draft = null; } await refresh(); }
+        catch (e) { toast(e.message); }
+      }));
+    }
+
+    right.appendChild(actions);
+    row.appendChild(right);
+    wrap.appendChild(row);
+
+    if (!isLast) {
+      const sep = document.createElement('div');
+      sep.className = 'opui-bt-device-sep';
+      wrap.appendChild(sep);
+    }
+    return wrap;
+  }
+
+  function renderDeviceList() {
+    const listEl = document.createElement('div');
+    listEl.className = 'opui-bt-devices';
+
+    const paired = (state.devices || []).filter(d => d.paired);
+    const found = (state.devices || []).filter(d => !d.paired).sort((a, b) => (b.rssi ?? -1000) - (a.rssi ?? -1000));
+
+    if (paired.length) {
+      const group = document.createElement('div');
+      group.className = 'opui-bt-device-group';
+      const title = document.createElement('div');
+      title.className = 'opui-bt-device-group-title';
+      title.textContent = t('Paired devices');
+      group.appendChild(title);
+      for (let i = 0; i < paired.length; i++) group.appendChild(renderDevice(paired[i], i === paired.length - 1 && !found.length));
+      listEl.appendChild(group);
+    }
+
+    if (found.length) {
+      const group = document.createElement('div');
+      group.className = 'opui-bt-device-group';
+      const title = document.createElement('div');
+      title.className = 'opui-bt-device-group-title';
+      title.textContent = t('Available devices');
+      group.appendChild(title);
+      for (let i = 0; i < found.length; i++) group.appendChild(renderDevice(found[i], i === found.length - 1));
+      listEl.appendChild(group);
+    }
+
+    if (!paired.length && !found.length) {
+      const empty = document.createElement('p');
+      empty.className = 'opui-bt-empty';
+      empty.textContent = t('Put your device in pairing mode and scan. Disconnect it from its previous phone if needed.');
+      listEl.appendChild(empty);
+    }
+
+    root.appendChild(listEl);
+  }
+
+  async function handlePrompt() {
+    if (!state.prompt || state.prompt.id === promptId) return;
+    const pid = state.prompt.id;
+    const kind = state.prompt.kind;
+    const value = state.prompt.value || '';
+    promptId = pid;
+    try {
+      if (['DisplayPinCode', 'DisplayPasskey'].includes(kind)) {
+        await showConfirm({ message: `${t('Pairing code')}: ${escapeHtml(value)}`, confirmText: t('OK'), single: true });
+      } else if (['RequestConfirmation', 'RequestAuthorization', 'AuthorizeService'].includes(kind)) {
+        const ok = await showConfirm(t('Confirm pairing with "{}"?').replace('{}', value));
+        await api('answer', { id: pid, value: ok });
+      } else if (kind === 'RequestPinCode') {
+        const pin = await showKeyboard({ title: t('Enter PIN'), value: '', password: false, minLen: 1, maxLen: 16 });
+        await api('answer', { id: pid, value: pin === null ? false : pin });
+      } else if (kind === 'RequestPasskey') {
+        const pass = await showKeyboard({ title: t('Enter passkey'), value: '', password: false, minLen: 1, maxLen: 6 });
+        await api('answer', { id: pid, value: pass === null ? false : pass });
+      }
+      await refresh();
+    } catch (e) { toast(e.message); }
+  }
+
+  function renderEditor() {
+    const editorEl = document.createElement('div');
+    editorEl.className = 'opui-bt-editor';
+
+    const editorHeader = document.createElement('div');
+    editorHeader.className = 'opui-bt-editor-header';
+    editorHeader.textContent = `${draft.name || selected} · ${selected}`;
+    editorEl.appendChild(editorHeader);
+
+    editorEl.appendChild(makeBtn(t('Back'), 'opui-btn opui-btn--normal', () => { draft = null; dirty = false; render(); }));
+
+    const profileRow = document.createElement('div');
+    profileRow.className = 'opui-bt-row';
+    const profileLabel = document.createElement('label');
+    profileLabel.textContent = t('Profile');
+    const profileSel = document.createElement('select');
+    profileSel.className = 'opui-select';
+    for (const [v, label] of [['yiser-j6', 'Yiser-J6'], ['generic', t('Generic keyboard / HID')]]) {
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = label;
+      if (draft.profile === v) opt.selected = true;
+      profileSel.appendChild(opt);
+    }
+    profileSel.onchange = () => {
+      draft.profile = profileSel.value;
+      draft.mapping = profileSel.value === 'yiser-j6' ? { ...BT_DEFAULTS } : {};
+      dirty = true;
+      render();
+    };
+    profileRow.appendChild(profileLabel);
+    profileRow.appendChild(profileSel);
+    editorEl.appendChild(profileRow);
+
+    const enabledRow = document.createElement('div');
+    enabledRow.className = 'opui-bt-row';
+    const enabledLabel = document.createElement('label');
+    enabledLabel.textContent = t('Use Carrot mapping');
+    const enabledToggle = document.createElement('input');
+    enabledToggle.type = 'checkbox';
+    enabledToggle.checked = !!draft.enabled;
+    enabledToggle.onchange = () => { draft.enabled = enabledToggle.checked; dirty = true; };
+    enabledLabel.appendChild(enabledToggle);
+    enabledRow.appendChild(enabledLabel);
+    editorEl.appendChild(enabledRow);
+
+    const mappingTitle = document.createElement('div');
+    mappingTitle.className = 'opui-bt-section-title';
+    mappingTitle.textContent = t('Button Mapping');
+    editorEl.appendChild(mappingTitle);
+
+    for (const btnName of BT_MAPPING_BUTTONS) {
+      const row = document.createElement('div');
+      row.className = 'opui-bt-mapping-row';
+      const btnLabel = document.createElement('div');
+      btnLabel.className = 'opui-bt-mapping-btn-name';
+      btnLabel.textContent = t(btnName);
+      row.appendChild(btnLabel);
+
+      for (const gesture of BT_GESTURES) {
+        const token = `${btnName}_${gesture}`;
+        const gestureLabel = document.createElement('div');
+        gestureLabel.className = 'opui-bt-mapping-gesture';
+        const sel = document.createElement('select');
+        sel.className = 'opui-select';
+        for (const action of BT_ACTIONS) {
+          const opt = document.createElement('option');
+          opt.value = action;
+          opt.textContent = btActionLabel(action);
+          if ((draft.mapping?.[token] || 'none') === action) opt.selected = true;
+          sel.appendChild(opt);
+        }
+        sel.onchange = () => { draft.mapping[token] = sel.value; dirty = true; };
+        gestureLabel.appendChild(sel);
+        row.appendChild(gestureLabel);
+      }
+      editorEl.appendChild(row);
+    }
+
+    const editorActions = document.createElement('div');
+    editorActions.className = 'opui-bt-editor-actions';
+
+    editorActions.appendChild(makeBtn(t('Save'), 'opui-btn opui-btn--primary', async () => {
+      try {
+        await api('device-config', { address: selected, device: draft });
+        dirty = false;
+        toast(t('Saved'));
+        await refresh();
+      } catch (e) { toast(e.message); }
+    }));
+
+    const isLearning = state.runtime?.learning?.address === selected;
+    if (isLearning) {
+      editorActions.appendChild(makeBtn(t('Stop Test'), 'opui-btn opui-btn--danger', async () => {
+        try { await api('learn', { address: selected, enabled: false }); await refresh(); }
+        catch (e) { toast(e.message); }
+      }));
+    } else {
+      editorActions.appendChild(makeBtn(t('Test / Learn'), 'opui-btn opui-btn--normal', async () => {
+        try {
+          await api('learn', { address: selected, enabled: true });
+          toast(t('Test mode active'));
+          await refresh();
+        } catch (e) { toast(e.message); }
+      }));
+    }
+
+    const learning = state.runtime?.learning;
+    const grabbed = state.runtime?.grabbed || [];
+    const captureStatus = document.createElement('div');
+    captureStatus.className = 'opui-bt-capture-status';
+    if (learning?.address === selected) {
+      captureStatus.textContent = `${t('Testing')} (${Math.max(0, Math.ceil((learning.until || 0) - (state.runtime?.time || 0)))}s)`;
+    } else if (dirty) {
+      captureStatus.textContent = t('Save your changes');
+    } else {
+      captureStatus.textContent = grabbed.includes(selected) ? t('Exclusive HID capture active') : t('Waiting for HID capture (check connection and mapping)');
+    }
+    editorActions.appendChild(captureStatus);
+
+    editorEl.appendChild(editorActions);
+    root.appendChild(editorEl);
+  }
+
+  function selectDevice(dev) {
+    if (dirty) { toast(t('Save your changes')); return; }
+    selected = dev.address;
+    const stored = state.config?.devices?.[selected];
+    if (stored) {
+      draft = { name: dev.name, profile: stored.profile || 'generic', enabled: stored.enabled || false, mapping: { ...(stored.mapping || {}) } };
+    } else {
+      const isYiser = /yiser-j6/i.test(dev.name || '');
+      draft = { name: dev.name, profile: isYiser ? 'yiser-j6' : 'generic', enabled: false, mapping: isYiser ? { ...BT_DEFAULTS } : {} };
+    }
+    dirty = false;
+    render();
+  }
+
+  async function doInstall() {
+    if (installing) return;
+    installing = true;
+    render();
+    try {
+      await api('install');
+      toast(t('Bluetooth installed'));
+    } catch (e) { toast(e.message); }
+    installing = false;
+    await refresh();
+  }
+
+  async function doEnableService() {
+    try {
+      await api('service', { start: true });
+      toast(t('Bluetooth service started'));
+      await refresh();
+    } catch (e) { toast(e.message); }
+  }
+
+  function render() {
+    if (panelRenderStale(gen) || !state) return;
+    root.innerHTML = '';
+
+    if (!state.hasBluez) {
+      renderEmptyState({
+        icon: '📡',
+        title: t('Bluetooth is not installed'),
+        desc: t('Install BlueZ to enable Bluetooth HID remotes and device management.'),
+        actionText: installing ? t('Installing...') : t('Install Bluetooth'),
+        action: doInstall,
+        actionDisabled: installing,
+      });
+      return;
+    }
+
+    if (!state.serviceRunning) {
+      renderEmptyState({
+        icon: '🔘',
+        title: t('Bluetooth service is stopped'),
+        desc: t('Start the Bluetooth service to scan and pair devices.'),
+        actionText: t('Enable Bluetooth'),
+        action: doEnableService,
+      });
+      return;
+    }
+
+    if (!state.hasUart || !state.hasBtpower) {
+      let title, desc;
+      if (!state.hasUart && !state.hasBtpower) {
+        title = t('Bluetooth radio hardware not detected');
+        desc = t('This device or AGNOS build lacks the required Bluetooth UART and power nodes.');
+      } else if (!state.hasUart) {
+        title = t('Bluetooth UART not available');
+        desc = t('This AGNOS kernel does not expose /dev/ttyHS1. Reflash to a Bluetooth-capable AGNOS build.');
+      } else {
+        title = t('Bluetooth power node not detected');
+        desc = t('This device or AGNOS build lacks /dev/btpower.');
+      }
+      renderEmptyState({ icon: '📵', title, desc, actionText: t('Retry'), action: () => refresh() });
+      return;
+    }
+
+    if (!state.available) {
+      renderEmptyState({
+        icon: '📵',
+        title: t('No Bluetooth adapter found'),
+        desc: t('Flash an AGNOS with Bluetooth support (e.g. 19.8-carrot-bt1) or plug in a USB Bluetooth dongle, then retry.'),
+        actionText: t('Retry'),
+        action: () => refresh(),
+      });
+      return;
+    }
+
+    renderHeader();
+    if (!draft) {
+      renderDeviceList();
+      handlePrompt();
+    } else {
+      renderEditor();
+    }
+
+    // Auto-scan once when entering a ready state
+    if (!autoScanned && state.radioEnabled) {
+      autoScanned = true;
+      scanningUntil = Date.now() + 32000;
+      api('scan').catch(() => {});
+    }
+  }
+
+  await refresh();
+  startPoll();
+
+  const cleanup = () => { stopPoll(); };
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(container)) { cleanup(); observer.disconnect(); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+
+async function renderBluetoothAdvancedPanel(container, data) {
+  const gen = beginPanelRender();
+  container.innerHTML = '';
+  const root = document.createElement('div');
+  root.className = 'opui-bt-advanced-panel';
+  container.appendChild(root);
+
+  let state = null;
+  let pollTimer = null;
+
+  const api = (op, payload) => op ? apiPost(`/api/opui/bluetooth/${op}`, payload || {}) : apiGet('/api/opui/bluetooth');
+
+  async function refresh() {
+    try {
+      state = await api();
+      render();
+    } catch (e) {
+      console.error('Bluetooth advanced poll error:', e);
+    }
+  }
+
+  function startPoll() { stopPoll(); pollTimer = setInterval(refresh, 1000); }
+  function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+  function makeRow(title, desc, control) {
+    const row = document.createElement('div');
+    row.className = 'opui-sp-row opui-sp-row--control-inline';
+    const text = document.createElement('div');
+    text.className = 'opui-sp-row-text';
+    const t1 = document.createElement('div');
+    t1.className = 'opui-sp-row-title';
+    t1.textContent = title;
+    text.appendChild(t1);
+    if (desc) {
+      const t2 = document.createElement('div');
+      t2.className = 'opui-sp-row-desc';
+      t2.textContent = desc;
+      text.appendChild(t2);
+    }
+    row.appendChild(text);
+    const ctrlWrap = document.createElement('div');
+    ctrlWrap.className = 'opui-sp-row-control';
+    ctrlWrap.appendChild(control);
+    row.appendChild(ctrlWrap);
+    return row;
+  }
+
+  function makeToggle(checked, disabled, onChange) {
+    const label = document.createElement('label');
+    label.className = 'opui-sp-toggle' + (checked ? ' on' : '') + (disabled ? ' disabled' : '');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = checked;
+    input.disabled = disabled;
+    input.addEventListener('change', () => {
+      label.classList.toggle('on', input.checked);
+      onChange(input.checked);
+    });
+    const track = document.createElement('span');
+    track.className = 'opui-sp-toggle-track';
+    const thumb = document.createElement('span');
+    thumb.className = 'opui-sp-toggle-thumb';
+    track.appendChild(thumb);
+    label.appendChild(input);
+    label.appendChild(track);
+    return label;
+  }
+
+  function render() {
+    if (panelRenderStale(gen) || !state) return;
+    root.innerHTML = '';
+
+    const canAct = state.available;
+
+    // Bluetooth master toggle
+    const masterToggle = makeToggle(!!state.radioEnabled, !canAct, async (enabled) => {
+      try { await api('radio', { enabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    });
+    root.appendChild(makeRow(t('Bluetooth'), t('Turn Bluetooth radio on or off.'), masterToggle));
+
+    // Discoverable toggle
+    const discToggle = makeToggle(!!state.discoverable, !canAct || !state.radioEnabled, async (enabled) => {
+      try { await api('discoverable', { enabled }); await refresh(); }
+      catch (e) { toast(e.message); }
+    });
+    root.appendChild(makeRow(t('Discoverable'), t('Allow other devices to find this device.'), discToggle));
+
+    // Device name: value on the left, single Edit/Save button on the right.
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'opui-bt-advanced-name';
+    const nameValue = document.createElement('span');
+    nameValue.className = 'opui-bt-advanced-name-value';
+    nameValue.textContent = state.localName || '';
+    const nameActionBtn = document.createElement('button');
+    nameActionBtn.type = 'button';
+    nameActionBtn.className = 'opui-btn opui-btn--normal';
+    nameActionBtn.textContent = t('Edit');
+    nameActionBtn.disabled = !canAct;
+    const updateActionState = () => {
+      const changed = nameValue.textContent.trim() !== (state.localName || '').trim();
+      nameActionBtn.textContent = t(changed ? 'Save' : 'Edit');
+      nameActionBtn.className = changed ? 'opui-btn opui-btn--primary' : 'opui-btn opui-btn--normal';
+    };
+    nameActionBtn.addEventListener('click', async () => {
+      if (nameValue.textContent.trim() !== (state.localName || '').trim()) {
+        try { await api('name', { name: nameValue.textContent.trim() }); toast(t('Saved')); await refresh(); }
+        catch (e) { toast(e.message); }
+      } else {
+        const val = await showKeyboard({ title: t('Device name'), value: nameValue.textContent || '', maxLen: 248 });
+        if (val !== null) {
+          nameValue.textContent = val;
+          updateActionState();
+        }
+      }
+    });
+    nameWrap.appendChild(nameValue);
+    nameWrap.appendChild(nameActionBtn);
+    root.appendChild(makeRow(t('Device name'), t('Name shown to other Bluetooth devices.'), nameWrap));
+
+    // Reset section
+    const resetGroup = document.createElement('div');
+    resetGroup.className = 'opui-bt-advanced-group opui-bt-advanced-group--danger';
+    const resetTitle = document.createElement('div');
+    resetTitle.className = 'opui-bt-advanced-group-title';
+    resetTitle.textContent = t('Reset Bluetooth');
+    resetGroup.appendChild(resetTitle);
+    const resetDesc = document.createElement('div');
+    resetDesc.className = 'opui-bt-advanced-empty';
+    resetDesc.textContent = t('Remove all pairings and restart the Bluetooth service.');
+    resetGroup.appendChild(resetDesc);
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'opui-btn opui-btn--danger';
+    resetBtn.textContent = t('Reset Bluetooth');
+    resetBtn.disabled = !canAct;
+    resetBtn.addEventListener('click', async () => {
+      const ok = await showConfirm(t('Remove all Bluetooth pairings and restart the service?'));
+      if (!ok) return;
+      try {
+        for (const dev of (state.devices || []).filter(d => d.paired)) {
+          await api('forget', { address: dev.address });
+        }
+        await api('service', { start: false });
+        await api('service', { start: true });
+        toast(t('Bluetooth reset'));
+        await refresh();
+      } catch (e) { toast(e.message); }
+    });
+    resetGroup.appendChild(resetBtn);
+    root.appendChild(resetGroup);
+  }
+
+  await refresh();
+  startPoll();
+
+  const cleanup = () => { stopPoll(); };
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(container)) { cleanup(); observer.disconnect(); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+
+async function renderEgpuPanel(container, data) {
+  container.innerHTML = "";
+  const root = document.createElement("div");
+  root.className = "opui-egpu-panel";
+  container.appendChild(root);
+
+  const st = globalState?.device?.egpu_state;
+  const state = st?.state || "gray";
+
+  // Header
+  const header = document.createElement("div");
+  header.className = "opui-egpu-header";
+
+  const title = document.createElement("div");
+  title.className = "opui-egpu-title";
+  title.textContent = t("eGPU / Big Model");
+  header.appendChild(title);
+
+  const statusBadge = document.createElement("div");
+  statusBadge.className = `opui-egpu-status opui-egpu-status--${state}`;
+  statusBadge.textContent = t(EGPU_STATE_LABELS[state] || state);
+  header.appendChild(statusBadge);
+  root.appendChild(header);
+
+  // Description
+  const desc = document.createElement("div");
+  desc.className = "opui-egpu-desc";
+  desc.textContent = t(EGPU_STATE_DESCS[state] || "");
+  root.appendChild(desc);
+
+  // Chestnut info
+  if (!globalState?.device?.chestnutPresent) {
+    const warning = document.createElement("div");
+    warning.className = "opui-egpu-warning";
+    warning.textContent = t("eGPU (Chestnut) not detected. Connect your eGPU hardware to enable.");
+    root.appendChild(warning);
+  }
+
+  // State breakdown
+  const section = document.createElement("div");
+  section.className = "opui-egpu-section";
+
+  const sectionTitle = document.createElement("div");
+  sectionTitle.className = "opui-egpu-section-title";
+  sectionTitle.textContent = t("Status Details");
+  section.appendChild(sectionTitle);
+
+  const stateItems = [
+    { label: t("Current State"), value: t(EGPU_STATE_LABELS[state] || state) },
+    { label: t("eGPU Available"), value: globalState?.device?.chestnutPresent ? t("Yes") : t("No") },
+    { label: t("Description"), value: t(EGPU_STATE_DESCS[state] || "") },
+  ];
+
+  for (const item of stateItems) {
+    const row = document.createElement("div");
+    row.className = "opui-egpu-row";
+    const labelEl = document.createElement("span");
+    labelEl.className = "opui-egpu-row-label";
+    labelEl.textContent = item.label;
+    const valueEl = document.createElement("span");
+    valueEl.className = "opui-egpu-row-value";
+    valueEl.textContent = item.value;
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    section.appendChild(row);
+  }
+  root.appendChild(section);
 }
 
 async function renderTripsPanel(container, data) {
@@ -4006,12 +4658,13 @@ function createMpcOptionRow(cfg, value, disabled) {
 }
 
 async function renderLongitudinalMpcTuningPanel(container) {
-  container.innerHTML = "";
+  const gen = beginPanelRender();
   const disabled = !globalState.has_longitudinal_control;
 
   const batch = await apiPost("/api/opui/params/batch", {
     keys: LONGITUDINAL_MPC_TUNING_PARAMS.map((c) => c.param),
   });
+  if (panelRenderStale(gen)) return;
   const values = batch?.ok ? (batch.params || {}) : {};
 
   const wrap = document.createElement("div");
@@ -4040,6 +4693,7 @@ async function renderLongitudinalMpcTuningPanel(container) {
   resetWrap.appendChild(resetBtn);
   wrap.appendChild(resetWrap);
 
+  container.innerHTML = "";
   container.appendChild(wrap);
 }
 
@@ -4604,7 +5258,7 @@ function renderLanguageRow() {
     if (res.ok) {
       toast(`${t("Language")}: ${lang.label}`);
       deviceExtrasCache = { ...ex, current_language: lang.id };
-      const { loadI18n } = await import("./i18n.js");
+      const { loadI18n } = await import("./i18n.js?v=3");
       await loadI18n(true);
       requestPanelRefresh();
       window.dispatchEvent(new CustomEvent("opui:language-changed"));
@@ -4984,7 +5638,7 @@ async function renderSunnylinkPanel(container, data) {
 
 async function renderStoragePanel(container, opts = {}) {
   const force = Boolean(opts.force);
-  const { loadI18n } = await import("./i18n.js");
+  const { loadI18n } = await import("./i18n.js?v=3");
   await loadI18n(true);
   container.innerHTML = `<p class="opui-muted opui-panel-loading" style="padding:48px;text-align:center">${escapeHtml(t("Calculating..."))}</p>`;
   const data = await apiGet(`/api/opui/storage${force ? "?force=1" : ""}`);

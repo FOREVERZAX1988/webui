@@ -1,6 +1,6 @@
 /** 300px metrics sidebar — layout matches openpilot/selfdrive/ui/layouts/sidebar.py */
 
-import { tr } from "./i18n.js";
+import { tr } from "./i18n.js?v=3";
 
 const METRIC_KEYS = ["temp", "vehicle", "connect", "sunnylink"];
 
@@ -157,13 +157,15 @@ function updateNetworkIndicator(d) {
   });
 }
 
-export function updateSidebarMode(started) {
+export function updateSidebarMode(started, carrotWebEnabled = false) {
   const bottomBtn = document.getElementById("btn-sidebar-bottom");
   if (!bottomBtn) return;
+  const showCarrotWeb = !started && carrotWebEnabled;
   bottomBtn.classList.toggle("opui-sidebar-btn--flag", !!started);
-  bottomBtn.classList.toggle("opui-sidebar-btn--home", !started);
-  bottomBtn.disabled = !started;
-  const label = started ? tr("Bookmark route") : tr("Home");
+  bottomBtn.classList.toggle("opui-sidebar-btn--carrot-web", showCarrotWeb);
+  bottomBtn.classList.toggle("opui-sidebar-btn--home", !started && !showCarrotWeb);
+  bottomBtn.disabled = !(started || showCarrotWeb);
+  const label = started ? tr("Bookmark route") : (showCarrotWeb ? tr("Carrot Web") : tr("Home"));
   bottomBtn.title = label;
   bottomBtn.setAttribute("aria-label", label);
 }

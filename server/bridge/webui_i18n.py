@@ -13,6 +13,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Changes": "Changes",
     "Current": "Current",
     "Available": "Available",
+    "Bluetooth": "Bluetooth",
+    "Carrot": "Carrot",
+    "Data": "Data",
+    "Storage": "Storage",
     "This updates only the Web UI files, not openpilot firmware.": (
       "This updates only the Web UI files, not openpilot firmware."
     ),
@@ -405,6 +409,16 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Green light": "Green light",
     "Left-turn green": "Left-turn green",
     "Traffic light": "Traffic light",
+    "Very free": "Very free",
+    "Free": "Free",
+    "Slow": "Slow",
+    "Congested": "Congested",
+    "Severe": "Severe",
+    "No data": "No data",
+    "Current": "Current",
+    "Service area": "Service area",
+    "Toll gate": "Toll gate",
+    "Checkpoint": "Checkpoint",
     "ETA": "ETA",
     "Curve": "Curve",
     "Carrot Tuning": "Carrot Tuning",
@@ -421,10 +435,6 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     ),
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images)."
-    ),
-    "Carrot Nav Panel Side": "Carrot Nav Panel Side",
-    "Place the onroad Carrot navigation panel on the left or right side of the screen.": (
-      "Place the onroad Carrot navigation panel on the left or right side of the screen."
     ),
     "Carrot Driving Mode": "Carrot Driving Mode",
     "Carrot driving style preset.": "Carrot driving style preset.",
@@ -597,6 +607,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Web UI": "Web UI",
     "Local": "本地",
     "Cloud": "云端",
+    "Bluetooth": "蓝牙",
+    "Carrot": "Carrot",
+    "Data": "数据",
+    "Storage": "存储",
     "Loading...": "加载中...",
     "Web UI update available": "有 Web UI 更新",
     "Web UI is up to date": "Web UI 已是最新版本",
@@ -996,6 +1010,16 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Green light": "绿灯",
     "Left-turn green": "左转绿灯",
     "Traffic light": "信号灯",
+    "Very free": "极畅通",
+    "Free": "畅通",
+    "Slow": "缓行",
+    "Congested": "拥堵",
+    "Severe": "严重拥堵",
+    "No data": "无数据",
+    "Current": "当前位置",
+    "Service area": "服务区",
+    "Toll gate": "收费站",
+    "Checkpoint": "检查站",
     "ETA": "剩余",
     "Curve": "弯道",
     "Carrot Tuning": "Carrot 调参",
@@ -1012,10 +1036,6 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     ),
     "Use the 7714 WebSocket v2 rich navigation stream (traffic, lanes, crossroad images).": (
       "使用 7714 WebSocket v2 富导航流（红绿灯、车道、复杂路口图像）。"
-    ),
-    "Carrot Nav Panel Side": "Carrot 导航面板位置",
-    "Place the onroad Carrot navigation panel on the left or right side of the screen.": (
-      "将 Carrot 导航面板放在屏幕左侧或右侧。"
     ),
     "Carrot Driving Mode": "Carrot 驾驶模式",
     "Carrot driving style preset.": "Carrot 驾驶风格预设。",
@@ -1192,6 +1212,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "Let the Carrot app's turn instruction act as a turn signal. This reaches the car's real turn signal, so it is off by default.": (
       "讓 Carrot App 的轉彎指令充當方向燈。該信號會到達車輛真實方向燈，因此預設關閉。"
     ),
+    "Bluetooth": "藍牙",
+    "Carrot": "Carrot",
+    "Data": "資料",
+    "Storage": "儲存",
     "Loading...": "載入中...",
     "Web UI update available": "有 Web UI 更新",
     "Web UI is up to date": "Web UI 已是最新版本",

@@ -2,7 +2,7 @@ import { apiGet, apiPost } from "./api.js";
 import {
   loadPanelList, renderPanel, setGlobalState, setHomeState, setSubpanelNavigator,
   applyPanelSync, syncDrivingPersonality, notifyPanelWatch, applyPanelCustom, clearPanelDomCache,
-} from "./panels.js?v=113";
+} from "./panels.js?v=116";
 import {
   startRoadStream, stopRoadStream, updateOnroadHud, bindExperimentalButton, bindCameraSwitcher, prewarmWebrtc, isCameraPlaying, isRoadStreaming, updateStreamDeviceState, onDocumentVisibilityChange, isOverlayAllowed, shouldDrawModelOverlay, getOverlayFpsHint, isPreviewStreamEnabled, applyPreviewOffUi, stopOnroadHudAnimLoop,
 } from "./onroad.js?v=120";
@@ -12,12 +12,12 @@ import { updateHomeScreen, showHomeLoading, refreshHomeScreen, bindHomeHeader, a
 import {
   updateSidebarMetrics, updateSidebarMode, updateSidebarRecording,
   updateSidebarEgpu,
-} from "./sidebar.js?v=1";
+} from "./sidebar.js?v=2";
 import { initBodyLayout, updateBodyLayout, stopBodyLayout } from "./body_layout.js";
 import { initDevPanel } from "./dev.js";
 import { initModelCanvas, showModelOverlay, scheduleDrawModelOverlay, setModelOverlayEnabled, hasOverlayGeometry } from "./model_canvas.js";
 import { initRoadLite } from "./road_lite.js";
-import { loadI18n, translatePanelTitle, syncStaticUiStrings, tr } from "./i18n.js";
+import { loadI18n, translatePanelTitle, syncStaticUiStrings, tr } from "./i18n.js?v=3";
 import { initOnboarding, bindOnboardingDialog } from "./onboarding.js";
 import { initWebUiUpdate, refreshWebUiUpdateI18n } from "./webui_update.js";
 import { initSystemWaitOverlay } from "./system_wait_overlay.js";
@@ -40,6 +40,7 @@ const panelTitle = $("#panel-title");
 let panels = [];
 let currentPanel = "device";
 let lastStarted = false;
+let carrotWebEnabled = false;
 let lastIsBody = false;
 let lastUiState = null;
 let devPc = false;
@@ -648,9 +649,10 @@ async function bootstrap() {
 
 function handleState(st) {
   lastUiState = st;
+  carrotWebEnabled = !!st.carrot_web_enabled;
   setGlobalState(st);
   updateSidebarMetrics(st);
-  updateSidebarMode(!!st.started);
+  updateSidebarMode(!!st.started, carrotWebEnabled);
   updateSidebarRecording(st);
   updateSidebarEgpu(st);
   updateScreenSaverState(st);
@@ -747,7 +749,7 @@ function setupWebSocket() {
   });
   opuiWs.on("i18n", async (msg) => {
     if (msg?.data?.ok) {
-      const { applyI18nPayload } = await import("./i18n.js");
+      const { applyI18nPayload } = await import("./i18n.js?v=3");
       if (applyI18nPayload(msg.data, true)) {
         clearPanelDomCache();
         renderNav();
@@ -888,6 +890,10 @@ $("#btn-sidebar-bottom").addEventListener("click", async () => {
     cameraPreview = false;
     await stopRoadStream();
     setScreen("home");
+    return;
+  }
+  if (carrotWebEnabled && !lastStarted) {
+    window.open(`http://${location.hostname}:8088`, "_blank", "noopener,noreferrer");
     return;
   }
   if (lastStarted) {

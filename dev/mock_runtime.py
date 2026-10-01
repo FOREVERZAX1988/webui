@@ -98,8 +98,6 @@ SIM: dict[str, Any] = {
   "agnos_sim_reboot_until": 0.0,
   "is_body": False,
   "carrot_road_limit": 120,
-  "car_speed_limit": 120,
-  "map_speed_limit": 120,
   "speed_limit_source": "map",
   "carrot_crossroad_demo": True,
   "carrot_navi_debug_demo": True,
@@ -111,7 +109,7 @@ def _seed_params() -> dict[str, bytes | str]:
   bool_on = {
     "OpenpilotEnabledToggle", "IsLdwEnabled", "AlwaysOnDM", "IsMetric",
     "Mads", "BlindSpot", "SunnylinkEnabled", "DisengageOnAccelerator",
-    "RecordFront", "RecordAudio",
+    "RecordFront", "RecordAudio", "CarrotWebEnabled",
   }
   data: dict[str, bytes | str] = {}
   for k in bool_on:
@@ -250,7 +248,7 @@ def _mock_road_model(s: dict[str, Any]) -> dict[str, Any]:
   if s.get("edge_missing_demo"):
     edges = [None, None]
 
-  # Amap lane-line semantics (AmapLineType): 0 unknown · 1 solid white ·
+  # Carrot 7714 v2 lane-line semantics: 0 unknown · 1 solid white ·
   # 2 dashed white · 3 solid yellow · 4 double yellow · 5 botts dots · 6 edge.
   line_kinds = [0, 0, 0, 0]
   if s.get("lane_kinds_demo", True):
@@ -354,8 +352,21 @@ def _mock_carrot_nav(s: dict[str, Any]) -> dict[str, Any]:
     "goal_name": "上海",
     "sdi_descr": "",
     "road_cate": 1,
-    "panel_side": int(s.get("carrot_panel_side", 0)),
-    "panel_opacity": int(s.get("carrot_panel_opacity", 100)),
+    # Service area / toll gate hint (App §2.3).
+    "sapa_name": "阳澄湖服务区",
+    "sapa_dist": 1800,
+    "sapa_type": 0,
+    "sapa_cnt": 2,
+    # TMC congestion (App §2.5): mixed segments so the bar shows every colour.
+    "tmc_overall_status": 3,
+    "tmc_total_distance": 20000,
+    "tmc_residual_distance": 12500,
+    "tmc_segment_count": 5,
+    "tmc_segment_statuses": "[1,2,3,4,5]",
+    "tmc_segment_distances": "[3000,2500,4000,1500,6000]",
+    # Guided-lane arrow codes (App §2.2).
+    "nav_lane_guide": "L,SL",
+    "nav_lane_guide_cnt": 2,
   }
 
 
@@ -419,12 +430,6 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
       "speed_limit_assist_state": s.get("speed_limit_assist", ""),
       "speed_limit_assist": s.get("speed_limit_assist", ""),
       "speed_limit_assist_active": bool(s.get("speed_limit_assist")),
-      "speed_limit_sources": {
-        "car": {"value": s.get("car_speed_limit"), "valid": s.get("car_speed_limit") is not None},
-        "map": {"value": s.get("map_speed_limit", s.get("speed_limit")), "valid": True, "provider": "OSM"},
-        "carrot": {"value": s.get("carrot_road_limit"), "valid": s.get("carrot_road_limit") is not None, "sdi_value": None, "sdi_distance": 0.},
-        "merged": {"value": s.get("speed_limit"), "source": s.get("speed_limit_source", "map")},
-      },
       "road_name": s.get("road_name", ""),
       "standstill_timer": s.get("standstill_timer"),
       "blindspot_left": s.get("blindspot_left", False),
@@ -444,20 +449,6 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
       "carrot_nav": _mock_carrot_nav(s) if s["started"] and s.get("carrot_nav_demo", True) else None,
       "amap_lines": ({"valid": True, "left_blocked": False, "right_blocked": True}
                      if s["started"] and s.get("amap_lines_demo", True) else None),
-      "longitudinal_source": s.get("longitudinal_source", "cruise"),
-      "carrot_plan": {
-        "x_state": s.get("carrot_plan_x_state", "e2eCruise"),
-        "driving_mode": s.get("carrot_plan_driving_mode", "normal"),
-        "v_target": s.get("carrot_plan_v_target", s.get("set_speed_kmh", 80)),
-        "a_target": s.get("carrot_plan_a_target", 0.0),
-        "stop_dist": s.get("carrot_plan_stop_dist", 0.0),
-      } if s.get("carrot_plan_demo", True) else None,
-      "traffic_light": {
-        "state": s.get("traffic_light_state", ""),
-        "source": s.get("traffic_light_source", ""),
-        "confidence": s.get("traffic_light_confidence", 0.0),
-        "distance": s.get("traffic_light_distance", 0.0),
-      } if s.get("traffic_light_demo", True) else None,
     },
     "developer_ui": int(s.get("developer_ui", 0)),
     "recording_audio": bool(s.get("recording_audio", False)),
@@ -530,12 +521,20 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "alert_sound": str(s.get("alert_sound", "none") or "none"),
     "quiet_mode": _mock_quiet_mode(),
     "is_body": bool(s.get("is_body", False)),
+    "carrot_web_enabled": bool(s.get("carrot_web_enabled", _mock_carrot_web_enabled())),
   }
 
 
 def _mock_quiet_mode() -> bool:
   try:
     return MockParams().get_bool("QuietMode")
+  except Exception:
+    return False
+
+
+def _mock_carrot_web_enabled() -> bool:
+  try:
+    return MockParams().get_bool("CarrotWebEnabled")
   except Exception:
     return False
 
@@ -659,4 +658,5 @@ def install_openpilot_mocks(root: str) -> None:
 
   os.environ["WEBUI_DEV_PC"] = "1"
   os.environ.setdefault("OPENPILOT_ROOT", root)
+  MockParams()  # trigger full _seed_params() before carrot-navi overlay adds its keys
   _seed_carrot_navi_params()

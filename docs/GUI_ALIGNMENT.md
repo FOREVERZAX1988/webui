@@ -17,7 +17,7 @@
 |------|-----|------|
 | 数据 | `SpeedLimitResolver` 合并 carrot 导航限速到 `map` 源；SDI 走 `LIMIT_ADAPT_ACC` 前瞻语义；carrot 包新鲜度/数值合理性门控 | ✅ |
 | 数据 | `plannerd` 订阅 `carrotManSP`（`ignore_alive`） | ✅ |
-| 数据 | `state_api` 输出 `sp_hud.speed_limit_sources`（车机/地图/Carrot/生效）与顶层 `amap_provider` | ✅ |
+| 数据 | `state_api` 输出 `sp_hud.speed_limit_sources`（车机/地图/Carrot/生效）；Amap Web 已移除，无 `amap_provider` | ✅ |
 | 数据 | `state_api` 盲区/转向灯改读 `carState`（原 `SelfdriveStateSP` 字段不存在） | ✅ |
 | 数据 | `radarTracks` 加入 `STATE_HUB_SERVICES`，`state_api` 输出 `radar_tracks` | ✅ |
 | HUD | road-lite：导航带移到时速下方居中、字号放大；移除单独限速徽标；SLA 圆环接管 | ✅ |
@@ -55,15 +55,15 @@
 
 ## 0.-1 v79 新增（Carrot 导航 HUD 对齐）
 
-对照源：`openpilot/selfdrive/ui/sunnypilot/onroad/amap_lane_indicators.py`（AmapLaneIndicators + CarrotNavigationPanel）。
+对照源：原生 GUI `CarrotLaneIndicators` + `CarrotNavigationPanel`（Carrot 7714 v2 车道线数据）。
 
 | 区域 | 项 | 状态 |
 |------|-----|------|
 | 数据 | webui 订阅 `carrotManSP`（`cereal_services.py` STATE_HUB_SERVICES） | ✅ |
 | 数据 | `state_api.sp_hud.carrot_nav`（25 个 carrotManSP 字段 + panel_side/panel_opacity） | ✅ |
-| 数据 | `state_api.sp_hud.amap_lines`（carStateSP 的 amapLineValid/Left/Right，服务端按 `AmapEnabled` 门控） | ✅ |
+| 数据 | `state_api.sp_hud.amap_lines`（carStateSP 的 `carrotLaneValid` / `carrotLeftLineBlocked` / `carrotRightLineBlocked`，来自 Carrot 7714 v2） | ✅ |
 | HUD | Carrot 导航面板（`hud_carrot_nav.js`）：TBT 主文本+方向、转向图标(1/2/3/4/7)与回退文案(6=TG/8=目的地/减速)、ATC 徽标(prepare 半透明)、弯道建议速度、转向距离/倒计时、ETA+终点距离+🏁目标名、SDI/路名+道路等级章(高速…乡道)、LIMIT 牌(超速+2 变红)、desiredSpeed 牌、测速相机圆环(区间/减速带/移动)、红绿灯(红/绿/左转绿+倒计时) | ✅ |
-| HUD | 面板位置（`CarrotPanelSide` 0=左/1=右）与不透明度（`CarrotPanelOpacity` 0-100）参数化；边缘车道线条 `AmapLaneIndicators`（左/右竖条，绿=可越/橙=拦截） | ✅ |
+| HUD | 面板位置（`CarrotPanelSide` 0=左/1=右）与不透明度（`CarrotPanelOpacity` 0-100）参数化；边缘车道线条 `CarrotLaneIndicators`（左/右竖条，绿=可越/橙=拦截） | ✅ |
 | 设置 | Navigation 面板新增 `CarrotPanelSide`/`CarrotPanelOpacity` 控件（GUI 无此 UI，webui 超集）；`params_keys.h` 注册两键 | ✅ |
 | Dev | PC 预览预设 `carrot_nav`（Dev 面板 "Carrot · nav HUD" 按钮），mock `carrot_nav`/`amap_lines` 样例数据 | ✅ |
 | 修复 | 5d1667c 移动 `panel_schema` 导出后 `routes/__init__.py` 引用未更新导致服务无法启动 | ✅ |

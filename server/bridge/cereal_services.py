@@ -44,6 +44,10 @@ STATE_HUB_SERVICES: tuple[str, ...] = (
   "carrotManSP",
   "carrotNaviSP",
   "carrotNaviMediaSP",
+  # The fused stock-navd + 7714 guidance stream. carrot_man publishes it and nothing
+  # consumed it before; the HUD now reads its multi-step manoeuvre list and per-lane
+  # arrows, which no other service carries.
+  "navInstructionCarrotSP",
   "carParamsSP",
   "chestnutState",
 )
