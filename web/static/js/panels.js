@@ -1757,9 +1757,7 @@ function renderWidget(w, panelData) {
       return renderAlwaysOffroadRow(active);
     }
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
-    if (w.custom === "amap_api_key") return renderAmapApiKeyRow(w);
     if (w.custom === "speed_limit_sources") return renderSpeedLimitSourcesRow(w);
-    if (w.custom === "navigation_provider") return renderNavigationProviderRow(w);
     if (w.custom === "longitudinal_source") return renderLongitudinalSourceRow(w);
     if (w.custom === "traffic_light_fusion") return renderTrafficLightFusionRow(w);
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
@@ -2521,58 +2519,7 @@ function renderSshKeysBlock() {
   return row;
 }
 
-function renderAmapApiKeyRow(w) {
-  const row = document.createElement("div");
-  row.className = "opui-sp-row";
-  row.dataset.custom = "amap_api_key";
-  if (w.offroad_only) row.dataset.offroadOnly = "1";
-  row.innerHTML = `
-    <div class="opui-sp-row-text">
-      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
-    </div>
-    <div class="opui-sp-row-actions">
-      <span class="opui-sp-row-value" id="amap-api-key-display"></span>
-      <button type="button" class="opui-btn opui-btn--action" id="amap-api-key-btn">${escapeHtml(t("EDIT"))}</button>
-    </div>`;
-
-  const refresh = () => {
-    const val = panelDataRef?.values?.AmapApiKey || "";
-    const masked = val ? "*".repeat(Math.min(val.length, 12)) : t("Not set");
-    const display = row.querySelector("#amap-api-key-display");
-    if (display) display.textContent = masked;
-  };
-
-  const btn = row.querySelector("#amap-api-key-btn");
-  if (btn) {
-    btn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (btn.disabled) return;
-      const current = panelDataRef?.values?.AmapApiKey || "";
-      const value = await showTextInput({
-        title: t("Enter Amap API Key"),
-        value: current,
-        minLen: 0,
-        maxLen: 255,
-        placeholder: t("Amap API Key"),
-      });
-      if (value === null) return;
-      const res = await putParam("AmapApiKey", value);
-      if (res.ok) {
-        if (panelDataRef?.values) panelDataRef.values.AmapApiKey = value;
-        refresh();
-      } else {
-        toast(res.error || t("Save failed"));
-      }
-    });
-  }
-
-  row.querySelector(".opui-sp-row-actions")?.addEventListener("click", (e) => e.stopPropagation());
-  if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
-  refresh();
-  return row;
-}
-
-/* Speed-limit source diagnostics: show the raw values from car, map (OSM/Amap)
+/* Speed-limit source diagnostics: show the raw values from car, map (OSM)
    and carrot navigation, plus the merged resolver result. This is read-only. */
 function renderSpeedLimitSourcesRow(w) {
   const row = document.createElement("div");
@@ -2620,29 +2567,6 @@ function renderSpeedLimitSourcesRow(w) {
   row._cleanup = off;
   update();
   if (w.desc) bindRowExpand(row, { desc: t(w.desc) });
-  return row;
-}
-
-/* Navigation provider read-out: shows whether mapd is currently using OSM or
-   the Amap web API for map-based speed limits and road names. */
-function renderNavigationProviderRow(w) {
-  const row = document.createElement("div");
-  row.className = "opui-sp-row opui-sp-row--readonly";
-  row.dataset.custom = "navigation_provider";
-  row.innerHTML = `
-    <div class="opui-sp-row-text">
-      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
-    </div>
-    <div class="opui-row-value" id="nav-provider-value">--</div>`;
-  const update = () => {
-    const st = opuiWs.lastState;
-    const provider = st?.amap_provider || "OSM";
-    const el = row.querySelector("#nav-provider-value");
-    if (el) el.textContent = provider;
-  };
-  const off = opuiWs.on("state", update);
-  row._cleanup = off;
-  update();
   return row;
 }
 

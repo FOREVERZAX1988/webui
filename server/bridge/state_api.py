@@ -137,15 +137,6 @@ def _speed_limit_sources(sm: Any, v_ego_ms: float) -> dict[str, Any]:
   return sources
 
 
-def _amap_has_key() -> bool:
-  try:
-    from openpilot.common.params import Params
-    key = Params().get("AmapApiKey") or ""
-    return bool(key.strip())
-  except Exception:
-    return False
-
-
 def _sunnylink_metric() -> dict[str, str]:
   try:
     from openpilot.common.params import Params
@@ -594,7 +585,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   developer_ui = int(car_ctx.developer_ui or 0)
   torque_bar = car_ctx.torque_bar
   speed_limit_mode = 0
-  amap_enabled = False
   carrot_panel_side = 0
   carrot_panel_opacity = 100
   turn_signals = car_ctx.turn_signals
@@ -608,7 +598,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     screensaver_enabled = p.get_bool("ScreenSaverEnabled")
     screensaver_timeout_sec = int(p.get("ScreenSaverTimeout", return_default=True) or 300)
     speed_limit_mode = int(p.get("SpeedLimitMode", return_default=True) or 0)
-    amap_enabled = bool(p.get_bool("AmapEnabled"))
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
   except Exception:
@@ -696,8 +685,10 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if sp_hud["speed_limit_ahead_valid"]:
         sp_hud["speed_limit_ahead"] = round(float(getattr(lmd, "speedLimitAhead", 0) or 0) * conv)
         sp_hud["speed_limit_ahead_dist"] = float(getattr(lmd, "speedLimitAheadDistance", 0) or 0)
-    # Carrot 7714 v2 lane-line edge bars (mirrors GUI AmapLaneIndicators).
-    if amap_enabled and sm.valid.get("carStateSP"):
+    # Carrot 7714 v2 lane-line edge bars (mirrors GUI AmapLaneIndicators). The payload
+    # carries its own validity flag, so publish it whenever carStateSP is live - same as
+    # modeld, which reads the same carrotLaneValid / carrot*LineBlocked fields.
+    if sm.valid.get("carStateSP"):
       cssp = sm["carStateSP"]
       sp_hud["amap_lines"] = {
         "valid": bool(getattr(cssp, "carrotLaneValid", False)),
@@ -1004,7 +995,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "sp_hud": sp_hud,
     "dm_arc": dm_arc,
     "speed_limit_mode": speed_limit_mode,
-    "amap_provider": "高德" if (amap_enabled and _amap_has_key()) else "OSM",
     "turn_signals": turn_signals,
     "blindspot": blindspot,
     "rocket_fuel_enabled": rocket_fuel_enabled,
