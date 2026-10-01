@@ -4,12 +4,22 @@
  */
 
 import { apiGet, apiPost, toast } from "./api.js";
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 
 const SESSION_KEY = "opui_system_wait_v1";
 const BOOTSTRAP_TIMEOUT_MS = 6000;
 const RECONNECT_TIMEOUT_MS = 5 * 60 * 1000;
 const AGNOS_POLL_MS = 2000;
+
+/** Server codes that are not failures: they mean "there is nothing to do". */
+const AGNOS_INFO_CODES = {
+  not_required: ["No update needed",
+    "This device is already running the latest AGNOS version — nothing to install."],
+  not_agnos: ["AGNOS update unavailable",
+    "This device does not support AGNOS updates."],
+  not_ready: ["Update not ready",
+    "The AGNOS update is not ready to install yet — try again in a moment."],
+};
 
 let active = false;
 let abortCtrl = null;
@@ -220,9 +230,19 @@ export async function runAgnosUpdateFlow({ readyToReboot = false } = {}) {
   const res = await apiPost(endpoint).catch((err) => ({ ok: false, error: err?.message }));
 
   if (!res?.ok) {
+    const code = String(res?.error || "failed");
+    const info = AGNOS_INFO_CODES[code];
+    if (info) {
+      // Nothing to install / nothing to do is not a failure. Close the full-screen overlay
+      // we opened optimistically and say so, instead of leaving the bare error code on an
+      // "Update failed" screen - that looked exactly like a button that does nothing.
+      hideOverlay();
+      toast(`${tr(info[0])} — ${tr(info[1])}`, 6000);
+      return;
+    }
     showOverlay({
       title: tr("Update failed"),
-      message: res?.error || tr("Failed"),
+      message: code,
       showDismiss: true,
     });
     return;

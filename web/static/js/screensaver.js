@@ -1,6 +1,6 @@
 /** Offroad screen saver — mirrors ScreenSaverSP bouncing logo when idle. */
 
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 
 let overlay = null;
 let animId = null;

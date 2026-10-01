@@ -8,7 +8,7 @@
  * is drawn. */
 
 import { opuiWs } from "./ws.js";
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 
 const ROAD_LITE_MS = 400;
 

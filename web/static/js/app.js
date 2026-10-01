@@ -17,10 +17,10 @@ import { initBodyLayout, updateBodyLayout, stopBodyLayout } from "./body_layout.
 import { initDevPanel } from "./dev.js";
 import { initModelCanvas, showModelOverlay, scheduleDrawModelOverlay, setModelOverlayEnabled, hasOverlayGeometry } from "./model_canvas.js";
 import { initRoadLite } from "./road_lite.js";
-import { loadI18n, translatePanelTitle, syncStaticUiStrings, tr } from "./i18n.js?v=3";
+import { loadI18n, translatePanelTitle, syncStaticUiStrings, tr } from "./i18n.js?v=4";
 import { initOnboarding, bindOnboardingDialog } from "./onboarding.js";
 import { initWebUiUpdate, refreshWebUiUpdateI18n } from "./webui_update.js";
-import { initSystemWaitOverlay } from "./system_wait_overlay.js";
+import { initSystemWaitOverlay } from "./system_wait_overlay.js?v=2";
 import { initScreenSaver, updateScreenSaverState } from "./screensaver.js";
 import { opuiWs } from "./ws.js";
 import { clientToOpui } from "./opui_coords.js";
@@ -749,7 +749,7 @@ function setupWebSocket() {
   });
   opuiWs.on("i18n", async (msg) => {
     if (msg?.data?.ok) {
-      const { applyI18nPayload } = await import("./i18n.js?v=3");
+      const { applyI18nPayload } = await import("./i18n.js?v=4");
       if (applyI18nPayload(msg.data, true)) {
         clearPanelDomCache();
         renderNav();

@@ -66,6 +66,16 @@ const LOCAL_FALLBACKS = {
     "Current State": "Current State",
     "eGPU Available": "eGPU Available",
     "Description": "Description",
+    "No update needed": "No update needed",
+    "This device is already running the latest AGNOS version — nothing to install.": (
+      "This device is already running the latest AGNOS version — nothing to install."
+    ),
+    "AGNOS update unavailable": "AGNOS update unavailable",
+    "This device does not support AGNOS updates.": "This device does not support AGNOS updates.",
+    "Update not ready": "Update not ready",
+    "The AGNOS update is not ready to install yet — try again in a moment.": (
+      "The AGNOS update is not ready to install yet — try again in a moment."
+    ),
   },
   "zh-CHS": {
     "Projected": "投射",
@@ -932,6 +942,16 @@ const LOCAL_FALLBACKS = {
     "OK": "确定",
     "Confirm": "确认",
     "Cancel": "取消",
+    "No update needed": "无需更新",
+    "This device is already running the latest AGNOS version — nothing to install.": (
+      "本机已是最新 AGNOS 版本，无需安装。"
+    ),
+    "AGNOS update unavailable": "无法进行 AGNOS 更新",
+    "This device does not support AGNOS updates.": "本设备不支持 AGNOS 更新。",
+    "Update not ready": "更新尚未就绪",
+    "The AGNOS update is not ready to install yet — try again in a moment.": (
+      "AGNOS 更新尚未准备好安装，请稍后重试。"
+    ),
   },
   "zh-CHT": {
     "Projected": "投射",
@@ -1718,6 +1738,16 @@ const LOCAL_FALLBACKS = {
     "copyparty is a very capable file server, you can use it to download your routes, view your logs and even make some edits on some files from your browser. Requires you to connect to your comma locally via its IP address.": "copyparty is a very capable file server, you can use it to download your routes, view your logs and even make some edits on some files from your browser. Requires you to connect to your comma locally via its IP address.",
     "sunnypilot Longitudinal Control (Alpha)": "sunnypilot Longitudinal Control (Alpha)",
     "sunnypilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.": "sunnypilot 要求裝置安裝角度左右不超過 4°，上仰不超過 5°，下傾不超過 9°。",
+    "No update needed": "無需更新",
+    "This device is already running the latest AGNOS version — nothing to install.": (
+      "本機已是最新 AGNOS 版本，無需安裝。"
+    ),
+    "AGNOS update unavailable": "無法進行 AGNOS 更新",
+    "This device does not support AGNOS updates.": "本裝置不支援 AGNOS 更新。",
+    "Update not ready": "更新尚未就緒",
+    "The AGNOS update is not ready to install yet — try again in a moment.": (
+      "AGNOS 更新尚未準備好安裝，請稍後再試。"
+    ),
 };
 
 function resolvePoCode(lang, code) {

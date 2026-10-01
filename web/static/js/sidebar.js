@@ -1,6 +1,6 @@
 /** 300px metrics sidebar — layout matches openpilot/selfdrive/ui/layouts/sidebar.py */
 
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 
 const METRIC_KEYS = ["temp", "vehicle", "connect", "sunnylink"];
 

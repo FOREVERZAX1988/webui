@@ -1,6 +1,6 @@
 /** sunnypilot onroad HUD extensions (speed limit, road name, blinkers, DM arc, rocket fuel, SCC). */
 
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 import { AlertFadeAnimator } from "./fade_anim.js";
 
 const TURN_IMG = "/api/opui/assets/icons_mici/onroad/turn_signal_left.png";

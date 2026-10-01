@@ -1,6 +1,6 @@
 /** Offroad onboarding — terms, sunnylink consent, training. */
 
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 import { apiGet, apiPut } from "./api.js";
 import { showConfirm } from "./components.js";
 

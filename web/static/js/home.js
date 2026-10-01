@@ -1,8 +1,8 @@
 /** Offroad home layout — Prime card, experimental banner, Firehose setup, UPDATE/ALERTS pills. */
 
-import { tr, trn } from "./i18n.js?v=3";
+import { tr, trn } from "./i18n.js?v=4";
 import { apiGet, apiPost } from "./api.js";
-import { runSoftwareInstallFlow, runAgnosUpdateFlow } from "./system_wait_overlay.js";
+import { runSoftwareInstallFlow, runAgnosUpdateFlow } from "./system_wait_overlay.js?v=2";
 import { reopenOnboarding } from "./onboarding.js";
 
 function assetUrl(rel) {

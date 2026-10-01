@@ -1,5 +1,5 @@
 import { apiGet, apiPut } from "./api.js";
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 import { updateSpHud } from "./hud_sp.js";
 import { updateCarrotNav, updateAmapBars, updateCarrotCrossroad, updateCarrotMedia } from "./hud_carrot_nav.js";
 import { updateDevUi } from "./hud_dev.js";

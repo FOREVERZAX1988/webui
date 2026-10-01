@@ -1,6 +1,6 @@
 /** Canvas overlay for modelV2 lanes / path / leads (mirrors ModelRenderer). */
 
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 import { initModelWebGL, drawModelWebGL, isModelWebGLReady, clearModelWebGL } from "./model_webgl.js";
 
 let canvas = null;

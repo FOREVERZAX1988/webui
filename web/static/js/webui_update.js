@@ -1,7 +1,7 @@
 /** Web UI self-update (git) — separate from openpilot Software UPDATE pill. */
 
 import { apiGet, apiPost } from "./api.js";
-import { tr } from "./i18n.js?v=3";
+import { tr } from "./i18n.js?v=4";
 
 const POLL_MS = 10 * 60 * 1000;
 let lastStatus = null;
