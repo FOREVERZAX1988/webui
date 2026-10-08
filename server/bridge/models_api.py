@@ -619,6 +619,8 @@ def _models_status_impl() -> dict[str, Any]:
     "model_manager_online": mm is not None,
     "started": bool(state and state.get("started")),
     "accelerator": accel_state,
+    "mirror": _mirror_state(p),
+    "download_ref": p.get("ModelManager_DownloadRef") or "",
   }
 
 
@@ -681,6 +683,81 @@ def models_select(ref: str, index: int | None = None, source: str = "qcom") -> d
         needs_reset_cal = True
       p.put("ModelManager_DownloadRef", ref, block=True)
     return {"ok": True, "ref": ref, "source": source, "needs_reset_cal": needs_reset_cal}
+  except Exception as exc:
+    return {"ok": False, "error": str(exc)}
+
+
+def _mirror_state(p: Any) -> dict[str, Any]:
+  """The Model Download Mirror / Model List Source rows, so the web panel can show
+  and edit the same two settings the native Models page does."""
+  try:
+    import openpilot.sunnypilot.models.mirror as mirror
+    hf_raw = (p.get(mirror.HF_MIRROR_PARAM) or "").strip()
+    gh_raw = (p.get(mirror.GITHUB_PROXY_PARAM) or "").strip()
+    if hf_raw == "off":
+      hf_mode = "direct"
+    elif mirror.normalize_base_url(hf_raw):
+      hf_mode = "custom"
+    else:
+      hf_mode = "mirror"
+    if gh_raw == mirror.PROXY_DIRECT_VALUE:
+      gh_mode = "direct"
+    elif mirror.normalize_base_url(gh_raw):
+      gh_mode = "proxy"
+    else:
+      gh_mode = "auto"
+    return {
+      "hf_param": mirror.HF_MIRROR_PARAM,
+      "gh_param": mirror.GITHUB_PROXY_PARAM,
+      "hf_mode": hf_mode,
+      "gh_mode": gh_mode,
+      "hf_custom": mirror.normalize_base_url(hf_raw) or "",
+      "gh_custom": mirror.normalize_base_url(gh_raw) or "",
+      "hf_effective": mirror.describe_hf_mirror(p),
+      "gh_effective": mirror.describe_github_proxy(p),
+    }
+  except Exception:
+    return {}
+
+
+def models_set_mirror(which: str, mode: str, url: str = "") -> dict[str, Any]:
+  """Set one mirror row. `which` is 'hf' (model files) or 'gh' (catalog list);
+  mode 'mirror'/'auto' clears the param back to the built-in default, 'direct'
+  stores the off/direct sentinel, 'custom'/'proxy' validates and stores a base URL."""
+  try:
+    from openpilot.common.params import Params
+    import openpilot.sunnypilot.models.mirror as mirror
+    p = Params()
+    if which == "hf":
+      param = mirror.HF_MIRROR_PARAM
+      if mode == "mirror":
+        value = ""
+      elif mode == "direct":
+        value = "off"
+      elif mode == "custom":
+        base = mirror.normalize_base_url(url)
+        if base is None:
+          return {"ok": False, "error": "mirror must be an http(s) URL without spaces"}
+        value = base
+      else:
+        return {"ok": False, "error": f"unknown mirror mode: {mode}"}
+    elif which == "gh":
+      param = mirror.GITHUB_PROXY_PARAM
+      if mode == "auto":
+        value = ""
+      elif mode == "direct":
+        value = mirror.PROXY_DIRECT_VALUE
+      elif mode == "proxy":
+        base = mirror.normalize_base_url(url)
+        if base is None:
+          return {"ok": False, "error": "proxy must be an http(s) URL without spaces"}
+        value = base
+      else:
+        return {"ok": False, "error": f"unknown catalog mode: {mode}"}
+    else:
+      return {"ok": False, "error": f"unknown setting: {which}"}
+    p.put(param, value, block=True)
+    return {"ok": True, "param": param, "value": value}
   except Exception as exc:
     return {"ok": False, "error": str(exc)}
 

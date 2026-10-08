@@ -4318,6 +4318,81 @@ function buildModelsClearCacheRow(w, m) {
   return row;
 }
 
+function buildModelsMirrorRows(m) {
+  const mirror = m?.mirror;
+  if (!mirror || !mirror.hf_param) return [];
+  const rows = [];
+
+  const mkRow = (which, title, desc, modes, current, effective) => {
+    const row = document.createElement("div");
+    row.className = "opui-sp-row";
+    row.dataset.modelsMirror = which;
+    row.innerHTML = `
+      <div class="opui-sp-row-text">
+        <div class="opui-sp-row-title">${escapeHtml(t(title))}</div>
+        <div class="opui-sp-row-desc"></div>
+      </div>
+      <div class="opui-multi-btn-group" data-mirror-buttons="1"></div>`;
+    const descEl = row.querySelector(".opui-sp-row-desc");
+    descEl.innerHTML = `${escapeHtml(t(desc))}<br>${escapeHtml(t("Current"))}: ${escapeHtml(String(effective))}`;
+    const group = row.querySelector("[data-mirror-buttons]");
+    for (const [key, label] of modes) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = t(label);
+      btn.dataset.mode = key;
+      btn.classList.toggle("selected", key === current);
+      btn.setAttribute("aria-pressed", key === current ? "true" : "false");
+      btn.addEventListener("click", async () => {
+        let url = "";
+        if (which === "hf" && key === "custom") {
+          url = await showTextInput({
+            title: t("Base URL replacing https://huggingface.co, e.g. https://hf-mirror.com"),
+            value: mirror.hf_custom || "",
+            placeholder: "https://hf-mirror.com",
+          });
+          if (url === null) return;
+        } else if (which === "gh" && key === "proxy") {
+          url = await showTextInput({
+            title: t("Prefix prepended to the catalog URL, e.g. https://gh-proxy.com"),
+            value: mirror.gh_custom || "",
+            placeholder: "https://gh-proxy.com",
+          });
+          if (url === null) return;
+        }
+        const res = await apiPost("/api/opui/models/mirror", { which, mode: key, url });
+        if (!res.ok) {
+          toast(res.error || t("Failed"));
+          return;
+        }
+        toast(t(title));
+        const c2 = document.getElementById("panel-content");
+        if (c2 && panelDataRef) await renderModelsPanel(c2, panelDataRef);
+      });
+      group.appendChild(btn);
+    }
+    return row;
+  };
+
+  rows.push(mkRow(
+    "hf",
+    "Model Download Mirror",
+    "huggingface.co is unreachable on many networks. Mirror sends model downloads to a mirror site instead; " +
+      "Direct uses huggingface.co as-is; Custom lets you enter your own mirror. Applies to the next download.",
+    [["mirror", "Mirror"], ["direct", "Direct"], ["custom", "Custom"]],
+    mirror.hf_mode, mirror.hf_effective));
+
+  rows.push(mkRow(
+    "gh",
+    "Model List Source",
+    "The model list lives on GitHub raw. Auto tries direct first and falls back to a CDN mirror when it fails; " +
+      "Direct never falls back; Proxy always fetches through your own prefix. Press Refresh Model List to apply.",
+    [["auto", "Auto"], ["direct", "Direct"], ["proxy", "Proxy"]],
+    mirror.gh_mode, mirror.gh_effective));
+
+  return rows;
+}
+
 function buildModelsPanelWidgets(container, data, m) {
   for (const w of data.widgets || []) {
     if (w.type === "action" && w.action === "models_sync") {
@@ -4334,6 +4409,9 @@ function buildModelsPanelWidgets(container, data, m) {
       container.appendChild(el);
     }
   }
+  // The two download-source rows the native Models page carries; appended after
+  // the catalog widgets so Refresh/Clear keep their place.
+  for (const row of buildModelsMirrorRows(m)) container.appendChild(row);
 }
 
 function updateModelsSlotRows(m, container) {

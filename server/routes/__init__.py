@@ -26,7 +26,7 @@ from webui.server.bridge.network_api import (
 )
 from webui.server.bridge.webrtc_api import webrtc_notify, webrtc_offer, webrtc_schema
 from webui.server.bridge.trips_api import trips_stats
-from webui.server.bridge.models_api import accelerator_link_set, models_select, models_status, models_toggle_favorite
+from webui.server.bridge.models_api import accelerator_link_set, models_select, models_set_mirror, models_status, models_toggle_favorite
 from webui.server.bridge.design_tokens import tokens_payload
 from webui.server.bridge.assets_api import resolve_asset
 from webui.server.bridge.stream_health_api import snapshot_stream_health
@@ -306,6 +306,17 @@ async def api_models_favorite(request: web.Request) -> web.Response:
   except Exception:
     return json_response({"ok": False, "error": "invalid json"}, status=400)
   return json_response(models_toggle_favorite(ref))
+
+
+async def api_models_mirror(request: web.Request) -> web.Response:
+  try:
+    body = await request.json()
+    which = str(body.get("which", ""))
+    mode = str(body.get("mode", ""))
+    url = str(body.get("url", ""))
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  return json_response(models_set_mirror(which, mode, url))
 
 
 async def api_tokens(_request: web.Request) -> web.Response:
@@ -765,6 +776,7 @@ def register_routes(app: web.Application) -> None:
   app.router.add_post("/api/opui/models/select", api_models_select)
   app.router.add_post("/api/opui/models/accelerator", api_models_accelerator)
   app.router.add_post("/api/opui/models/favorite", api_models_favorite)
+  app.router.add_post("/api/opui/models/mirror", api_models_mirror)
   app.router.add_get("/api/opui/tokens", api_tokens)
   app.router.add_get("/api/opui/assets/{path:.*}", api_asset)
   app.router.add_get("/api/opui/model/overlay", api_model_overlay)

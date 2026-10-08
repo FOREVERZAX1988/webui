@@ -22,7 +22,7 @@ from webui.server.bridge.imu_calibration_api import (
   set_imu_calibration_enabled,
 )
 from webui.server.bridge.model_overlay import snapshot_model_overlay
-from webui.server.bridge.models_api import models_select, models_status, models_toggle_favorite
+from webui.server.bridge.models_api import models_select, models_set_mirror, models_status, models_toggle_favorite
 from webui.server.bridge.network_api import (
   network_advanced_status,
   wifi_connect,
@@ -245,6 +245,9 @@ def dispatch_http(method: str, path: str, body: dict[str, Any] | None = None) ->
 
     if method == "POST" and clean_path == "/api/opui/models/favorite":
       return models_toggle_favorite(str(body.get("ref", "")))
+
+    if method == "POST" and clean_path == "/api/opui/models/mirror":
+      return models_set_mirror(str(body.get("which", "")), str(body.get("mode", "")), str(body.get("url", "")))
 
     if method == "GET" and clean_path == "/api/opui/imu/calibration":
       return snapshot_imu_calibration()
