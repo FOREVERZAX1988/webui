@@ -765,11 +765,15 @@ function updateDeveloperCapabilities(st) {
 
   const adbRow = document.querySelector('[data-param="AdbEnabled"]');
   if (adbRow) {
-    const disabled = !globalState.is_offroad;
+    // native ui_state.adb_blocked: while the link holds the USB port, ADB has
+    // no gadget to build. Wi-Fi leaves the port, and ADB, alone.
+    const adbBlocked = !!lastModelsStatus?.accelerator?.adb_blocked;
+    const disabled = !globalState.is_offroad || adbBlocked;
     const input = adbRow.querySelector("input");
     const label = adbRow.querySelector(".opui-sp-toggle");
     if (input) input.disabled = disabled;
     label?.classList.toggle("disabled", disabled);
+    adbRow.title = adbBlocked ? t("Jetlink holds the USB port; turn the link off to use ADB.") : "";
   }
 
   const joyRow = document.querySelector('[data-param="JoystickDebugMode"]');
@@ -4033,7 +4037,9 @@ function buildModelSlots(m, data, gen, container) {
   downloadRoot.dataset.modelsDownload = "1";
   wrap.appendChild(downloadRoot);
 
-  if (m.usbgpu_enabled) {
+  // the note is the chestnut's or, without one, the accelerator's (jetlink's
+  // stand-in while the pick is prepared)
+  if (m.usbgpu_enabled || m.accelerator?.meaningful) {
     const note = buildModelsStatusNote(m);
     if (note) {
       const noteRow = document.createElement("div");
@@ -4056,7 +4062,10 @@ function buildModelSlots(m, data, gen, container) {
 // the USB mode exactly like a Jetson or a Mac (jetlink docs/android-app.md),
 // so USB is described as covering it.
 
-const ACCELERATOR_DESC = "Run the big driving model on an attached accelerator: USB for a Jetson, a Linux PC, a Mac or an Android phone; iOS for an iPhone.";
+const ACCELERATOR_DESC = "Run the big driving model on an attached accelerator: USB for a Jetson, a Linux PC, a Mac or an Android phone; iOS for an iPhone; Wi-Fi joins the device's hotspot. USB and iOS turn off ADB.";
+
+// the mode names, the same as the native panels' LINK_MODE_TITLES
+const ACCELERATOR_MODE_LABELS = { off: "Off", usb: "USB", ios: "iOS", wifi: "Wi-Fi" };
 
 function acceleratorStatusText(accel) {
   if (!accel) return "";
@@ -4070,6 +4079,7 @@ function acceleratorStatusText(accel) {
   if (key === "accelerator_connected") {
     return t("Accelerator connected: {transport}.").replace("{transport}", accel.status.transport || "USB");
   }
+  if (key === "accelerator_wifi") return t("Join the device's hotspot and open Jetlink there.");
   if (key === "port_empty") return t("Nothing on the USB port.");
   if (key === "port_device") return t("A device is on the USB port.");
   return "";
@@ -4095,10 +4105,10 @@ function buildAcceleratorRow(m) {
   row.insertBefore(desc, row.querySelector(".opui-multi-btn-group"));
 
   const group = row.querySelector("[data-accel-buttons]");
-  for (const mode of accel.modes || ["off", "usb", "ios"]) {
+  for (const mode of accel.modes || ["off", "usb", "ios", "wifi"]) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = mode === "off" ? t("Off") : mode === "usb" ? t("USB") : t("iOS");
+    btn.textContent = t(ACCELERATOR_MODE_LABELS[mode] || mode);
     btn.dataset.mode = mode;
     btn.disabled = !globalState.is_offroad;
     btn.addEventListener("click", async () => {
@@ -4164,6 +4174,15 @@ function updateAcceleratorStatus(row, accel, m) {
 }
 
 function buildModelsStatusNote(m) {
+  // the accelerator's own note first: without a chestnut the big slot is
+  // jetlink's, and "{} drives until {} is ready" comes from its stand-in
+  const accel = m.accelerator;
+  if (accel?.meaningful && accel.mode !== "off" && !accel.ready && accel.standin) {
+    const bigName = accel.model || m.slots?.usbgpu?.selected?.name || m.slots?.usbgpu?.default_label || "";
+    return t("{standin} drives until {name} is ready.")
+      .replace("{standin}", accel.standin)
+      .replace("{name}", bigName);
+  }
   if (!m.usbgpu_enabled) return "";
   const smallSlot = m.slots?.qcom || {};
   const bigSlot = m.slots?.usbgpu || {};

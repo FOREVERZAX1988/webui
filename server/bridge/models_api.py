@@ -202,6 +202,9 @@ def _accelerator_status_text(s: Any) -> dict[str, Any]:
   frontend translates the key and interpolates the transport."""
   if s.present:
     return {"key": "accelerator_connected", "transport": s.transport}
+  if getattr(s, "mode", None) == "wifi":
+    # nothing on the port to report: the link is the hotspot the comma joined
+    return {"key": "accelerator_wifi"}
   if s.port is None:
     return {"key": ""}
   return {"key": "port_empty" if s.port == "empty" else "port_device"}
@@ -209,7 +212,7 @@ def _accelerator_status_text(s: Any) -> dict[str, Any]:
 
 def _accelerator_state(p: Any, chestnut_present: bool | None = None) -> dict[str, Any]:
   adapter = _adapter()
-  modes = list(adapter.MODES) if adapter is not None else ["off", "usb", "ios"]
+  modes = list(adapter.MODES) if adapter is not None else ["off", "usb", "ios", "wifi"]
   link_param = str(adapter.KEYS.link) if adapter is not None else "JetlinkLink"
 
   mode = _accelerator_mode(p, modes, link_param)
@@ -232,6 +235,8 @@ def _accelerator_state(p: Any, chestnut_present: bool | None = None) -> dict[str
   reason: str | None = None
   model: str | None = None
   default_model: str | None = None
+  standin: str | None = None
+  ready = False
   if s is not None:
     try:
       status = _accelerator_status_text(s)
@@ -239,6 +244,8 @@ def _accelerator_state(p: Any, chestnut_present: bool | None = None) -> dict[str
       reason = s.reason
       model = s.model
       default_model = s.default_model
+      standin = getattr(s, "standin", None)
+      ready = bool(getattr(s, "ready", False))
     except Exception:
       pass
 
@@ -251,6 +258,11 @@ def _accelerator_state(p: Any, chestnut_present: bool | None = None) -> dict[str
     "reason": reason,
     "model": model,
     "default_model": default_model,
+    "standin": standin,
+    "ready": ready,
+    # native _enforce_usb_port: the link holds the port (and takes ADB with it)
+    # in every mode but Wi-Fi, which leaves the port alone
+    "adb_blocked": bool(s is not None and getattr(s, "enabled", False) and mode != "wifi"),
   }
 
 
