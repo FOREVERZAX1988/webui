@@ -265,7 +265,13 @@ def accelerator_link_set(mode: str) -> dict[str, Any]:
     return {"ok": False, "error": f"unknown mode: {mode}"}
   try:
     from openpilot.common.params import Params
-    Params().put(str(adapter.KEYS.link), modes.index(mode))
+    p = Params()
+    p.put(str(adapter.KEYS.link), modes.index(mode))
+    # Turning the link on has to free the USB port in the same breath: AGNOS's ADB
+    # gadget (g1) holds the only device controller while AdbEnabled is set, and
+    # jetlink refuses to take it.
+    from webui.server.bridge.param_constraints import _enforce_usb_port
+    _enforce_usb_port(p)
   except Exception as exc:
     return {"ok": False, "error": str(exc)}
   return {"ok": True, "mode": mode}
