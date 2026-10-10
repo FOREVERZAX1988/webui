@@ -719,9 +719,14 @@ export function createSpToggle(w, panelData, globalState, handlers) {
 export function createProgressRow(label, pct) {
   const row = document.createElement("div");
   row.className = "opui-sp-row opui-sp-row--progress";
+  // callers hand in a percentage (0..100): the model download, the OSM map
+  // download, the IMU calibration and the backup phases all publish 0..100.
+  // Scaling it by 100 again pinned the fill past the rail, and .opui-progress
+  // clips with overflow:hidden, so every bar read as full.
+  const width = Math.max(0, Math.min(100, Number(pct) || 0));
   row.innerHTML = `
     <div class="opui-sp-row-text"><div class="opui-sp-row-title">${escapeHtml(label)}</div></div>
-    <div class="opui-progress"><div class="opui-progress-fill" style="width:${Math.round(pct * 100)}%"></div></div>`;
+    <div class="opui-progress"><div class="opui-progress-fill" style="width:${width}%"></div></div>`;
   return row;
 }
 

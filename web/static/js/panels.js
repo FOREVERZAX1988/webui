@@ -4263,6 +4263,9 @@ function paintModelsDownload(container, status) {
     offPolicy: t("Off-Policy Model"),
     onPolicy: t("On-Policy Model"),
     navigation: t("Navigation Model"),
+    // deep models ship one chunked artifact for the whole bundle, so it reads
+    // as the driving model rather than as a bare "chunked"
+    chunked: t("Driving Model"),
   };
   const parts = status.download.models?.length
     ? status.download.models

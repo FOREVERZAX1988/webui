@@ -836,12 +836,12 @@ def _mock_models() -> dict[str, Any]:
       "status": "downloading",
       "name": "mock-bundle",
       "ref": "mock-1",
+      # the catalog serves one `chunked` artifact per bundle, and progress is a
+      # percentage (0..100), the same unit createProgressRow paints. The old
+      # per-role rows with 0..1 fractions encoded the mismatch that kept the
+      # real bar clipped to full.
       "models": [
-        {"type": "supercombo", "progress": 0.42},
-        {"type": "vision", "progress": 0.65},
-        {"type": "policy", "progress": 0.1},
-        {"type": "offPolicy", "progress": 0},
-        {"type": "onPolicy", "progress": 0},
+        {"type": "chunked", "progress": 42.0},
       ],
     },
     "last_sync": "",
