@@ -4,6 +4,59 @@ import { tr } from "./i18n.js?v=3";
 
 const METRIC_KEYS = ["temp", "vehicle", "connect", "sunnylink"];
 
+// Metric box geometry, mirrored from opui.css (.opui-metric / .opui-metric-text) and from
+// the native spec (sidebar.py: METRIC_WIDTH 240, text inset 22 left / 8 right).
+// The 2px border of .opui-metric is inside its 240px box, so the text area is 206px wide.
+const METRIC_BOX_W = 240;
+const METRIC_BOX_BORDER = 2;
+const METRIC_TEXT_LEFT = 22;
+const METRIC_TEXT_RIGHT = 8;
+const METRIC_LINE_W = METRIC_BOX_W - 2 * METRIC_BOX_BORDER - METRIC_TEXT_LEFT - METRIC_TEXT_RIGHT;
+const METRIC_FONT_SIZE = 35;      // .opui-metric-line font-size, same as native FONT_SIZE
+const METRIC_MIN_FONT_SIZE = 24;  // keep the shrink readable
+
+let measureCtx = null;
+
+/**
+ * Shrink a metric line until the whole string fits the text area.
+ *
+ * "SUNNYLINK" is the longest label and is not translated: 204px in Inter, but 229px in
+ * DejaVu Sans Bold, which is what a browser without "Inter" uses. CSS text-align:center
+ * pins an overflowing line to the start edge, which is what made the SUNNYLINK label hug
+ * the left bar instead of staying centered. Measure with the font the element actually
+ * resolved to, and only shrink when the string really does not fit.
+ */
+function fitMetricLine(el) {
+  if (!el) return;
+  const text = el.textContent || "";
+  if (el._fitText === text) return;  // same string, already measured
+  el._fitText = text;
+  el.style.fontSize = "";
+  if (!text) return;
+
+  if (!measureCtx) measureCtx = document.createElement("canvas").getContext("2d");
+  if (!measureCtx) return;
+
+  const style = getComputedStyle(el);
+  measureCtx.font = `${style.fontWeight} ${METRIC_FONT_SIZE}px ${style.fontFamily}`;
+  if (!measureCtx.font.includes(`${METRIC_FONT_SIZE}px`)) {
+    measureCtx.font = `600 ${METRIC_FONT_SIZE}px sans-serif`;  // shorthand did not parse
+  }
+  const width = measureCtx.measureText(text).width;
+  // clientWidth is 0 while the sidebar is hidden; the text area width is fixed anyway.
+  const avail = (el.parentElement && el.parentElement.clientWidth) || METRIC_LINE_W;
+  if (!width || width <= avail) return;
+
+  let size = Math.max(METRIC_MIN_FONT_SIZE, Math.floor(METRIC_FONT_SIZE * avail / width));
+  el.style.fontSize = `${size}px`;
+  // Canvas metrics can be a hair optimistic: step down until the layout agrees.
+  let guard = 0;
+  while (el.scrollWidth > avail && size > METRIC_MIN_FONT_SIZE && guard++ < 16) {
+    size -= 1;
+    el.style.fontSize = `${size}px`;
+  }
+}
+
 const VALUE_KEYS = {
   GOOD: "GOOD",
   HIGH: "HIGH",
@@ -72,8 +125,14 @@ function setMetric(key, { label, value, warn, danger, disabled, progress, visibl
   row.classList.toggle("opui-metric--progress", !!progress);
   const labelEl = row.querySelector(".opui-metric-label");
   const valueEl = row.querySelector(".opui-metric-value");
-  if (labelEl) labelEl.textContent = label;
-  if (valueEl) valueEl.textContent = value;
+  if (labelEl) {
+    labelEl.textContent = label;
+    fitMetricLine(labelEl);
+  }
+  if (valueEl) {
+    valueEl.textContent = value;
+    fitMetricLine(valueEl);
+  }
 }
 
 let lastNetType = "";

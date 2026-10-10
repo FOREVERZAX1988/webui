@@ -54,6 +54,37 @@ def main() -> int:
     else:
       print(f"OK   device panel rows={rows}")
 
+    # Metrics sidebar: labels must stay centered and inside the box (SUNNYLINK overflow bug).
+    # "SUNNYLINK" is the longest label, so it is the first one to hug the left bar when the
+    # browser falls back to a wider font than Inter.
+    page.wait_for_timeout(300)
+    lines = page.evaluate("""() => {
+      const out = [];
+      document.querySelectorAll("#metrics .opui-metric").forEach((row) => {
+        const wrap = row.querySelector(".opui-metric-text");
+        const wrapCenter = wrap.getBoundingClientRect().left + wrap.getBoundingClientRect().width / 2;
+        row.querySelectorAll(".opui-metric-line").forEach((line) => {
+          const r = line.getBoundingClientRect();
+          out.push({
+            metric: row.dataset.metric,
+            text: line.textContent,
+            overflow: line.scrollWidth - line.clientWidth,
+            offCenter: Math.abs((r.left + r.width / 2) - wrapCenter),
+          });
+        });
+      });
+      return out;
+    }""")
+    if not lines:
+      print("FAIL metrics sidebar not rendered")
+      fails += 1
+    for line in lines:
+      if line["overflow"] > 1 or line["offCenter"] > 2:
+        print(f"FAIL metric {line['metric']} \"{line['text']}\": overflow={line['overflow']} offCenter={line['offCenter']:.1f}px")
+        fails += 1
+      else:
+        print(f"OK   metric {line['metric']} \"{line['text']}\" centered, overflow={line['overflow']}")
+
     browser.close()
 
   print(f"\nUI checks: {fails} failures")

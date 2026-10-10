@@ -389,6 +389,9 @@ html.opui-portrait-host .opui-modal-scroll {
   right: 8px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
 }
 

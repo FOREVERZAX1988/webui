@@ -12,7 +12,7 @@ import { updateHomeScreen, showHomeLoading, refreshHomeScreen, bindHomeHeader, a
 import {
   updateSidebarMetrics, updateSidebarMode, updateSidebarRecording,
   updateSidebarEgpu,
-} from "./sidebar.js?v=2";
+} from "./sidebar.js?v=3";
 import { initBodyLayout, updateBodyLayout, stopBodyLayout } from "./body_layout.js";
 import { initDevPanel } from "./dev.js";
 import { initModelCanvas, showModelOverlay, scheduleDrawModelOverlay, setModelOverlayEnabled, hasOverlayGeometry } from "./model_canvas.js";
