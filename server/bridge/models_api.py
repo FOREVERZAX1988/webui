@@ -28,7 +28,11 @@ def _get_state_sm() -> Any:
   global _STATE_SM
   if _STATE_SM is None:
     import openpilot.cereal.messaging as messaging
-    _STATE_SM = messaging.SubMaster(["deviceState"], poll="deviceState")
+    # No poll=: a polled service is read non-blocking by update(), so
+    # update(500) would return immediately without a message (deviceState
+    # publishes at 2 Hz) and valid would stay False forever. Without poll,
+    # update() blocks until the message or the timeout, whichever first.
+    _STATE_SM = messaging.SubMaster(["deviceState"])
   return _STATE_SM
 
 
@@ -40,6 +44,20 @@ def _get_mm_sm() -> Any:
   return _MM_SM
 
 
+_MDV2SP_SM: Any = None
+
+
+def _get_mdv2sp_sm() -> Any:
+  """modelDataV2SP carries acceleratorState — the ground truth for where the
+  big model is actually running right now (jetlink joining/running vs the
+  chestnut big bundle vs the on-device small model)."""
+  global _MDV2SP_SM
+  if _MDV2SP_SM is None:
+    import openpilot.cereal.messaging as messaging
+    _MDV2SP_SM = messaging.SubMaster(["modelDataV2SP"], poll="modelDataV2SP")
+  return _MDV2SP_SM
+
+
 def _warm_submasters() -> None:
   """Background thread: keep SubMaster sockets warm and cache latest values."""
   global _STATE_CACHE, _MM_CACHE
@@ -48,7 +66,11 @@ def _warm_submasters() -> None:
     mm_sm = _get_mm_sm()
     while True:
       with _SM_LOCK:
-        state_sm.update(100)
+        # deviceState publishes at 2 Hz — waiting less than ~500 ms per update
+        # usually times out with no message, so valid stays False and the
+        # cache is never filled (which sent every handler into its 400 ms
+        # fallback poll).
+        state_sm.update(500)
         if state_sm.valid.get("deviceState"):
           ds = state_sm["deviceState"]
           try:
@@ -124,6 +146,149 @@ def _cache_size_mb() -> float:
     return 0.0
 
 
+# -- Accelerator Link (jetlink) -------------------------------------------------
+# Mirrors the native Models panel's Accelerator Link row: the mode setting, why
+# an enabled link cannot run, and the live connection status. An Android phone
+# rides the USB mode exactly like a Jetson or a Mac (jetlink docs/android-app.md).
+
+def _adapter() -> Any | None:
+  """The jetlink adapter module, or None where it cannot import. The adapter is
+  built to degrade safely (an absent jetlink checkout is a normal state), so the
+  import itself only fails on a broken checkout."""
+  try:
+    from openpilot.sunnypilot import jetlink_adapter
+    return jetlink_adapter
+  except Exception:
+    return None
+
+
+def _accelerator_mode(p: Any, modes: list[str], link_param: str) -> str:
+  try:
+    index = p.get(link_param, return_default=True)
+  except Exception:
+    index = None
+  return modes[index] if isinstance(index, int) and 0 <= index < len(modes) else "off"
+
+
+def _big_model_source(p: Any, state: dict[str, Any] | None, accel: dict[str, Any] | None) -> str:
+  """Where the big driving model is running right now: 'jetlink' (off-board
+  accelerator), 'chestnut' (on the eGPU), or 'device' (on-device small model).
+  Judged from modelDataV2SP.acceleratorState first — that is what modeld is
+  actually driving with — then falling back to the chestnut state."""
+  try:
+    sm = _get_mdv2sp_sm()
+    with _SM_LOCK:
+      sm.update(30)
+    state_name = str(sm["modelDataV2SP"].acceleratorState)
+    if state_name in ("running", "joining"):
+      return "jetlink"
+  except Exception:
+    pass
+
+  usbgpu = bool(state and state.get("chestnutPresent")) or _usbgpu_present()
+  if usbgpu:
+    usbgpu_active = state.get("usbgpuActive")
+    usbgpu_loading = state.get("usbgpuLoading")
+    started = state.get("started")
+    big_active = usbgpu_active is True or usbgpu_loading or (not started)
+    if big_active:
+      return "chestnut"
+
+  return "device"
+
+
+def _accelerator_status_text(s: Any) -> dict[str, Any]:
+  """Structured form of the native accelerator_link.link_status() one-liner; the
+  frontend translates the key and interpolates the transport."""
+  if s.present:
+    return {"key": "accelerator_connected", "transport": s.transport}
+  if getattr(s, "mode", None) == "wifi":
+    # nothing on the port to report: the link is the hotspot the comma joined
+    return {"key": "accelerator_wifi"}
+  if s.port is None:
+    return {"key": ""}
+  return {"key": "port_empty" if s.port == "empty" else "port_device"}
+
+
+def _accelerator_state(p: Any, chestnut_present: bool | None = None) -> dict[str, Any]:
+  adapter = _adapter()
+  modes = list(adapter.MODES) if adapter is not None else ["off", "usb", "ios", "wifi"]
+  link_param = str(adapter.KEYS.link) if adapter is not None else "JetlinkLink"
+
+  mode = _accelerator_mode(p, modes, link_param)
+
+  s = None
+  if adapter is not None:
+    try:
+      s = adapter.status()
+    except Exception:
+      s = None
+
+  if chestnut_present is None:
+    chestnut_present = bool((_device_state() or {}).get("chestnutPresent"))
+  # native link_toggle_meaningful(): hidden beside a chestnut, which runs the
+  # big model itself; offered while the link is on even if jetlink cannot run
+  meaningful = (not chestnut_present) and (s is not None or mode != "off")
+
+  status: dict[str, Any] = {"key": ""}
+  progress: dict[str, Any] | None = None
+  reason: str | None = None
+  model: str | None = None
+  default_model: str | None = None
+  standin: str | None = None
+  ready = False
+  if s is not None:
+    try:
+      status = _accelerator_status_text(s)
+      progress = dict(s.progress) if s.progress else None
+      reason = s.reason
+      model = s.model
+      default_model = s.default_model
+      standin = getattr(s, "standin", None)
+      ready = bool(getattr(s, "ready", False))
+    except Exception:
+      pass
+
+  return {
+    "modes": modes,
+    "mode": mode,
+    "meaningful": meaningful,
+    "status": status,
+    "progress": progress,
+    "reason": reason,
+    "model": model,
+    "default_model": default_model,
+    "standin": standin,
+    "ready": ready,
+    # native _enforce_usb_port: the link holds the port (and takes ADB with it)
+    # in every mode but Wi-Fi, which leaves the port alone
+    "adb_blocked": bool(s is not None and getattr(s, "enabled", False) and mode != "wifi"),
+  }
+
+
+def accelerator_link_set(mode: str) -> dict[str, Any]:
+  """Write the Accelerator Link setting (an index into the adapter's MODES), the
+  same param the native multiple_button_item_sp and jetlinkd both read."""
+  adapter = _adapter()
+  if adapter is None:
+    return {"ok": False, "error": "jetlink adapter unavailable"}
+  modes = list(adapter.MODES)
+  if mode not in modes:
+    return {"ok": False, "error": f"unknown mode: {mode}"}
+  try:
+    from openpilot.common.params import Params
+    p = Params()
+    p.put(str(adapter.KEYS.link), modes.index(mode))
+    # Turning the link on has to free the USB port in the same breath: AGNOS's ADB
+    # gadget (g1) holds the only device controller while AdbEnabled is set, and
+    # jetlink refuses to take it.
+    from webui.server.bridge.param_constraints import _enforce_usb_port
+    _enforce_usb_port(p)
+  except Exception as exc:
+    return {"ok": False, "error": str(exc)}
+  return {"ok": True, "mode": mode}
+
+
 def _default_model_label(source: str) -> str:
   try:
     if source == "usbgpu":
@@ -143,37 +308,62 @@ def _usbgpu_present() -> bool:
     return False
 
 
-def _device_state() -> dict[str, Any] | None:
-  """Read the live usbgpu status from deviceState + Params.
+_DEVICE_STATE_CACHE: dict[str, Any] | None = None
+_DEVICE_STATE_TS: float = 0.0
+_DEVICE_STATE_TTL = 0.3  # s — deviceState is 2 Hz; poll at most ~3x a second
 
-  Uses the background warmer cache when available so the HTTP handler can
-  return immediately; falls back to a short poll if the cache is empty.
+
+def _device_state() -> dict[str, Any] | None:
+  """Best-effort device state for the Models panel.
+
+  The warmer cache serves deviceState when it is publishing normally. But
+  hardware_thread paces itself on pandaStates, and with no panda attached
+  that loop slows far below deviceState's nominal 2 Hz — a subscriber can
+  wait seconds without a frame. So never block: peek non-blocking, then
+  fall back to Params (IsOffroad mirrors `started`; the chestnut is probed
+  on USB directly).
   """
+  global _DEVICE_STATE_CACHE, _DEVICE_STATE_TS
   _start_submaster_warmers()
   try:
     if _STATE_CACHE is not None:
       return _STATE_CACHE
+    if _DEVICE_STATE_CACHE is not None and time.monotonic() - _DEVICE_STATE_TS < _DEVICE_STATE_TTL:
+      return _DEVICE_STATE_CACHE
     sm = _get_state_sm()
-    deadline = time.monotonic() + 0.4
-    while time.monotonic() < deadline:
-      with _SM_LOCK:
-        sm.update(120)
-      if sm.valid.get("deviceState"):
-        ds = sm["deviceState"]
-        try:
-          from openpilot.common.params import Params
-          p = Params()
-        except Exception:
-          p = None
-        return {
-          "started": bool(getattr(ds, "started", False)),
-          "chestnutPresent": bool(getattr(ds, "chestnutPresent", False)),
-          "usbgpuActive": p.get_bool("UsbGpuActive") if p else None,
-          "usbgpuLoading": p.get_bool("UsbGpuLoading") if p else False,
-        }
+    with _SM_LOCK:
+      sm.update(30)  # peek: a blocking wait here stalls the whole event loop
+    if sm.valid.get("deviceState"):
+      ds = sm["deviceState"]
+      try:
+        from openpilot.common.params import Params
+        p = Params()
+      except Exception:
+        p = None
+      _DEVICE_STATE_CACHE = {
+        "started": bool(getattr(ds, "started", False)),
+        "chestnutPresent": bool(getattr(ds, "chestnutPresent", False)),
+        "usbgpuActive": p.get_bool("UsbGpuActive") if p else None,
+        "usbgpuLoading": p.get_bool("UsbGpuLoading") if p else False,
+      }
+      _DEVICE_STATE_TS = time.monotonic()
+      return _DEVICE_STATE_CACHE
+
+    from openpilot.common.params import Params
+    from openpilot.selfdrive.modeld.helpers import chestnut_present
+    p = Params()
+    state = {
+      "started": not p.get_bool("IsOffroad"),
+      "chestnutPresent": chestnut_present(),
+      "usbgpuActive": p.get_bool("UsbGpuActive"),
+      "usbgpuLoading": p.get_bool("UsbGpuLoading"),
+    }
+    _DEVICE_STATE_CACHE = state
+    _DEVICE_STATE_TS = time.monotonic()
+    return state
   except Exception:
     pass
-  return None
+  return _DEVICE_STATE_CACHE
 
 
 def _active_source(state: dict[str, Any] | None) -> str:
@@ -190,22 +380,32 @@ def _active_source(state: dict[str, Any] | None) -> str:
   return "usbgpu" if big_active else "qcom"
 
 
+_MM_CACHE_TS: float = 0.0
+_MM_CACHE_TTL = 0.3  # s — modelManagerSP is high-frequency; a 300 ms cache is fresh
+
+
 def _read_live_model_manager(timeout_ms: int = 1000) -> Any | None:
   """Return the latest modelManagerSP message.
 
-  Uses the background warmer cache when available; falls back to a short poll.
+  Uses the background warmer cache when available; otherwise takes a short
+  non-blocking peek (modelManagerSP is published at high frequency, so a
+  peek is enough) and caches the result. Never blocks the event loop.
   """
+  global _MM_CACHE_TS
   _start_submaster_warmers()
   try:
-    if _MM_CACHE is not None:
+    if _MM_CACHE is not None and time.monotonic() - _MM_CACHE_TS < _MM_CACHE_TTL:
       return _MM_CACHE
     sm = _get_mm_sm()
-    deadline = time.monotonic() + timeout_ms / 1000.0
+    deadline = time.monotonic() + 0.1  # cap the wait: modelManagerSP is ~1 Hz, the next poll retries
     while time.monotonic() < deadline:
       with _SM_LOCK:
-        sm.update(200)
+        sm.update(30)
       if sm.valid.get("modelManagerSP"):
-        return sm["modelManagerSP"]
+        _MM_CACHE = sm["modelManagerSP"]
+        _MM_CACHE_TS = time.monotonic()
+        break
+    return _MM_CACHE
   except Exception:
     pass
   return None
@@ -417,9 +617,11 @@ def _models_status_impl() -> dict[str, Any]:
   carry_internal = carry_slot["selected"].get("internal") or carry_slot["default_label"]
 
   download = _bundle_download(mm)
+  accel_state = _accelerator_state(p, chestnut_present=bool(state and state.get("chestnutPresent")))
   return {
     "ok": True,
     "active_source": active,
+    "big_model_source": _big_model_source(p, state, accel_state),
     "usbgpu_enabled": usbgpu_enabled,
     "big_state": big_state,
     "carry_source": carry_source,
@@ -434,6 +636,9 @@ def _models_status_impl() -> dict[str, Any]:
     "cache_size_mb": _cache_size_mb(),
     "model_manager_online": mm is not None,
     "started": bool(state and state.get("started")),
+    "accelerator": accel_state,
+    "mirror": _mirror_state(p),
+    "download_ref": p.get("ModelManager_DownloadRef") or "",
   }
 
 
@@ -500,6 +705,81 @@ def models_select(ref: str, index: int | None = None, source: str = "qcom") -> d
     return {"ok": False, "error": str(exc)}
 
 
+def _mirror_state(p: Any) -> dict[str, Any]:
+  """The Model Download Mirror / Model List Source rows, so the web panel can show
+  and edit the same two settings the native Models page does."""
+  try:
+    import openpilot.sunnypilot.models.mirror as mirror
+    hf_raw = (p.get(mirror.HF_MIRROR_PARAM) or "").strip()
+    gh_raw = (p.get(mirror.GITHUB_PROXY_PARAM) or "").strip()
+    if hf_raw == "off":
+      hf_mode = "direct"
+    elif mirror.normalize_base_url(hf_raw):
+      hf_mode = "custom"
+    else:
+      hf_mode = "mirror"
+    if gh_raw == mirror.PROXY_DIRECT_VALUE:
+      gh_mode = "direct"
+    elif mirror.normalize_base_url(gh_raw):
+      gh_mode = "proxy"
+    else:
+      gh_mode = "auto"
+    return {
+      "hf_param": mirror.HF_MIRROR_PARAM,
+      "gh_param": mirror.GITHUB_PROXY_PARAM,
+      "hf_mode": hf_mode,
+      "gh_mode": gh_mode,
+      "hf_custom": mirror.normalize_base_url(hf_raw) or "",
+      "gh_custom": mirror.normalize_base_url(gh_raw) or "",
+      "hf_effective": mirror.describe_hf_mirror(p),
+      "gh_effective": mirror.describe_github_proxy(p),
+    }
+  except Exception:
+    return {}
+
+
+def models_set_mirror(which: str, mode: str, url: str = "") -> dict[str, Any]:
+  """Set one mirror row. `which` is 'hf' (model files) or 'gh' (catalog list);
+  mode 'mirror'/'auto' clears the param back to the built-in default, 'direct'
+  stores the off/direct sentinel, 'custom'/'proxy' validates and stores a base URL."""
+  try:
+    from openpilot.common.params import Params
+    import openpilot.sunnypilot.models.mirror as mirror
+    p = Params()
+    if which == "hf":
+      param = mirror.HF_MIRROR_PARAM
+      if mode == "mirror":
+        value = ""
+      elif mode == "direct":
+        value = "off"
+      elif mode == "custom":
+        base = mirror.normalize_base_url(url)
+        if base is None:
+          return {"ok": False, "error": "mirror must be an http(s) URL without spaces"}
+        value = base
+      else:
+        return {"ok": False, "error": f"unknown mirror mode: {mode}"}
+    elif which == "gh":
+      param = mirror.GITHUB_PROXY_PARAM
+      if mode == "auto":
+        value = ""
+      elif mode == "direct":
+        value = mirror.PROXY_DIRECT_VALUE
+      elif mode == "proxy":
+        base = mirror.normalize_base_url(url)
+        if base is None:
+          return {"ok": False, "error": "proxy must be an http(s) URL without spaces"}
+        value = base
+      else:
+        return {"ok": False, "error": f"unknown catalog mode: {mode}"}
+    else:
+      return {"ok": False, "error": f"unknown setting: {which}"}
+    p.put(param, value, block=True)
+    return {"ok": True, "param": param, "value": value}
+  except Exception as exc:
+    return {"ok": False, "error": str(exc)}
+
+
 def models_toggle_favorite(ref: str) -> dict[str, Any]:
   ref = (ref or "").strip()
   if not ref or ref == "Default":
@@ -532,6 +812,7 @@ def _mock_models() -> dict[str, Any]:
   return {
     "ok": True,
     "active_source": "qcom",
+    "big_model_source": "device",
     "usbgpu_enabled": False,
     "big_state": None,
     "carry_source": "qcom",
@@ -569,4 +850,14 @@ def _mock_models() -> dict[str, Any]:
     "model_manager_online": True,
     "started": False,
     "dev_pc": True,
+    "accelerator": {
+      "modes": ["off", "usb", "ios"],
+      "mode": "off",
+      "meaningful": True,
+      "status": {"key": ""},
+      "progress": None,
+      "reason": None,
+      "model": None,
+      "default_model": None,
+    },
   }

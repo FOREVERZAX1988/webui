@@ -765,11 +765,15 @@ function updateDeveloperCapabilities(st) {
 
   const adbRow = document.querySelector('[data-param="AdbEnabled"]');
   if (adbRow) {
-    const disabled = !globalState.is_offroad;
+    // native ui_state.adb_blocked: while the link holds the USB port, ADB has
+    // no gadget to build. Wi-Fi leaves the port, and ADB, alone.
+    const adbBlocked = !!lastModelsStatus?.accelerator?.adb_blocked;
+    const disabled = !globalState.is_offroad || adbBlocked;
     const input = adbRow.querySelector("input");
     const label = adbRow.querySelector(".opui-sp-toggle");
     if (input) input.disabled = disabled;
     label?.classList.toggle("disabled", disabled);
+    adbRow.title = adbBlocked ? t("Jetlink holds the USB port; turn the link off to use ADB.") : "";
   }
 
   const joyRow = document.querySelector('[data-param="JoystickDebugMode"]');
@@ -4033,7 +4037,9 @@ function buildModelSlots(m, data, gen, container) {
   downloadRoot.dataset.modelsDownload = "1";
   wrap.appendChild(downloadRoot);
 
-  if (m.usbgpu_enabled) {
+  // the note is the chestnut's or, without one, the accelerator's (jetlink's
+  // stand-in while the pick is prepared)
+  if (m.usbgpu_enabled || m.accelerator?.meaningful) {
     const note = buildModelsStatusNote(m);
     if (note) {
       const noteRow = document.createElement("div");
@@ -4044,10 +4050,139 @@ function buildModelSlots(m, data, gen, container) {
     }
   }
 
+  const accelRow = buildAcceleratorRow(m);
+  if (accelRow) wrap.appendChild(accelRow);
+
   return wrap;
 }
 
+// -- Accelerator Link (jetlink) ------------------------------------------------
+// Mirrors the native Models panel row: Off / USB / iOS buttons bound to the
+// JetlinkLink param, plus the live connection status. An Android phone rides
+// the USB mode exactly like a Jetson or a Mac (jetlink docs/android-app.md),
+// so USB is described as covering it.
+
+const ACCELERATOR_DESC = "Run the big driving model on an attached accelerator: USB for a Jetson, a Linux PC, a Mac or an Android phone; iOS for an iPhone; Wi-Fi joins the device's hotspot. USB and iOS turn off ADB.";
+
+// the mode names, the same as the native panels' LINK_MODE_TITLES
+const ACCELERATOR_MODE_LABELS = { off: "Off", usb: "USB", ios: "iOS", wifi: "Wi-Fi" };
+
+function acceleratorStatusText(accel) {
+  if (!accel) return "";
+  if (accel.reason && accel.mode !== "off") return accel.reason;
+  if (accel.progress && accel.progress.stage) {
+    const frac = typeof accel.progress.frac === "number" ? ` ${Math.round(accel.progress.frac * 100)}%` : "";
+    const msg = accel.progress.msg ? ` — ${accel.progress.msg}` : "";
+    return `${accel.progress.stage}${frac}${msg}`;
+  }
+  const key = accel.status?.key;
+  if (key === "accelerator_connected") {
+    return t("Accelerator connected: {transport}.").replace("{transport}", accel.status.transport || "USB");
+  }
+  if (key === "accelerator_wifi") return t("Join the device's hotspot and open Jetlink there.");
+  if (key === "port_empty") return t("Nothing on the USB port.");
+  if (key === "port_device") return t("A device is on the USB port.");
+  return "";
+}
+
+function buildAcceleratorRow(m) {
+  const accel = m?.accelerator;
+  if (!accel || !accel.meaningful) return null;
+
+  const row = document.createElement("div");
+  row.className = "opui-sp-row";
+  row.dataset.modelsAccelerator = "1";
+
+  const desc = document.createElement("div");
+  desc.className = "opui-sp-row-desc";
+  desc.dataset.accelDesc = "1";
+  row.innerHTML = `
+    <div class="opui-sp-row-text">
+      <div class="opui-sp-row-title">${escapeHtml(t("Accelerator Link"))}</div>
+      <div class="opui-sp-row-desc" data-accel-status="1"></div>
+    </div>
+    <div class="opui-multi-btn-group" data-accel-buttons="1"></div>`;
+  row.insertBefore(desc, row.querySelector(".opui-multi-btn-group"));
+
+  const group = row.querySelector("[data-accel-buttons]");
+  for (const mode of accel.modes || ["off", "usb", "ios", "wifi"]) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = t(ACCELERATOR_MODE_LABELS[mode] || mode);
+    btn.dataset.mode = mode;
+    btn.disabled = !globalState.is_offroad;
+    btn.addEventListener("click", async () => {
+      if (!globalState.is_offroad) {
+        toast(t("Changing the accelerator link is only allowed while offroad."));
+        return;
+      }
+      if (btn.dataset.mode === accel.mode || row.dataset.accelPending === "1") return;
+      // Optimistic paint first: the POST itself is fast (~20 ms), but a 500 ms
+      // status poll blocked behind a slow GET used to delay the feedback by
+      // seconds. Roll back if the write fails.
+      const prev = accel.mode;
+      accel.mode = btn.dataset.mode;
+      row.dataset.accelPending = "1";
+      paintAcceleratorButtons(row, accel);
+      try {
+        const res = await apiPost("/api/opui/models/accelerator", { mode: btn.dataset.mode });
+        if (!res.ok) {
+          accel.mode = prev;
+          toast(res.error || t("Failed"));
+        }
+      } catch {
+        accel.mode = prev;
+        toast(t("Failed"));
+      } finally {
+        delete row.dataset.accelPending;
+        paintAcceleratorButtons(row, accel);
+      }
+    });
+    group.appendChild(btn);
+  }
+  paintAcceleratorButtons(row, accel);
+  updateAcceleratorStatus(row, accel, m);
+  return row;
+}
+
+function paintAcceleratorButtons(row, accel) {
+  row.querySelectorAll("[data-accel-buttons] button").forEach((btn) => {
+    const selected = btn.dataset.mode === accel.mode;
+    btn.classList.toggle("selected", selected);
+    btn.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+}
+
+const BIG_MODEL_SOURCE_TEXT = {
+  jetlink: "Big model: running on the accelerator",
+  chestnut: "Big model: running on the eGPU",
+  device: "Big model: running on the device",
+};
+
+function bigModelSourceText(m) {
+  const key = m?.big_model_source;
+  return BIG_MODEL_SOURCE_TEXT[key] ? t(BIG_MODEL_SOURCE_TEXT[key]) : "";
+}
+
+function updateAcceleratorStatus(row, accel, m) {
+  const el = row.querySelector("[data-accel-status]");
+  if (!el) return;
+  const status = acceleratorStatusText(accel);
+  const source = bigModelSourceText(m);
+  const parts = [t(ACCELERATOR_DESC), source, status].filter(Boolean);
+  el.textContent = parts.join("\n");
+}
+
 function buildModelsStatusNote(m) {
+  // the accelerator's own note first: without a chestnut the big slot is
+  // jetlink's, and "{} drives until {} is ready" comes from its stand-in
+  const accel = m.accelerator;
+  if (accel?.meaningful && accel.mode !== "off" && !accel.ready && accel.standin) {
+    const bigName = accel.model || m.slots?.usbgpu?.selected?.name || m.slots?.usbgpu?.default_label || "";
+    return t("{standin} drives until {name} is ready.")
+      .replace("{standin}", accel.standin)
+      .replace("{name}", bigName);
+  }
   if (!m.usbgpu_enabled) return "";
   const smallSlot = m.slots?.qcom || {};
   const bigSlot = m.slots?.usbgpu || {};
@@ -4202,6 +4337,81 @@ function buildModelsClearCacheRow(w, m) {
   return row;
 }
 
+function buildModelsMirrorRows(m) {
+  const mirror = m?.mirror;
+  if (!mirror || !mirror.hf_param) return [];
+  const rows = [];
+
+  const mkRow = (which, title, desc, modes, current, effective) => {
+    const row = document.createElement("div");
+    row.className = "opui-sp-row";
+    row.dataset.modelsMirror = which;
+    row.innerHTML = `
+      <div class="opui-sp-row-text">
+        <div class="opui-sp-row-title">${escapeHtml(t(title))}</div>
+        <div class="opui-sp-row-desc"></div>
+      </div>
+      <div class="opui-multi-btn-group" data-mirror-buttons="1"></div>`;
+    const descEl = row.querySelector(".opui-sp-row-desc");
+    descEl.innerHTML = `${escapeHtml(t(desc))}<br>${escapeHtml(t("Current"))}: ${escapeHtml(String(effective))}`;
+    const group = row.querySelector("[data-mirror-buttons]");
+    for (const [key, label] of modes) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = t(label);
+      btn.dataset.mode = key;
+      btn.classList.toggle("selected", key === current);
+      btn.setAttribute("aria-pressed", key === current ? "true" : "false");
+      btn.addEventListener("click", async () => {
+        let url = "";
+        if (which === "hf" && key === "custom") {
+          url = await showTextInput({
+            title: t("Base URL replacing https://huggingface.co, e.g. https://hf-mirror.com"),
+            value: mirror.hf_custom || "",
+            placeholder: "https://hf-mirror.com",
+          });
+          if (url === null) return;
+        } else if (which === "gh" && key === "proxy") {
+          url = await showTextInput({
+            title: t("Prefix prepended to the catalog URL, e.g. https://gh-proxy.com"),
+            value: mirror.gh_custom || "",
+            placeholder: "https://gh-proxy.com",
+          });
+          if (url === null) return;
+        }
+        const res = await apiPost("/api/opui/models/mirror", { which, mode: key, url });
+        if (!res.ok) {
+          toast(res.error || t("Failed"));
+          return;
+        }
+        toast(t(title));
+        const c2 = document.getElementById("panel-content");
+        if (c2 && panelDataRef) await renderModelsPanel(c2, panelDataRef);
+      });
+      group.appendChild(btn);
+    }
+    return row;
+  };
+
+  rows.push(mkRow(
+    "hf",
+    "Model Download Mirror",
+    "huggingface.co is unreachable on many networks. Mirror sends model downloads to a mirror site instead; " +
+      "Direct uses huggingface.co as-is; Custom lets you enter your own mirror. Applies to the next download.",
+    [["mirror", "Mirror"], ["direct", "Direct"], ["custom", "Custom"]],
+    mirror.hf_mode, mirror.hf_effective));
+
+  rows.push(mkRow(
+    "gh",
+    "Model List Source",
+    "The model list lives on GitHub raw. Auto tries direct first and falls back to a CDN mirror when it fails; " +
+      "Direct never falls back; Proxy always fetches through your own prefix. Press Refresh Model List to apply.",
+    [["auto", "Auto"], ["direct", "Direct"], ["proxy", "Proxy"]],
+    mirror.gh_mode, mirror.gh_effective));
+
+  return rows;
+}
+
 function buildModelsPanelWidgets(container, data, m) {
   for (const w of data.widgets || []) {
     if (w.type === "action" && w.action === "models_sync") {
@@ -4218,6 +4428,9 @@ function buildModelsPanelWidgets(container, data, m) {
       container.appendChild(el);
     }
   }
+  // The two download-source rows the native Models page carries; appended after
+  // the catalog widgets so Refresh/Clear keep their place.
+  for (const row of buildModelsMirrorRows(m)) container.appendChild(row);
 }
 
 function updateModelsSlotRows(m, container) {
@@ -4256,6 +4469,12 @@ function updateModelsPanelLive(m, container) {
   const statusRow = container.querySelector("[data-models-status-row]");
   if (statusRow) {
     statusRow.replaceWith(buildModelStatusRow(m));
+  }
+  const accelRow = container.querySelector("[data-models-accelerator]");
+  if (accelRow && m.accelerator && accelRow.dataset.accelPending !== "1") {
+    // skip while an optimistic write is in flight so the poll can't flash the old mode back
+    paintAcceleratorButtons(accelRow, m.accelerator);
+    updateAcceleratorStatus(accelRow, m.accelerator, m);
   }
   const noteRow = container.querySelector("[data-models-status-note]");
   if (noteRow) {

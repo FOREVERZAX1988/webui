@@ -1,8 +1,29 @@
-"""Mirror UIStateSP._enforce_constraints after WebUI param writes."""
+"""Mirror UIStateSP._enforce_constraints and _enforce_usb_port after WebUI param writes."""
 
 from __future__ import annotations
 
 from typing import Any
+
+
+def _enforce_usb_port(p: Any) -> None:
+  """Mirror UIStateSP._enforce_usb_port: ADB and Jetlink both need the comma's USB
+  port, and AGNOS's ADB gadget (g1) holds the only device controller while
+  AdbEnabled is set, so jetlink cannot build its own. The native UI does this in
+  its params pass, but that pass only runs where a builtin display does, so a
+  headless comma (or one whose UI has not ticked yet) would keep the link
+  unavailable after the link is turned on from here.
+
+  Over Wi-Fi the link leaves the port alone, and ADB with it."""
+  try:
+    from openpilot.sunnypilot import jetlink_adapter
+
+    s = jetlink_adapter.status()
+    if s is None or not getattr(s, "enabled", False) or getattr(s, "mode", None) == "wifi":
+      return
+    if p.get_bool("AdbEnabled"):
+      p.put_bool("AdbEnabled", False, block=True)
+  except Exception:
+    pass
 
 
 def _refresh_ctx() -> Any:
@@ -87,3 +108,5 @@ def enforce_param_constraints(p: Any | None = None) -> None:
         pass
   except Exception:
     pass
+
+  _enforce_usb_port(p)
