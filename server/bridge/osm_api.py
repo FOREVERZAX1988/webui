@@ -292,7 +292,9 @@ def osm_download_progress() -> dict[str, Any]:
     # params by mapd/mapd_manager.
     mem_p = _shm_params()
     persist_p = Params()
-    downloading = bool(mem_p.get("OSMDownloadLocations"))
+    # a download is a location list OR a bounds box; the device UI starts either, and its
+    # "downloading" gate reads both, so this must too or a bounds download reads as idle
+    downloading = bool(mem_p.get("OSMDownloadLocations") or mem_p.get("OSMDownloadBounds"))
     pending = bool(persist_p.get_bool("OsmDbUpdatesCheck"))
     progress_raw = persist_p.get("OSMDownloadProgress")
     total = done = 0
@@ -345,7 +347,15 @@ def osm_delete_maps() -> dict[str, Any]:
     return {"ok": True, "dev_pc": True}
   try:
     from openpilot.common.params import Params
-    Params().put_bool("OsmDbDelete", True, block=True)
+    Params().put_bool("Mapd_ClearCache", True, block=True)
+    # a half-finished download from a prior session must not auto-resume after the user
+    # asked to wipe everything (the device UI clears the same two mem-params)
+    try:
+      mem_p = _shm_params()
+      mem_p.remove("OSMDownloadLocations")
+      mem_p.remove("OSMDownloadBounds")
+    except Exception:
+      pass
     _SIZE_CACHE["ts"] = 0.0
     _refresh_size_cache_async()
     return {"ok": True}
