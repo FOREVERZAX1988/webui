@@ -611,7 +611,7 @@ def clear_storage(category: str) -> dict[str, Any]:
     elif category == "maps":
       from openpilot.common.params import Params
       p = Params()
-      p.put_bool("OsmDbDelete", True, block=True)
+      p.put_bool("Mapd_ClearCache", True, block=True)
       for path in _CATEGORY_PATHS.get("maps", []):
         freed += _clear_dir_contents(path)
 
