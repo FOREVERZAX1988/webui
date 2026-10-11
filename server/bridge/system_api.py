@@ -105,7 +105,7 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
       return {"ok": True, "action": action}
 
     if action == "osm_delete_maps":
-      p.put_bool("OsmDbDelete", True, block=True)
+      p.put_bool("Mapd_ClearCache", True, block=True)
       return {"ok": True, "action": action}
 
     if action == "network_set_apn":
