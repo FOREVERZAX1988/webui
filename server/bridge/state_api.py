@@ -48,7 +48,9 @@ def _cpu_temp_c(ds) -> int | None:
     return None
 
 
-PING_TIMEOUT_NS = 80_000_000_000
+# Must match selfdrive/ui/sunnypilot/layouts/sidebar.py: covers sunnylinkd's 20s ping cadence plus
+# its reconnect backoff (up to 128s) so a healthy-but-reconnecting link is not reported as dead.
+PING_TIMEOUT_NS = 180_000_000_000
 
 
 def _models_state(p) -> dict[str, bool]:
