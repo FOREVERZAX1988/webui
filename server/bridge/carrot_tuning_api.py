@@ -256,6 +256,11 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # page). Listed here so the webui read/write whitelist accepts them. ---
   "CarrotTrafficCongestionEnabled": ("bool", 0),
   "CarrotNavLaneGuideBlockEnabled": ("bool", 0),
+  # The heaviest of the three: with it on, the phone app's speed target and follow
+  # time reach the MPC. Registered here for the same reason as its neighbours - the
+  # Developer page exposes it natively, so the webui read/write whitelist must accept
+  # the key too or the two UIs would disagree about which params exist.
+  "CarrotLongitudinalSourceEnabled": ("bool", 0),
 }
 
 _PARAM_TYPE_NAMES = {"bool": "BOOL", "int": "INT", "float": "FLOAT", "str": "STRING"}
