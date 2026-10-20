@@ -2092,6 +2092,8 @@ html.opui-portrait-host .opui-modal-scroll {
   container-type: size;
   --dev-ui-bar-h: 61px;
   --dev-ui-bar-lift: 28px;
+  /* 预览切换器要落在最底部状态带（dev-UI 底栏）之上，别再压住它的文字 */
+  --camera-switcher-bottom: calc(var(--dev-ui-bar-lift) + var(--dev-ui-bar-h) + 14px);
   /* Web CSS border is 30px solid vs native ~15px stroke inside content_rect */
   --border-stroke-inset: 18px;
 }
@@ -2255,7 +2257,8 @@ html.opui-portrait-host .opui-modal-scroll {
 
 .opui-camera-switcher {
   position: absolute;
-  bottom: 48px;
+  /* 原 48px 正好压在底部状态栏文字的带上（底栏 28+61px 高），整体抬到底栏之上 */
+  bottom: var(--camera-switcher-bottom, calc(var(--dev-ui-bar-lift, 28px) + var(--dev-ui-bar-h, 61px) + 14px));
   left: 50%;
   transform: translateX(-50%);
   display: none;
