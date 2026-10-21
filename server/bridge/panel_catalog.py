@@ -37,7 +37,6 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CarrotYouTubeTimestamp",
   "ContinuousLaneChange",
   "CustomSR",
-  "HotspotOnBoot",
   "LaneChangeDelay",
   "LaneChangeNeedTorque",
   "LaneLineCheck",
@@ -89,18 +88,26 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "ShowPathMode",
   "ShowPathModeLane",
   "ShowPlotMode",
-  "ShowRadarInfo",
   "ShowRouteInfo",
   "ShowTpms",
   "SideRadarMinDist",
   "SoftwareMenu",
-  "SoundLanguageSetting",
   "SteerActuatorDelay",
-  "SteerRatioRate",
   "StockBlinkerCtrl",
-  "UseLaneLineCurveSpeed",
   "UseWideCamera",
- })
+})
+
+
+# Params hidden from this catalogue even though shipped code does read them. Each entry has
+# to say why: "no reader" is no longer the reason, and hiding a control that works is its
+# own bug. The dead-param test fails on any hidden key whose reader is not listed here, so
+# this cannot grow by accident.
+CARROT_TUNING_HIDDEN_WITH_READERS: dict[str, str] = {
+  # Read as a language code picking one of sounds/, sounds_chs/, sounds_eng/; "auto" derives
+  # it from LanguageSetting. This catalogue has no free-text or option widget type, so a
+  # control would have to invent one - add it back once the vocabulary has a select.
+  "SoundLanguageSetting": "no widget type for a language code; 'auto' follows LanguageSetting",
+}
 
 
 # Widget types: bool, int, choice, readonly, action, section, html, subpanel_ref
@@ -1466,6 +1473,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 60,
         "step": 5
+      },{
+        "type": "int",
+        "param": "UseLaneLineCurveSpeed",
+        "label": "Lane Line Curve Gate (km/h)",
+        "desc": "Lane-line centring is skipped in bends slower than this curve speed; 0 never skips it.",
+        "min": 0,
+        "max": 120,
+        "step": 5
       }],
   },
 
@@ -1524,6 +1539,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 50,
         "step": 1,
+      },{
+        "type": "int",
+        "param": "SteerRatioRate",
+        "label": "Steer Ratio Rate (%)",
+        "desc": "Percent applied to the live steer ratio: 100 as measured, lower turns in less, higher more. Outside 30-200 the controller uses 100.",
+        "min": 30,
+        "max": 200,
+        "step": 5
       }],
   },
 
@@ -1612,6 +1635,10 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },{
         "type": "int", "param": "ClusterHudTheme", "label": "Cluster HUD Theme",
         "desc": "0 = Auto, 1 = Dark, 2 = Light.", "min": 0, "max": 2, "step": 1
+      },{
+        "type": "int", "param": "ShowRadarInfo", "label": "Display Radar Points",
+        "desc": "0 = off, 1 = speed only, 2 = speed + distance, 3 = every point incl. static. Display only.",
+        "min": 0, "max": 3, "step": 1
       }],
   },
 
@@ -1771,6 +1798,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "max": 50,
         "step": 1,
         "default": 0
+      },{
+        "type": "bool",
+        "param": "HotspotOnBoot",
+        "label": "Wi-Fi Hotspot On Boot",
+        "desc": "Bring the Wi-Fi hotspot up on every boot instead of only when asked from the network page.",
+        "default": False
       }],
   },
 
@@ -1904,6 +1937,82 @@ def get_panel(panel_id: str) -> dict[str, Any] | None:
   return None
 
 
+# Declared depths, memoised per process. They come from the compiled key table, so they
+# cannot change without a restart; a panel fetch per request would otherwise re-ask the
+# store for every key on the page.
+_LEVEL_CACHE: dict[str, dict[str, int]] = {}
+
+
+def declared_tuning_metadata(names) -> dict[str, dict[str, int]]:
+  """`{name: {tuningLevel, settingsTier}}` read from the compiled key table.
+
+  The numbers are declared once, in `openpilot/common/params_keys.h`, and compiled into
+  `libparams_c.so`. Reading them here is what keeps this catalogue from being a second,
+  hand-maintained opinion about how deep a knob sits and which settings tier owns it: a
+  control added to the header shows up with the right depth without an edit in this file.
+
+  A host with no store, or a device whose `libparams_c.so` predates the metadata, gets an
+  empty map and therefore no extra fields at all - the pre-metadata payload. That is why
+  the caller must treat a missing key as "no opinion" rather than as level 0.
+  """
+  names = [n for n in dict.fromkeys(names) if n]
+  if not names:
+    return {}
+  unknown = [n for n in names if n not in _LEVEL_CACHE]
+  if unknown:
+    try:
+      from openpilot.common.params import Params
+      from openpilot.sunnypilot.common.param_read import read_settings_tier, read_tuning_level
+
+      params = Params()
+      for name in unknown:
+        _LEVEL_CACHE[name] = {
+          "tuningLevel": read_tuning_level(params, name, 0),
+          "settingsTier": read_settings_tier(params, name, 1),
+        }
+    except Exception:
+      return {}
+  return {n: _LEVEL_CACHE[n] for n in names}
+
+
+def stamped_widgets(widgets: list[dict]) -> list[dict]:
+  """The widgets with their declared depth attached.
+
+  Both fetch paths go through this - `panel_schema` for the root panels and
+  `params_api.panel_values` for a single panel, subpanels included. Subpanels matter: the
+  carrot tuning page is entirely subpanels, so stamping only `PANELS` would have left
+  every control on it without a depth.
+  """
+  metadata = declared_tuning_metadata([w.get("param") for w in _walk_widgets(widgets)])
+  return _stamp_tuning_metadata(widgets, metadata)
+
+
+def _walk_widgets(widgets: list[dict]):
+  """Yield every widget in the tree, tabs included."""
+  for w in widgets:
+    yield w
+    if isinstance(w.get("widgets"), list):
+      yield from _walk_widgets(w["widgets"])
+
+
+def _stamp_tuning_metadata(widgets: list[dict], metadata: dict[str, dict[str, int]]) -> list[dict]:
+  """Copy each widget with its declared depth attached, recursing into tabs.
+
+  Copies rather than mutates: `PANELS` is module state, and handing a caller a reference
+  into it would let one request's payload change the next one's.
+  """
+  out = []
+  for w in widgets:
+    stamped = dict(w)
+    meta = metadata.get(w.get("param") or "")
+    if meta:
+      stamped.update(meta)
+    if isinstance(w.get("widgets"), list):
+      stamped["widgets"] = _stamp_tuning_metadata(w["widgets"], metadata)
+    out.append(stamped)
+  return out
+
+
 def panel_schema() -> dict[str, Any]:
   from webui.server.bridge.design_tokens import PANEL_ICONS, tokens_payload
   from webui.server.bridge.headless_util import is_headless_mode
@@ -1915,6 +2024,10 @@ def panel_schema() -> dict[str, Any]:
     "Brightness", "OnroadScreenOffBrightness", "OnroadScreenOffTimer",
     "InteractivityTimeout", "ScreenSaverEnabled", "ScreenSaverTimeout",
   }
+
+  # One store read for the whole payload: every panel's params, resolved into the depth
+  # each control was declared with. Memoised per process, so later panel fetches are free.
+  declared_tuning_metadata([key for panel in PANELS for key in panel_param_keys(panel["id"])])
 
   def _filter_widgets(widgets: list[dict]) -> list[dict]:
     out = []
@@ -1939,7 +2052,7 @@ def panel_schema() -> dict[str, Any]:
         "i18n_key": "No built-in screen — brightness and screen saver do not apply. Camera stream settings below are used by Web UI.",
       })
       widgets.insert(1, {"type": "separator"})
-    entry["widgets"] = widgets
+    entry["widgets"] = stamped_widgets(widgets)
     panels_out.append(entry)
   return {
     "ok": True,

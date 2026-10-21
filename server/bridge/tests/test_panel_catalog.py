@@ -3,18 +3,34 @@
 from __future__ import annotations
 
 import ast
+import os
 import re
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from webui.server.bridge import carrot_tuning_api
-from webui.server.bridge.panel_catalog import (CARROT_TUNING_UNAVAILABLE, SUBPANELS,
-                                                    get_panel, panel_param_keys)
+from webui.server.bridge.panel_catalog import (CARROT_TUNING_HIDDEN_WITH_READERS, CARROT_TUNING_UNAVAILABLE,
+                                               SUBPANELS, _stamp_tuning_metadata, declared_tuning_metadata,
+                                               get_panel, panel_param_keys)
 
-# Carrot tuning keys that are intentionally NOT rendered as user-tunable widgets:
-# a cross-process diagnostic sink written by the carrot daemon, plus every param
-# that no code in this tree consumes (see CARROT_TUNING_UNAVAILABLE for the reasons).
-_PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE)
+# Carrot tuning keys that are intentionally NOT rendered as user-tunable widgets: a
+# cross-process diagnostic sink written by the carrot daemon, plus every param that no code
+# in this tree consumes (see CARROT_TUNING_UNAVAILABLE for the reasons), plus the handful
+# that do have a reader but no widget that could honestly drive them.
+_PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE) | set(CARROT_TUNING_HIDDEN_WITH_READERS)
+
+
+def _repo_config_py() -> str:
+  """carrot/config.py in this checkout, found relative to this test file.
+
+  It used to be a hardcoded `E:\\sp\\...` path, which made the whole suite unrunnable
+  anywhere but one developer's PC - including on the device, where it would have been
+  the first thing to fail if these tests ever ran there.
+  """
+  here = os.path.dirname(os.path.abspath(__file__))
+  root = os.path.abspath(os.path.join(here, "..", "..", "..", ".."))
+  return os.path.join(root, "openpilot", "sunnypilot", "carrot", "config.py")
 
 
 _CONFIG_RELPATHS = (
@@ -138,9 +154,10 @@ class CarrotTuningLayoutTests(unittest.TestCase):
   def test_every_subpanel_row_targets_a_real_panel(self):
     widgets = get_panel(self.ROOT)["widgets"]
     rows = [w for w in widgets if w.get("type") == "subpanel"]
-    # 8 groups: "Path Rendering" lost every item when the params with no reader
-    # were hidden, so the group and its row were removed rather than left empty.
-    self.assertEqual(len(rows), 8, f"expected 8 group rows, got {len(rows)}")
+    # 9 groups. "Path Rendering" lost every item when the params with no reader were
+    # hidden, so the group and its row were removed rather than left empty; eGPU was
+    # then added as its own row.
+    self.assertEqual(len(rows), 9, f"expected 9 group rows, got {len(rows)}")
     for w in rows:
       target = w["target"]
       self.assertIn(target, SUBPANELS, f"{target} is not a registered subpanel")
@@ -151,7 +168,7 @@ class CarrotTuningLayoutTests(unittest.TestCase):
   def test_group_rows_are_separated_and_described(self):
     widgets = get_panel(self.ROOT)["widgets"]
     row_indices = [i for i, w in enumerate(widgets) if w.get("type") == "subpanel"]
-    self.assertEqual(len(row_indices), 8, "expected 8 group rows")
+    self.assertEqual(len(row_indices), 9, "expected 9 group rows")
     self.assertNotEqual(widgets[0].get("type"), "separator", "the list must not open with a separator")
     for i in range(len(row_indices) - 1):
       between = widgets[row_indices[i] + 1:row_indices[i + 1]]
@@ -163,10 +180,15 @@ class CarrotTuningLayoutTests(unittest.TestCase):
       self.assertTrue(w.get("label"), f"{w['target']} has no label")
 
   def test_no_group_panel_is_empty(self):
+    """A panel that renders itself (``custom``) owns no declarative widgets by design."""
     widgets = get_panel(self.ROOT)["widgets"]
     for w in (x for x in widgets if x.get("type") == "subpanel"):
-      sub = get_panel(w["target"])["widgets"]
-      self.assertTrue(sub, f"{w['target']} has no widgets")
+      panel = get_panel(w["target"])
+      if panel.get("custom"):
+        continue
+      self.assertTrue(panel["widgets"], f"{w['target']} has no widgets")
+
+
 class CarrotHiddenParamsAreReallyDeadTests(unittest.TestCase):
   """A param hidden from the UI must not be read anywhere in the tree.
 
@@ -194,6 +216,8 @@ class CarrotHiddenParamsAreReallyDeadTests(unittest.TestCase):
     root = self._repo_root()
     names = set(CARROT_TUNING_UNAVAILABLE)
     self.assertTrue(names, "CARROT_TUNING_UNAVAILABLE is empty; the scan lost its input")
+    self.assertFalse(names & set(CARROT_TUNING_HIDDEN_WITH_READERS),
+                     "a key cannot be both 'no reader' and 'reader, but hidden on purpose'")
 
     offenders: dict[str, list[str]] = {}
     for tree in self.ROOTS:
@@ -214,11 +238,89 @@ class CarrotHiddenParamsAreReallyDeadTests(unittest.TestCase):
               rel = q.split("/openpilot/", 1)[-1]
               offenders.setdefault(name, []).append(rel)
 
-    self.assertFalse(
-      offenders,
-      "these params are hidden from the UI but still read by shipped code - "
-      f"unhide them or confirm the reader is gone: {offenders}",
-    )
+    if offenders:
+      self.fail(f"hidden but still read by shipped code: {offenders}")
+
+  def test_every_hidden_param_with_a_reader_states_why(self):
+    """The reasoned list is the only way to hide a working control, so it must justify itself."""
+    for name, reason in CARROT_TUNING_HIDDEN_WITH_READERS.items():
+      self.assertTrue(reason.strip(), f"{name} is hidden without a reason")
+      self.assertNotIn(name, CARROT_TUNING_UNAVAILABLE,
+                       f"{name} is listed as dead and as reasoned; pick one")
+
+
+class TuningMetadataTests(unittest.TestCase):
+  """The catalogue reads its depth numbers from the compiled key table, not from here.
+
+  `openpilot/common/params_keys.h` declares how deep each knob sits (`tuningLevel`) and
+  which settings tier owns it (`settingsTier`). Stamping those onto every widget is what
+  lets the frontend group and order controls without a second list to keep in step, and
+  what makes a newly declared control arrive with the right depth for free.
+  """
+
+  def test_a_declared_number_lands_on_the_widget(self):
+    widgets = [{"type": "bool", "param": "CarrotEnabled", "label": "Carrot"}]
+    out = _stamp_tuning_metadata(widgets, {"CarrotEnabled": {"tuningLevel": 1, "settingsTier": 0}})
+    self.assertEqual(out[0]["tuningLevel"], 1)
+    self.assertEqual(out[0]["settingsTier"], 0)
+    self.assertEqual(out[0]["label"], "Carrot")
+
+  def test_a_widget_with_no_declaration_gains_nothing(self):
+    """Absent is not zero: a store with no metadata must not look like "not a knob"."""
+    widgets = [{"type": "bool", "param": "SteerRatio"}]
+    out = _stamp_tuning_metadata(widgets, {})
+    self.assertNotIn("tuningLevel", out[0])
+    self.assertNotIn("settingsTier", out[0])
+
+  def test_the_input_widgets_are_left_alone(self):
+    """PANELS is module state; a request must not rewrite it for the next one."""
+    original = {"type": "bool", "param": "CarrotEnabled"}
+    _stamp_tuning_metadata([original], {"CarrotEnabled": {"tuningLevel": 3, "settingsTier": 1}})
+    self.assertEqual(original, {"type": "bool", "param": "CarrotEnabled"})
+
+  def test_tab_children_are_stamped_too(self):
+    widgets = [{"type": "tab", "widgets": [{"type": "bool", "param": "CarrotEnabled"}]}]
+    out = _stamp_tuning_metadata(widgets, {"CarrotEnabled": {"tuningLevel": 2, "settingsTier": 1}})
+    self.assertEqual(out[0]["widgets"][0]["tuningLevel"], 2)
+
+  def test_subpanel_widgets_are_stamped(self):
+    """The carrot tuning page is nothing but subpanels, and subpanels are fetched by id."""
+    import webui.server.bridge.panel_catalog as panel_catalog
+
+    metadata = {"UseLaneLineCurveSpeed": {"tuningLevel": 2, "settingsTier": 1}}
+    with mock.patch.object(panel_catalog, "declared_tuning_metadata", lambda names: metadata):
+      widgets = panel_catalog.stamped_widgets(get_panel("navigation__carrot_tuning__speed")["widgets"])
+    hit = next(w for w in widgets if w.get("param") == "UseLaneLineCurveSpeed")
+    self.assertEqual(hit["tuningLevel"], 2)
+    self.assertEqual(hit["settingsTier"], 1)
+
+  def test_the_four_unhidden_controls_are_reachable(self):
+    """These were hidden as dead while shipped code reads them; they must stay reachable."""
+    keys = set(panel_param_keys("navigation__carrot_tuning"))
+    for name in ("UseLaneLineCurveSpeed", "SteerRatioRate", "ShowRadarInfo", "HotspotOnBoot"):
+      self.assertIn(name, keys, f"{name} lost its control")
+
+  def test_no_names_means_no_store_read(self):
+    """An empty request must not build a Params handle just to answer nothing."""
+    self.assertEqual(declared_tuning_metadata([]), {})
+    self.assertEqual(declared_tuning_metadata(["", None]), {})
+
+  def test_a_store_that_cannot_be_built_answers_nothing(self):
+    """A PC host has no libparams_c.so, and the payload simply carries no depths."""
+    import builtins
+
+    real_import = builtins.__import__
+
+    def _refuse(name, *args, **kwargs):
+      if name == "openpilot.common.params":
+        raise ModuleNotFoundError(name)
+      return real_import(name, *args, **kwargs)
+
+    builtins.__import__ = _refuse
+    try:
+      self.assertEqual(declared_tuning_metadata(["CarrotEnabled"]), {})
+    finally:
+      builtins.__import__ = real_import
 
 
 if __name__ == "__main__":

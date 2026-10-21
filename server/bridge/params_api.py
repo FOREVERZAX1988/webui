@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from webui.server.bridge.model_overlay import OVERLAY_PARAM_KEYS, invalidate_overlay_params_cache
-from webui.server.bridge.panel_catalog import get_panel
+from webui.server.bridge.panel_catalog import get_panel, stamped_widgets
 
 
 def _op_params():
@@ -300,7 +300,9 @@ def panel_values(panel_id: str) -> dict[str, Any]:
     except Exception:
       pass
 
-  for w in panel.get("widgets", []):
+  # Stamped here as well as in panel_schema: a subpanel is only ever fetched through this
+  # path, and the carrot tuning page is nothing but subpanels.
+  for w in stamped_widgets(panel.get("widgets") or []):
     if w.get("custom") == "webui_update":
       continue
     from webui.server.bridge.lite_util import should_hide_widget
