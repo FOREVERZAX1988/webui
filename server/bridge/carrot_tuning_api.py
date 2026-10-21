@@ -93,7 +93,10 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # Diagnostic sink (not exposed in the panel)
   "CarrotException": ("str", ""),
   # --- Carrot longitudinal / t_follow (webui exposure) ---
-  "DynamicTFollowLC": ("float", 100.0),
+  # int, not float: the parameter is declared INT (percent, consumer divides by
+  # 100) and `carrot_put` casts by this kind, so a "float" here writes a float
+  # into an INT key - TypeMismatch on every save.
+  "DynamicTFollowLC": ("int", 100),
   "LeadAccelResponse": ("int", 0),
   "LongActuatorDelay": ("int", 20),
   "LongTuningKf": ("int", 100),

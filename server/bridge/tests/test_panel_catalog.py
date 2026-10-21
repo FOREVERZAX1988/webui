@@ -130,8 +130,12 @@ class CarrotTuningFullCoverageTests(unittest.TestCase):
   def test_panel_params_backed_by_api(self):
     api_keys = set(carrot_tuning_api.CARROT_TUNING_DEFAULTS)
     panel_keys = set(panel_param_keys("navigation__carrot_tuning"))
-    # CarrotEnabled is a master toggle dependency, not a carrot tuning key.
-    orphan = panel_keys - api_keys - {"CarrotEnabled"}
+    # Not carrot tuning keys in the nav_params.json sense: CarrotEnabled is the
+    # master toggle the panel gates on, and the weather keys are registered
+    # Params read by the planner rather than entries in the tuning surface, so
+    # carrot_tuning_api has nothing to say about any of them.
+    not_tuning_keys = {"CarrotEnabled", "WeatherOffsetsEnabled", "WeatherAutoDetect", "WeatherState"}
+    orphan = panel_keys - api_keys - not_tuning_keys
     self.assertFalse(orphan, f"panel params not in API: {sorted(orphan)}")
 
 
