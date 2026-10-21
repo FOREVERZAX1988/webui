@@ -36,7 +36,6 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CarrotYouTubeQuality",
   "CarrotYouTubeTimestamp",
   "ContinuousLaneChange",
-  "CustomSR",
   "LaneChangeDelay",
   "LaneChangeNeedTorque",
   "LaneLineCheck",
@@ -1547,6 +1546,14 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 30,
         "max": 200,
         "step": 5
+      },{
+        "type": "int",
+        "param": "CustomSR",
+        "label": "Steer Ratio Override (x0.1)",
+        "desc": "Integer steer ratio scaled by 0.1 (168 = 16.8). 0 means unset. Takes precedence over SteerRatio whenever it is non-zero, which is why it is shown here: a value set once from the Carrot app would otherwise silently win over the field above.",
+        "min": 0,
+        "max": 300,
+        "step": 1
       }],
   },
 
