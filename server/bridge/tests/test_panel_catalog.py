@@ -6,6 +6,7 @@ import ast
 import os
 import re
 import unittest
+from unittest import mock
 
 from webui.server.bridge import carrot_tuning_api
 from webui.server.bridge.panel_catalog import (CARROT_TUNING_HIDDEN_WITH_READERS, CARROT_TUNING_UNAVAILABLE,
@@ -259,6 +260,23 @@ class TuningMetadataTests(unittest.TestCase):
     widgets = [{"type": "tab", "widgets": [{"type": "bool", "param": "CarrotEnabled"}]}]
     out = _stamp_tuning_metadata(widgets, {"CarrotEnabled": {"tuningLevel": 2, "settingsTier": 1}})
     self.assertEqual(out[0]["widgets"][0]["tuningLevel"], 2)
+
+  def test_subpanel_widgets_are_stamped(self):
+    """The carrot tuning page is nothing but subpanels, and subpanels are fetched by id."""
+    import webui.server.bridge.panel_catalog as panel_catalog
+
+    metadata = {"UseLaneLineCurveSpeed": {"tuningLevel": 2, "settingsTier": 1}}
+    with mock.patch.object(panel_catalog, "declared_tuning_metadata", lambda names: metadata):
+      widgets = panel_catalog.stamped_widgets(get_panel("navigation__carrot_tuning__speed")["widgets"])
+    hit = next(w for w in widgets if w.get("param") == "UseLaneLineCurveSpeed")
+    self.assertEqual(hit["tuningLevel"], 2)
+    self.assertEqual(hit["settingsTier"], 1)
+
+  def test_the_four_unhidden_controls_are_reachable(self):
+    """These were hidden as dead while shipped code reads them; they must stay reachable."""
+    keys = set(panel_param_keys("navigation__carrot_tuning"))
+    for name in ("UseLaneLineCurveSpeed", "SteerRatioRate", "ShowRadarInfo", "HotspotOnBoot"):
+      self.assertIn(name, keys, f"{name} lost its control")
 
   def test_no_names_means_no_store_read(self):
     """An empty request must not build a Params handle just to answer nothing."""

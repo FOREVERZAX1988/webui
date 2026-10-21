@@ -1937,6 +1937,12 @@ def get_panel(panel_id: str) -> dict[str, Any] | None:
   return None
 
 
+# Declared depths, memoised per process. They come from the compiled key table, so they
+# cannot change without a restart; a panel fetch per request would otherwise re-ask the
+# store for every key on the page.
+_LEVEL_CACHE: dict[str, dict[str, int]] = {}
+
+
 def declared_tuning_metadata(names) -> dict[str, dict[str, int]]:
   """`{name: {tuningLevel, settingsTier}}` read from the compiled key table.
 
@@ -1952,20 +1958,41 @@ def declared_tuning_metadata(names) -> dict[str, dict[str, int]]:
   names = [n for n in dict.fromkeys(names) if n]
   if not names:
     return {}
-  try:
-    from openpilot.common.params import Params
-    from openpilot.sunnypilot.common.param_read import read_settings_tier, read_tuning_level
+  unknown = [n for n in names if n not in _LEVEL_CACHE]
+  if unknown:
+    try:
+      from openpilot.common.params import Params
+      from openpilot.sunnypilot.common.param_read import read_settings_tier, read_tuning_level
 
-    params = Params()
-    return {
-      name: {
-        "tuningLevel": read_tuning_level(params, name, 0),
-        "settingsTier": read_settings_tier(params, name, 1),
-      }
-      for name in names
-    }
-  except Exception:
-    return {}
+      params = Params()
+      for name in unknown:
+        _LEVEL_CACHE[name] = {
+          "tuningLevel": read_tuning_level(params, name, 0),
+          "settingsTier": read_settings_tier(params, name, 1),
+        }
+    except Exception:
+      return {}
+  return {n: _LEVEL_CACHE[n] for n in names}
+
+
+def stamped_widgets(widgets: list[dict]) -> list[dict]:
+  """The widgets with their declared depth attached.
+
+  Both fetch paths go through this - `panel_schema` for the root panels and
+  `params_api.panel_values` for a single panel, subpanels included. Subpanels matter: the
+  carrot tuning page is entirely subpanels, so stamping only `PANELS` would have left
+  every control on it without a depth.
+  """
+  metadata = declared_tuning_metadata([w.get("param") for w in _walk_widgets(widgets)])
+  return _stamp_tuning_metadata(widgets, metadata)
+
+
+def _walk_widgets(widgets: list[dict]):
+  """Yield every widget in the tree, tabs included."""
+  for w in widgets:
+    yield w
+    if isinstance(w.get("widgets"), list):
+      yield from _walk_widgets(w["widgets"])
 
 
 def _stamp_tuning_metadata(widgets: list[dict], metadata: dict[str, dict[str, int]]) -> list[dict]:
@@ -1999,8 +2026,8 @@ def panel_schema() -> dict[str, Any]:
   }
 
   # One store read for the whole payload: every panel's params, resolved into the depth
-  # each control was declared with.
-  metadata = declared_tuning_metadata([key for panel in PANELS for key in panel_param_keys(panel["id"])])
+  # each control was declared with. Memoised per process, so later panel fetches are free.
+  declared_tuning_metadata([key for panel in PANELS for key in panel_param_keys(panel["id"])])
 
   def _filter_widgets(widgets: list[dict]) -> list[dict]:
     out = []
@@ -2025,7 +2052,7 @@ def panel_schema() -> dict[str, Any]:
         "i18n_key": "No built-in screen — brightness and screen saver do not apply. Camera stream settings below are used by Web UI.",
       })
       widgets.insert(1, {"type": "separator"})
-    entry["widgets"] = _stamp_tuning_metadata(widgets, metadata)
+    entry["widgets"] = stamped_widgets(widgets)
     panels_out.append(entry)
   return {
     "ok": True,
