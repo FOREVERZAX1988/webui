@@ -954,6 +954,33 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {
         "type": "separator"
       },
+      {
+        "type": "section",
+        "label": "Weather Adaptation"
+      },
+      {
+        "type": "bool",
+        "param": "WeatherOffsetsEnabled",
+        "label": "Weather Adaptation",
+        "desc": "Lengthen the follow time, widen the stopped gap and lower the accel and lateral limits in bad weather. All offsets default to zero.",
+      },
+      {
+        "type": "bool",
+        "param": "WeatherAutoDetect",
+        "label": "Detect Weather Automatically",
+        "desc": "Ask Open-Meteo for the conditions where the car is. Nothing is requested unless Weather Adaptation is on.",
+        "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
+      },
+      {
+        "type": "readonly",
+        "param": "WeatherState",
+        "label": "Detected Weather",
+        "desc": "The condition currently applied: clear, rain, rain_storm, snow or low_visibility.",
+        "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
+      },
+      {
+        "type": "separator"
+      },
       
       
       
