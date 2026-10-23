@@ -82,8 +82,8 @@ def _warm_submasters() -> None:
             _STATE_CACHE = {
               "started": bool(getattr(ds, "started", False)),
               "chestnutPresent": bool(getattr(ds, "chestnutPresent", False)),
-              "usbgpuActive": p.get_bool("UsbGpuActive") if p else None,
-              "usbgpuLoading": p.get_bool("UsbGpuLoading") if p else False,
+              "usbgpuActive": p.get_bool("ChestnutActive") if p else None,
+              "usbgpuLoading": p.get_bool("ChestnutLoading") if p else False,
             }
           except Exception:
             _STATE_CACHE = None
@@ -343,8 +343,8 @@ def _device_state() -> dict[str, Any] | None:
       _DEVICE_STATE_CACHE = {
         "started": bool(getattr(ds, "started", False)),
         "chestnutPresent": bool(getattr(ds, "chestnutPresent", False)),
-        "usbgpuActive": p.get_bool("UsbGpuActive") if p else None,
-        "usbgpuLoading": p.get_bool("UsbGpuLoading") if p else False,
+        "usbgpuActive": p.get_bool("ChestnutActive") if p else None,
+        "usbgpuLoading": p.get_bool("ChestnutLoading") if p else False,
       }
       _DEVICE_STATE_TS = time.monotonic()
       return _DEVICE_STATE_CACHE
@@ -355,8 +355,8 @@ def _device_state() -> dict[str, Any] | None:
     state = {
       "started": not p.get_bool("IsOffroad"),
       "chestnutPresent": chestnut_present(),
-      "usbgpuActive": p.get_bool("UsbGpuActive"),
-      "usbgpuLoading": p.get_bool("UsbGpuLoading"),
+      "usbgpuActive": p.get_bool("ChestnutActive"),
+      "usbgpuLoading": p.get_bool("ChestnutLoading"),
     }
     _DEVICE_STATE_CACHE = state
     _DEVICE_STATE_TS = time.monotonic()

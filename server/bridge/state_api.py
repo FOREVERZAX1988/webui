@@ -206,8 +206,8 @@ def _egpu_state(ds, started: bool, sm=None) -> dict[str, Any] | None:
       usbgpu_compiled = _usbgpu_compiled()
     except Exception:
       pass
-    usbgpu_active = p.get("UsbGpuActive")
-    usbgpu_loading = p.get_bool("UsbGpuLoading")
+    usbgpu_active = p.get("ChestnutActive")
+    usbgpu_loading = p.get_bool("ChestnutLoading")
     model_runner_tinygrad = False
     try:
       for source in ("usbgpu", "tici"):
