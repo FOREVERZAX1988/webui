@@ -1,6 +1,8 @@
 import { apiGet, apiPut } from "./api.js";
 import { tr } from "./i18n.js?v=3";
 import { updateSpHud } from "./hud_sp.js";
+import { updateSpWidgets } from "./hud_sp_widgets.js";
+import { updateNavCard } from "./hud_navcard.js";
 import { updateCarrotNav, updateAmapBars, updateCarrotCrossroad, updateCarrotMedia } from "./hud_carrot_nav.js";
 import { updateDevUi } from "./hud_dev.js";
 import { updateCircularAlert } from "./hud_circular.js";
@@ -38,6 +40,8 @@ function updateAnimatedOnroadHud(st) {
   applyCruiseStyle(st);
   applyExperimentalButton(st);
   updateSpHud(st);
+  updateSpWidgets(st);
+  updateNavCard(st);
   updateDevUi(st);
   updateCircularAlert(st);
   updateConfidenceBall(st);

@@ -557,6 +557,33 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   has_longitudinal = car_ctx.has_longitudinal_control
   alpha_long_available = car_ctx.alpha_long_available
   has_icbm = car_ctx.has_icbm
+
+  # Onroad navigation instruction card (BIG UI navigation_card.py). carrot_man
+  # assembles NavInstructionState into a JSON param; the web card reads the same
+  # state every payload. NavDestination is the route-existence gate.
+  nav_card: dict[str, Any] = {
+    "enabled": car_ctx.navigation_card_enabled,
+    "valid": False,
+    "collapsed": False,
+    "instruction": None,
+  }
+  try:
+    if p is not None:
+      raw_instruction = p.get("NavInstructionState")
+      if isinstance(raw_instruction, (bytes, str)):
+        raw_instruction = raw_instruction.decode("utf-8", "replace") if isinstance(raw_instruction, bytes) else raw_instruction
+        import json as _json
+        parsed = _json.loads(raw_instruction) if raw_instruction else None
+      else:
+        parsed = raw_instruction
+      if isinstance(parsed, dict) and parsed:
+        nav_card["instruction"] = parsed
+        nav_card["valid"] = True
+      nav_card["valid"] = nav_card["valid"] and p.get("NavDestination") is not None
+      nav_card["collapsed"] = p.get_bool("NavInstructionCollapsed")
+  except Exception:
+    pass
+
   icbm_available = car_ctx.icbm_available
   pcm_cruise = car_ctx.pcm_cruise
   torque_control_allowed = car_ctx.torque_control_allowed
@@ -1059,6 +1086,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "developer_sidebar": car_ctx.developer_sidebar,
     "developer_sidebar_metrics": list(car_ctx.developer_sidebar_metrics),
     "navigation_card_enabled": car_ctx.navigation_card_enabled,
+    "nav_card": nav_card,
     "conditional_experimental": car_ctx.conditional_experimental,
     "speed_limit_changed_alert": car_ctx.speed_limit_changed_alert,
     "a_ego": float(cs.aEgo) if cs.aEgo == cs.aEgo else 0.0,

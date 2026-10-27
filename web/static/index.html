@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>openpilot</title>
   <link rel="icon" href="/static/favicon.svg?v=2" type="image/svg+xml" />
-  <link rel="stylesheet" href="/static/css/opui.css?v=140" />
+  <link rel="stylesheet" href="/static/css/opui.css?v=141" />
 </head>
 <body>
   <div id="bootstrap-banner" class="opui-bootstrap-banner" hidden></div>
@@ -139,6 +139,26 @@
         <div id="hud-carrot-nav" class="opui-hud-carrot" hidden></div>
         <div id="hud-scc-v" class="opui-hud-scc" hidden>SCC-V</div>
         <div id="hud-scc-m" class="opui-hud-scc opui-hud-scc--map" hidden>SCC-M</div>
+        <div id="hud-ce-badge" class="opui-ce-badge" hidden>CEM</div>
+        <div id="hud-signal-ring" class="opui-signal-ring" hidden><span></span></div>
+        <div id="hud-stop-sign" class="opui-stop-sign" hidden>
+          <div class="opui-stop-sign-body">STOP</div>
+          <div id="hud-stop-distance" class="opui-stop-distance" hidden></div>
+        </div>
+        <div id="hud-sl-sources" class="opui-sl-sources" hidden></div>
+        <div id="hud-navcard" class="opui-navcard" hidden>
+          <img id="hud-navcard-icon" class="opui-navcard-icon" alt="" />
+          <div class="opui-navcard-text">
+            <div id="hud-navcard-dist" class="opui-navcard-dist"></div>
+            <div id="hud-navcard-primary" class="opui-navcard-primary"></div>
+          </div>
+          <div id="hud-navcard-then" class="opui-navcard-then" hidden>
+            <img id="hud-navcard-next-icon" alt="" /><span>THEN</span>
+          </div>
+        </div>
+        <button type="button" id="hud-personality" class="opui-personality-btn" hidden>
+          <span id="hud-personality-label" class="opui-personality-label">STD</span>
+        </button>
         <div id="hud-rocket" class="opui-rocket" hidden>
           <div class="opui-rocket__up"></div>
           <div class="opui-rocket__down"></div>
@@ -353,6 +373,6 @@
     <label class="opui-dev-row"><span id="dev-label-speed">Speed</span> <input type="range" id="dev-speed" min="0" max="150" value="72" /> <span id="dev-speed-val">72</span></label>
     </div>
   </aside>
-  <script type="module" src="/static/js/app.js?v=134"></script>
+  <script type="module" src="/static/js/app.js?v=135"></script>
 </body>
 </html>

@@ -184,6 +184,14 @@ def dispatch_http(method: str, path: str, body: dict[str, Any] | None = None) ->
       from webui.server.bridge.following_profile_api import apply_following_profile
       return apply_following_profile(body)
 
+    if method == "GET" and clean_path == "/api/opui/navcard":
+      from webui.server.bridge.navcard_api import navcard_snapshot
+      return navcard_snapshot()
+
+    if method == "POST" and clean_path == "/api/opui/navcard/cancel":
+      from webui.server.bridge.navcard_api import cancel_navigation
+      return cancel_navigation()
+
     if method == "GET" and clean_path == "/api/opui/display/brightness":
       return snapshot_brightness()
 
