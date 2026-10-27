@@ -1775,6 +1775,7 @@ function renderWidget(w, panelData) {
 
   if (kind === "custom") {
     if (w.custom === "ssh_keys") return renderSshKeysBlock();
+    if (w.custom === "params_backup") return renderParamsBackupRow();
     if (w.custom === "chestnut_status") return renderChestnutStatusRow();
     if (w.custom === "device_language") return renderLanguageRow();
     if (w.custom === "stream_headless_mode") return renderStreamHeadlessModeRow(w);
@@ -2459,6 +2460,91 @@ function renderDualButtonRow(w) {
 
   if (lBtn) row.appendChild(lBtn);
   if (rBtn) row.appendChild(rBtn);
+  return row;
+}
+
+function renderParamsBackupRow() {
+  const row = document.createElement("div");
+  row.className = "opui-sp-row opui-sp-row--stacked";
+  row.dataset.custom = "params_backup";
+
+  const text = document.createElement("div");
+  text.className = "opui-sp-row-text";
+  text.innerHTML = `
+    <div class="opui-sp-row-title">${escapeHtml(t("Settings Backup"))}</div>
+    <div class="opui-sp-row-desc">${escapeHtml(t("Export every setting the web UI can edit to a JSON file, or restore a previous export. Restore is offroad-only and skips unknown or locked params."))}</div>`;
+
+  const btnGroup = document.createElement("div");
+  btnGroup.className = "opui-multi-btn-group";
+
+  const exportBtn = document.createElement("button");
+  exportBtn.type = "button";
+  exportBtn.className = "opui-btn";
+  exportBtn.textContent = t("Export");
+  exportBtn.addEventListener("click", async () => {
+    exportBtn.disabled = true;
+    try {
+      const res = await apiGet("/api/opui/params/backup");
+      if (!res.ok) {
+        toast(res.error || t("Failed"));
+        return;
+      }
+      const blob = new Blob([JSON.stringify(res, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `opui-settings-backup-${res.created_at?.replace(/[:T]/g, "-") || Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast(`${res.count} ${t("params backed up")}`);
+    } finally {
+      exportBtn.disabled = false;
+    }
+  });
+
+  const importBtn = document.createElement("button");
+  importBtn.type = "button";
+  importBtn.className = "opui-btn opui-btn--action";
+  importBtn.textContent = t("Restore");
+  importBtn.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch {
+        toast(t("Invalid backup file"));
+        return;
+      }
+      if (!(parsed?.ok && parsed.snapshot) && !parsed?.snapshot) {
+        toast(t("Invalid backup file"));
+        return;
+      }
+      if (!(await showConfirm({
+        message: t("Overwrite current settings with this backup? The device must be offroad."),
+        confirmText: t("Restore"),
+      }))) return;
+      importBtn.disabled = true;
+      try {
+        const res = await apiPost("/api/opui/params/backup/restore", { snapshot: parsed.snapshot });
+        if (!res.ok) {
+          toast(res.error || t("Failed"));
+          return;
+        }
+        toast(`${res.restored} ${t("params restored")}`);
+      } finally {
+        importBtn.disabled = false;
+      }
+    });
+    input.click();
+  });
+
+  btnGroup.append(exportBtn, importBtn);
+  row.append(text, btnGroup);
   return row;
 }
 

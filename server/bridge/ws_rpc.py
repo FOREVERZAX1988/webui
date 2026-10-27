@@ -192,6 +192,14 @@ def dispatch_http(method: str, path: str, body: dict[str, Any] | None = None) ->
       from webui.server.bridge.navcard_api import cancel_navigation
       return cancel_navigation()
 
+    if method == "GET" and clean_path == "/api/opui/params/backup":
+      from webui.server.bridge.params_backup_api import backup_params
+      return backup_params()
+
+    if method == "POST" and clean_path == "/api/opui/params/backup/restore":
+      from webui.server.bridge.params_backup_api import restore_params
+      return restore_params(body.get("snapshot"))
+
     if method == "GET" and clean_path == "/api/opui/display/brightness":
       return snapshot_brightness()
 

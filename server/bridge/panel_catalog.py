@@ -545,6 +545,7 @@ PANELS: list[dict[str, Any]] = [
        "desc": "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."},
       {"type": "bool", "param": "SshEnabled", "label": "Enable SSH"},
       {"type": "custom", "custom": "ssh_keys", "label": "SSH Keys"},
+      {"type": "custom", "custom": "params_backup", "label": "Settings Backup"},
       {"type": "bool", "param": "JoystickDebugMode", "label": "Joystick Debug Mode",
        "offroad_only": True, "capability": "not_release"},
       {"type": "bool", "param": "LongitudinalManeuverMode", "label": "Longitudinal Maneuver Mode",
