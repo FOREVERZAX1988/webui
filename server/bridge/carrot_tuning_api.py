@@ -85,6 +85,8 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "VehicleNaviCanControl": ("int", 0),
   "VehicleNaviSchoolZoneControl": ("bool", 0),
   "VehicleSpeedCameraControlMode": ("int", 1),
+  "VehicleNaviSectionAvgControl": ("bool", 0),
+  "VehicleNaviSectionAvgMargin": ("int", 0),
   "LatSuspendAngleDeg": ("int", 300),
   "ClusterNaviMapTheme": ("int", 1),
   "ClusterNaviMapType": ("int", 0),

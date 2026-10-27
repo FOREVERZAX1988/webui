@@ -176,6 +176,14 @@ def dispatch_http(method: str, path: str, body: dict[str, Any] | None = None) ->
     if method == "POST" and clean_path == "/api/opui/params/batch":
       return batch_get(body.get("keys", []))
 
+    if method == "GET" and clean_path == "/api/opui/following-profile":
+      from webui.server.bridge.following_profile_api import snapshot_following_profile
+      return snapshot_following_profile()
+
+    if method == "PUT" and clean_path == "/api/opui/following-profile":
+      from webui.server.bridge.following_profile_api import apply_following_profile
+      return apply_following_profile(body)
+
     if method == "GET" and clean_path == "/api/opui/display/brightness":
       return snapshot_brightness()
 

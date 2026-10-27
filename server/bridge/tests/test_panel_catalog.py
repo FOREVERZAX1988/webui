@@ -18,6 +18,8 @@ from webui.server.bridge.panel_catalog import (CARROT_TUNING_HIDDEN_WITH_READERS
 # in this tree consumes (see CARROT_TUNING_UNAVAILABLE for the reasons), plus the handful
 # that do have a reader but no widget that could honestly drive them.
 _PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE) | set(CARROT_TUNING_HIDDEN_WITH_READERS)
+# Carrot keys exposed outside the navigation__carrot_tuning tree. Each needs a home panel.
+_PANEL_EXCLUDED |= {"CustomSR"}  # exposed as "Custom Steer Ratio" in the steering panel
 
 
 def _repo_config_py() -> str:

@@ -1551,6 +1551,10 @@ export async function renderPanel(panelId, container, titleEl, options = {}) {
     await renderEgpuPanel(container, data);
     return;
   }
+  if (data.custom === "following_profile") {
+    await renderFollowingProfilePanel(container, data);
+    return;
+  }
 
   renderGenericPanel(container, data, panelId);
   updateDisplayDependencies(data);
@@ -5587,6 +5591,72 @@ function createSunnylinkToggleRow(w, rightValue, disabled, slStatus) {
     row.appendChild(dongle);
   }
   return row;
+}
+
+async function renderFollowingProfilePanel(container, data) {
+  const gen = beginPanelRender();
+  container.innerHTML = "";
+  const fp = await apiGet("/api/opui/following-profile");
+  if (panelRenderStale(gen)) return;
+  if (!fp.ok) {
+    const errRow = document.createElement("div");
+    errRow.className = "opui-sp-row";
+    errRow.textContent = fp.error || t("Failed");
+    container.appendChild(errRow);
+    return;
+  }
+
+  const enabledRow = createSpToggle({
+    param: "LongitudinalFollowingProfileEnabled",
+    label: t("Custom Following Profiles"),
+    desc: t("Replace the single following distance per personality with a speed-dependent profile. The follow time is interpolated over speed, so the gap can be shorter in town and longer on the highway."),
+    value: fp.enabled ? "1" : "0",
+    stacked: false,
+  }, {}, globalState, paramHandlers);
+  container.appendChild(enabledRow);
+  appendSpSeparator(container);
+
+  const personalityLabels = { aggressive: t("Aggressive"), standard: t("Standard"), relaxed: t("Relaxed") };
+  const presetLabels = { close: t("Close"), medium: t("Medium"), far: t("Far") };
+  const rowTitles = {
+    aggressive: t("Aggressive personality preset"),
+    standard: t("Standard personality preset"),
+    relaxed: t("Relaxed personality preset"),
+  };
+  const presets = fp.presets || Object.keys(presetLabels);
+
+  for (const personality of Object.keys(personalityLabels)) {
+    const row = document.createElement("div");
+    row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
+    row.dataset.param = "LongitudinalFollowingProfile." + personality;
+
+    const text = document.createElement("div");
+    text.className = "opui-sp-row-text";
+    text.innerHTML = `<div class="opui-sp-row-title">${escapeHtml(rowTitles[personality])}</div>`;
+
+    const group = document.createElement("div");
+    group.className = "opui-multi-btn-group";
+    for (const preset of presets) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = presetLabels[preset] || preset;
+      btn.classList.toggle("selected", sel[personality] === preset);
+      btn.addEventListener("click", async () => {
+        const res = await apiPut("/api/opui/following-profile", { selection: { [personality]: preset } });
+        if (!res.ok) {
+          toast(res.error || t("Save failed"));
+          return;
+        }
+        sel[personality] = preset;
+        group.querySelectorAll("button").forEach((b) => b.classList.toggle("selected", b === btn));
+      });
+      group.appendChild(btn);
+    }
+    row.appendChild(text);
+    row.appendChild(group);
+    container.appendChild(row);
+    appendSpSeparator(container);
+  }
 }
 
 async function renderSunnylinkPanel(container, data) {
