@@ -537,8 +537,22 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     carrot_panel_side = int(p.get("CarrotPanelSide", return_default=True) or 0)
     carrot_panel_opacity = int(p.get("CarrotPanelOpacity", return_default=True) or 100)
     carrot_web_enabled = p.get_bool("CarrotWebEnabled")
+    # Conditional experimental mode: 0 off, 1 curves, 2 lead, 3 signal, 4 manual.
+    ce_status = int(p.get("CEStatus", return_default=True) or 0)
+    # Visual speed-limit detector result lives in the memory params store.
+    vision_limit_ms = 0.0
+    vision_limit_enabled = False
+    try:
+      from openpilot.common.params import Params as _Params
+      mem = _Params("/dev/shm/params")
+      vision_limit_ms = float(mem.get_float("VisionSpeedLimit"))
+      vision_limit_enabled = p.get_bool("VisionSpeedLimitEnabled")
+    except Exception:
+      pass
   except Exception:
-    pass
+    ce_status = 0
+    vision_limit_ms = 0.0
+    vision_limit_enabled = False
 
   has_longitudinal = car_ctx.has_longitudinal_control
   alpha_long_available = car_ctx.alpha_long_available
@@ -572,6 +586,21 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   sp_hud: dict[str, Any] = {
     "long_override": long_override,
     "cluster_speed": round(speed_cluster) if speed_cluster > 0 else None,
+    # Traffic-signal evidence observed by the planner: 0 unknown, 1 red, 2 green,
+    # 3 mixed. This fork reports the observed colour, not a planner action.
+    "signal_assist_action": 0,
+    "signal_suspended": False,
+    # Gear position, needed by the developer sidebar metrics.
+    "gear_shifter": "",
+    # Conditional experimental mode reason (see conditional_experimental_mode.py).
+    "ce_status": ce_status,
+    # Per-source speed-limit values for the source drawer.
+    "speed_limit_dashboard": 0,
+    "speed_limit_dashboard_valid": False,
+    "speed_limit_map": 0,
+    "speed_limit_map_valid": False,
+    "speed_limit_vision": 0,
+    "speed_limit_vision_valid": False,
   }
   try:
     # Live blind-spot / turn-signal state comes from carState. SelfdriveStateSP
@@ -583,6 +612,8 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       "blindspot_right": bool(getattr(cs, "rightBlindspot", False)),
       "turn_signal_left": bool(getattr(cs, "leftBlinker", False)),
       "turn_signal_right": bool(getattr(cs, "rightBlinker", False)),
+      # gearShifter lives on carState in this fork (not on carStateSP).
+      "gear_shifter": str(getattr(cs, "gearShifter", "") or ""),
     })
     if sm.valid.get("longitudinalPlanSP"):
       lp_sp = sm["longitudinalPlanSP"]
@@ -627,6 +658,9 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if e2e is not None:
         sp_hud["e2e_green_light"] = bool(getattr(e2e, "greenLightAlert", False))
         sp_hud["e2e_lead_depart"] = bool(getattr(e2e, "leadDepartAlert", False))
+      # Traffic-signal evidence for the signal HUD ring.
+      sp_hud["signal_assist_action"] = int(getattr(lp_sp, "signalAssistAction", 0) or 0)
+      sp_hud["signal_suspended"] = bool(getattr(lp_sp, "signalDetectionSuspended", False))
     if not sp_hud.get("road_name") and sm.valid.get("liveMapDataSP"):
       lmd = sm["liveMapDataSP"]
       sp_hud["road_name"] = getattr(lmd, "roadName", "") or ""
@@ -637,6 +671,16 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       if sp_hud["speed_limit_ahead_valid"]:
         sp_hud["speed_limit_ahead"] = round(float(getattr(lmd, "speedLimitAhead", 0) or 0) * conv)
         sp_hud["speed_limit_ahead_dist"] = float(getattr(lmd, "speedLimitAheadDistance", 0) or 0)
+      # Map-side limit (OSM). The drawer's "Map Data" row reads this; the merged
+      # resolver value may have come from carrot instead, so keep them separate.
+      if not sp_hud.get("speed_limit_map_valid"):
+        map_limit = float(getattr(lmd, "speedLimit", 0) or 0)
+        sp_hud["speed_limit_map"] = round(map_limit * conv)
+        sp_hud["speed_limit_map_valid"] = bool(getattr(lmd, "speedLimitValid", False)) and map_limit > 0
+    # Visual detector limit: only meaningful when the detector is enabled.
+    if vision_limit_enabled and vision_limit_ms > 0:
+      sp_hud["speed_limit_vision"] = round(vision_limit_ms * (3.6 if is_metric else 2.23694))
+      sp_hud["speed_limit_vision_valid"] = True
     # Carrot 7714 v2 lane-line edge bars (mirrors GUI CarrotLaneIndicators).
     if sm.valid.get("carStateSP"):
       cssp = sm["carStateSP"]
@@ -645,10 +689,16 @@ def build_state_from_sm(sm) -> dict[str, Any]:
         "left_blocked": bool(getattr(cssp, "carrotLeftLineBlocked", False)),
         "right_blocked": bool(getattr(cssp, "carrotRightLineBlocked", False)),
       }
+      # Per-source speed-limit values for the source drawer. The resolver only
+      # publishes the merged result, so each source has to be read at its origin:
+      # CAN sign (carStateSP), OSM map (liveMapDataSP), visual detector (memory param).
+      if not sp_hud.get("speed_limit_dashboard_valid"):
+        dash = float(getattr(cssp, "speedLimit", 0) or 0)
+        sp_hud["speed_limit_dashboard"] = round(dash * (3.6 if is_metric else 2.23694))
+        sp_hud["speed_limit_dashboard_valid"] = dash > 0
     # Carrot navigation HUD panel (mirrors GUI CarrotNavigationPanel reading carrotManSP).
     if sm.valid.get("carrotManSP"):
       cmn = sm["carrotManSP"]
-
       def _txt(name: str) -> str:
         return str(getattr(cmn, name, "") or "")
 
@@ -1000,6 +1050,17 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "turn_signals": turn_signals,
     "blindspot": blindspot,
     "rocket_fuel_enabled": rocket_fuel_enabled,
+    # StarPilot-era onroad widget gates, read once per frame by car_context.
+    "show_stopping_point": car_ctx.show_stopping_point,
+    "show_stopping_point_metrics": car_ctx.show_stopping_point_metrics,
+    "show_torque_bar": car_ctx.show_torque_bar,
+    "show_personality_button": car_ctx.show_personality_button,
+    "show_speed_limit_sources": car_ctx.show_speed_limit_sources,
+    "developer_sidebar": car_ctx.developer_sidebar,
+    "developer_sidebar_metrics": list(car_ctx.developer_sidebar_metrics),
+    "navigation_card_enabled": car_ctx.navigation_card_enabled,
+    "conditional_experimental": car_ctx.conditional_experimental,
+    "speed_limit_changed_alert": car_ctx.speed_limit_changed_alert,
     "a_ego": float(cs.aEgo) if cs.aEgo == cs.aEgo else 0.0,
     "developer_ui": developer_ui,
     "dev_ui": dev_ui,
