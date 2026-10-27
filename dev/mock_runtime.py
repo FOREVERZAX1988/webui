@@ -645,6 +645,44 @@ def install_openpilot_mocks(root: str) -> None:
   swaglog_mod = types.ModuleType("openpilot.common.swaglog")
   swaglog_mod.cloudlog = _CloudLog()
 
+  # jeepney is a Linux-only D-Bus binding and is not installable on the PC dev host.
+  # openpilot.sunnypilot.carrot.bluetooth.bluez imports it at module load, so stub the
+  # symbols it touches: the PC preview must still boot (bluetooth stays unavailable).
+  jeepney = types.ModuleType("jeepney")
+  jeepney_wrappers = types.ModuleType("jeepney.wrappers")
+  jeepney_io = types.ModuleType("jeepney.io")
+  jeepney_io_asyncio = types.ModuleType("jeepney.io.asyncio")
+
+  class _DBusAddress:
+    def __init__(self, object_path, bus_name=None):
+      self.object_path = object_path
+      self.bus_name = bus_name
+
+  class _HeaderFields:
+    member = "member"
+    sender = "sender"
+    interface = "interface"
+
+  class _MatchRule:
+    def __init__(self, **kwargs):
+      self.kwargs = kwargs
+
+  jeepney.DBusAddress = _DBusAddress
+  jeepney.HeaderFields = _HeaderFields
+  jeepney.MatchRule = _MatchRule
+  jeepney.new_method_call = lambda *a, **k: None
+  jeepney.new_method_return = lambda *a, **k: None
+  jeepney.new_error = lambda *a, **k: None
+  jeepney_wrappers.unwrap_msg = lambda msg: msg
+  jeepney_io.__path__ = []
+  jeepney_io_asyncio.open_dbus_router = lambda *a, **k: None
+  jeepney_io.asyncio = jeepney_io_asyncio
+
+  sys.modules["jeepney"] = jeepney
+  sys.modules["jeepney.wrappers"] = jeepney_wrappers
+  sys.modules["jeepney.io"] = jeepney_io
+  sys.modules["jeepney.io.asyncio"] = jeepney_io_asyncio
+
   sys.modules["openpilot"] = op
   sys.modules["openpilot.common"] = common
   sys.modules["openpilot.common.params"] = params_mod
@@ -652,6 +690,15 @@ def install_openpilot_mocks(root: str) -> None:
   op.common = common
   common.params = params_mod
   common.swaglog = swaglog_mod
+
+  # The fake "openpilot" package must still expose the real subpackages on disk
+  # (openpilot.cereal.log, openpilot.selfdrive.locationd.calibrationd,
+  # openpilot.sunnypilot.carrot.bluetooth, ...). Without __path__ Python refuses to
+  # resolve any submodule and the server dies on import.
+  real_openpilot = os.path.join(root, "openpilot")
+  if os.path.isdir(real_openpilot):
+    op.__path__ = [real_openpilot]
+  common.__path__ = [os.path.join(real_openpilot, "common")] if os.path.isdir(os.path.join(real_openpilot, "common")) else []
 
   if root not in sys.path:
     sys.path.insert(0, root)
