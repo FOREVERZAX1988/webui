@@ -1551,6 +1551,10 @@ export async function renderPanel(panelId, container, titleEl, options = {}) {
     await renderEgpuPanel(container, data);
     return;
   }
+  if (data.custom === "following_profile") {
+    await renderFollowingProfilePanel(container, data);
+    return;
+  }
 
   renderGenericPanel(container, data, panelId);
   updateDisplayDependencies(data);
@@ -1611,6 +1615,59 @@ function renderAlwaysOffroadRow(active) {
       toast(label);
       requestPanelRefresh();
     } else toast(res.error || "Failed");
+  });
+  return row;
+}
+
+function renderSafeModeRow(active) {
+  const row = document.createElement("div");
+  row.className = "opui-dual-row opui-dual-row--single";
+  const label = active ? t("Exit Safe Mode") : t("Enable Safe Mode");
+  row.innerHTML = `<button type="button" class="opui-dual-btn ${active ? "primary" : "danger"}">${escapeHtml(label)}</button>`;
+  row.querySelector("button")?.addEventListener("click", async () => {
+    if (globalState.engaged) {
+      toast(t("Disengage to Toggle Safe Mode"));
+      return;
+    }
+    const msg = active
+      ? t("Are you sure you want to exit Safe Mode? All settings will be restored.")
+      : t("Are you sure you want to enter Safe Mode? All current settings will be backed up and defaults restored.");
+    if (!(await showConfirm({ message: msg, confirmText: t("Confirm") }))) return;
+    const res = await apiPost("/api/opui/action/safe_mode", { enable: !active });
+    if (res.ok) {
+      deviceExtrasCache = { ...(deviceExtrasCache || {}), safe_mode: !active };
+      toast(label);
+      requestPanelRefresh();
+    } else toast(res.error || "Failed");
+  });
+  return row;
+}
+
+function renderJetlinkLinkRow() {
+  const row = document.createElement("div");
+  row.className = "opui-row opui-row--action";
+  row.innerHTML = `
+    <div class="opui-row-label">
+      <div class="opui-row-title">${escapeHtml(t("Jetlink"))}</div>
+      <div class="opui-row-desc">${escapeHtml(t("Connect an Android phone or Jetson as an accelerator for model inference."))}</div>
+    </div>
+    <div class="opui-row-value" id="jetlink-status">${escapeHtml(t("Checking..."))}</div>
+  `;
+  // Fetch jetlink status asynchronously
+  apiGet("/api/opui/jetlink/status").then((res) => {
+    const el = row.querySelector("#jetlink-status");
+    if (el) {
+      if (res.ok && res.status) {
+        const mode = res.status.mode || "none";
+        const connected = res.status.connected ? t("Connected") : t("Disconnected");
+        el.textContent = `${mode} — ${connected}`;
+      } else {
+        el.textContent = t("Not available");
+      }
+    }
+  }).catch(() => {
+    const el = row.querySelector("#jetlink-status");
+    if (el) el.textContent = t("Not available");
   });
   return row;
 }
@@ -1771,6 +1828,7 @@ function renderWidget(w, panelData) {
 
   if (kind === "custom") {
     if (w.custom === "ssh_keys") return renderSshKeysBlock();
+    if (w.custom === "params_backup") return renderParamsBackupRow();
     if (w.custom === "chestnut_status") return renderChestnutStatusRow();
     if (w.custom === "device_language") return renderLanguageRow();
     if (w.custom === "stream_headless_mode") return renderStreamHeadlessModeRow(w);
@@ -1781,6 +1839,11 @@ function renderWidget(w, panelData) {
       const active = !!deviceExtrasCache?.offroad_mode;
       return renderAlwaysOffroadRow(active);
     }
+    if (w.custom === "safe_mode") {
+      const active = !!deviceExtrasCache?.safe_mode;
+      return renderSafeModeRow(active);
+    }
+    if (w.custom === "jetlink_link") return renderJetlinkLinkRow();
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
     if (w.custom === "device_calibration") return null;
@@ -2455,6 +2518,91 @@ function renderDualButtonRow(w) {
 
   if (lBtn) row.appendChild(lBtn);
   if (rBtn) row.appendChild(rBtn);
+  return row;
+}
+
+function renderParamsBackupRow() {
+  const row = document.createElement("div");
+  row.className = "opui-sp-row opui-sp-row--stacked";
+  row.dataset.custom = "params_backup";
+
+  const text = document.createElement("div");
+  text.className = "opui-sp-row-text";
+  text.innerHTML = `
+    <div class="opui-sp-row-title">${escapeHtml(t("Settings Backup"))}</div>
+    <div class="opui-sp-row-desc">${escapeHtml(t("Export every setting the web UI can edit to a JSON file, or restore a previous export. Restore is offroad-only and skips unknown or locked params."))}</div>`;
+
+  const btnGroup = document.createElement("div");
+  btnGroup.className = "opui-multi-btn-group";
+
+  const exportBtn = document.createElement("button");
+  exportBtn.type = "button";
+  exportBtn.className = "opui-btn";
+  exportBtn.textContent = t("Export");
+  exportBtn.addEventListener("click", async () => {
+    exportBtn.disabled = true;
+    try {
+      const res = await apiGet("/api/opui/params/backup");
+      if (!res.ok) {
+        toast(res.error || t("Failed"));
+        return;
+      }
+      const blob = new Blob([JSON.stringify(res, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `opui-settings-backup-${res.created_at?.replace(/[:T]/g, "-") || Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast(`${res.count} ${t("params backed up")}`);
+    } finally {
+      exportBtn.disabled = false;
+    }
+  });
+
+  const importBtn = document.createElement("button");
+  importBtn.type = "button";
+  importBtn.className = "opui-btn opui-btn--action";
+  importBtn.textContent = t("Restore");
+  importBtn.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch {
+        toast(t("Invalid backup file"));
+        return;
+      }
+      if (!(parsed?.ok && parsed.snapshot) && !parsed?.snapshot) {
+        toast(t("Invalid backup file"));
+        return;
+      }
+      if (!(await showConfirm({
+        message: t("Overwrite current settings with this backup? The device must be offroad."),
+        confirmText: t("Restore"),
+      }))) return;
+      importBtn.disabled = true;
+      try {
+        const res = await apiPost("/api/opui/params/backup/restore", { snapshot: parsed.snapshot });
+        if (!res.ok) {
+          toast(res.error || t("Failed"));
+          return;
+        }
+        toast(`${res.restored} ${t("params restored")}`);
+      } finally {
+        importBtn.disabled = false;
+      }
+    });
+    input.click();
+  });
+
+  btnGroup.append(exportBtn, importBtn);
+  row.append(text, btnGroup);
   return row;
 }
 
@@ -5590,6 +5738,72 @@ function createSunnylinkToggleRow(w, rightValue, disabled, slStatus) {
     row.appendChild(dongle);
   }
   return row;
+}
+
+async function renderFollowingProfilePanel(container, data) {
+  const gen = beginPanelRender();
+  container.innerHTML = "";
+  const fp = await apiGet("/api/opui/following-profile");
+  if (panelRenderStale(gen)) return;
+  if (!fp.ok) {
+    const errRow = document.createElement("div");
+    errRow.className = "opui-sp-row";
+    errRow.textContent = fp.error || t("Failed");
+    container.appendChild(errRow);
+    return;
+  }
+
+  const enabledRow = createSpToggle({
+    param: "LongitudinalFollowingProfileEnabled",
+    label: t("Custom Following Profiles"),
+    desc: t("Replace the single following distance per personality with a speed-dependent profile. The follow time is interpolated over speed, so the gap can be shorter in town and longer on the highway."),
+    value: fp.enabled ? "1" : "0",
+    stacked: false,
+  }, {}, globalState, paramHandlers);
+  container.appendChild(enabledRow);
+  appendSpSeparator(container);
+
+  const personalityLabels = { aggressive: t("Aggressive"), standard: t("Standard"), relaxed: t("Relaxed") };
+  const presetLabels = { close: t("Close"), medium: t("Medium"), far: t("Far") };
+  const rowTitles = {
+    aggressive: t("Aggressive personality preset"),
+    standard: t("Standard personality preset"),
+    relaxed: t("Relaxed personality preset"),
+  };
+  const presets = fp.presets || Object.keys(presetLabels);
+
+  for (const personality of Object.keys(personalityLabels)) {
+    const row = document.createElement("div");
+    row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
+    row.dataset.param = "LongitudinalFollowingProfile." + personality;
+
+    const text = document.createElement("div");
+    text.className = "opui-sp-row-text";
+    text.innerHTML = `<div class="opui-sp-row-title">${escapeHtml(rowTitles[personality])}</div>`;
+
+    const group = document.createElement("div");
+    group.className = "opui-multi-btn-group";
+    for (const preset of presets) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = presetLabels[preset] || preset;
+      btn.classList.toggle("selected", sel[personality] === preset);
+      btn.addEventListener("click", async () => {
+        const res = await apiPut("/api/opui/following-profile", { selection: { [personality]: preset } });
+        if (!res.ok) {
+          toast(res.error || t("Save failed"));
+          return;
+        }
+        sel[personality] = preset;
+        group.querySelectorAll("button").forEach((b) => b.classList.toggle("selected", b === btn));
+      });
+      group.appendChild(btn);
+    }
+    row.appendChild(text);
+    row.appendChild(group);
+    container.appendChild(row);
+    appendSpSeparator(container);
+  }
 }
 
 async function renderSunnylinkPanel(container, data) {

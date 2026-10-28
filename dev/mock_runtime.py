@@ -9,6 +9,7 @@ from __future__ import annotations
 import enum
 import json
 import os
+import time
 import types
 from typing import Any
 
@@ -443,7 +444,17 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
       "scc_vision_enabled": s.get("scc_vision_enabled", False),
       "scc_vision_active": s.get("scc_vision_active", False),
       "scc_map_enabled": s.get("scc_map_enabled", False),
-      "scc_map_active": s.get("scc_map_active", False),
+      "speed_limit_scc_map_active": s.get("scc_map_active", False),
+      "speed_limit_dashboard": s.get("speed_limit", 0),
+      "speed_limit_dashboard_valid": bool(s.get("speed_limit")),
+      "speed_limit_map": s.get("speed_limit", 0),
+      "speed_limit_map_valid": bool(s.get("speed_limit")),
+      "speed_limit_vision": 0,
+      "speed_limit_vision_valid": False,
+      "signal_assist_action": s.get("signal_assist_action", 0),
+      "signal_suspended": s.get("signal_suspended", False),
+      "gear_shifter": s.get("gear_shifter", ""),
+      "ce_status": s.get("ce_status", 0),
       "e2e_green_light": s.get("e2e_green_light", False),
       "e2e_lead_depart": s.get("e2e_lead_depart", False),
       "carrot_nav": _mock_carrot_nav(s) if s["started"] and s.get("carrot_nav_demo", True) else None,
@@ -498,6 +509,31 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "turn_signals": True,
     "blindspot": True,
     "rocket_fuel_enabled": True,
+    "show_stopping_point": False,
+    "show_stopping_point_metrics": False,
+    "show_torque_bar": False,
+    "show_personality_button": True,
+    "show_speed_limit_sources": False,
+    "developer_sidebar": False,
+    "developer_sidebar_metrics": [0, 0, 0, 0, 0, 0, 0],
+    "navigation_card_enabled": True,
+    "nav_card": {
+      "enabled": True,
+      "valid": True,
+      "collapsed": False,
+      "instruction": {
+        "valid": True,
+        "maneuverPrimaryText": "Mock Ave",
+        "maneuverSecondaryText": "",
+        "maneuverDistance": 320.0,
+        "maneuverType": "turn",
+        "maneuverModifier": "right",
+        "nextManeuverType": "",
+        "nextManeuverModifier": "",
+      },
+    },
+    "conditional_experimental": False,
+    "speed_limit_changed_alert": False,
     "a_ego": -0.8,
     "dm_arc": {
       "visible": True,
@@ -522,6 +558,39 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "quiet_mode": _mock_quiet_mode(),
     "is_body": bool(s.get("is_body", False)),
     "carrot_web_enabled": bool(s.get("carrot_web_enabled", _mock_carrot_web_enabled())),
+    "pearl_eyes": bool(s.get("pearl_eyes", False)),
+    "dm_state": {
+      "valid": True,
+      "faceDetected": True,
+      "isDistracted": False,
+      "lockout": False,
+      "alwaysOnLockout": False,
+      "isRHD": False,
+      "cameraUnavailable": False,
+      "activePolicy": "vision",
+    } if s["started"] else None,
+    "driver_state": {
+      "valid": True,
+      "frameId": int(time.monotonic() * 20),
+      "leftDriverData": {
+        "faceOrientation": [0.1, 0.05, 0.0],
+        "faceOrientationStd": [0.1, 0.1, 0.1],
+        "sunglassesProb": 0.0,
+        "leftEyeProb": 0.9,
+        "rightEyeProb": 0.9,
+        "leftBlinkProb": 0.0,
+        "rightBlinkProb": 0.0,
+      },
+      "rightDriverData": {
+        "faceOrientation": [0.1, 0.05, 0.0],
+        "faceOrientationStd": [0.1, 0.1, 0.1],
+        "sunglassesProb": 0.0,
+        "leftEyeProb": 0.9,
+        "rightEyeProb": 0.9,
+        "leftBlinkProb": 0.0,
+        "rightBlinkProb": 0.0,
+      },
+    } if s["started"] else None,
   }
 
 
@@ -645,6 +714,44 @@ def install_openpilot_mocks(root: str) -> None:
   swaglog_mod = types.ModuleType("openpilot.common.swaglog")
   swaglog_mod.cloudlog = _CloudLog()
 
+  # jeepney is a Linux-only D-Bus binding and is not installable on the PC dev host.
+  # openpilot.sunnypilot.carrot.bluetooth.bluez imports it at module load, so stub the
+  # symbols it touches: the PC preview must still boot (bluetooth stays unavailable).
+  jeepney = types.ModuleType("jeepney")
+  jeepney_wrappers = types.ModuleType("jeepney.wrappers")
+  jeepney_io = types.ModuleType("jeepney.io")
+  jeepney_io_asyncio = types.ModuleType("jeepney.io.asyncio")
+
+  class _DBusAddress:
+    def __init__(self, object_path, bus_name=None):
+      self.object_path = object_path
+      self.bus_name = bus_name
+
+  class _HeaderFields:
+    member = "member"
+    sender = "sender"
+    interface = "interface"
+
+  class _MatchRule:
+    def __init__(self, **kwargs):
+      self.kwargs = kwargs
+
+  jeepney.DBusAddress = _DBusAddress
+  jeepney.HeaderFields = _HeaderFields
+  jeepney.MatchRule = _MatchRule
+  jeepney.new_method_call = lambda *a, **k: None
+  jeepney.new_method_return = lambda *a, **k: None
+  jeepney.new_error = lambda *a, **k: None
+  jeepney_wrappers.unwrap_msg = lambda msg: msg
+  jeepney_io.__path__ = []
+  jeepney_io_asyncio.open_dbus_router = lambda *a, **k: None
+  jeepney_io.asyncio = jeepney_io_asyncio
+
+  sys.modules["jeepney"] = jeepney
+  sys.modules["jeepney.wrappers"] = jeepney_wrappers
+  sys.modules["jeepney.io"] = jeepney_io
+  sys.modules["jeepney.io.asyncio"] = jeepney_io_asyncio
+
   sys.modules["openpilot"] = op
   sys.modules["openpilot.common"] = common
   sys.modules["openpilot.common.params"] = params_mod
@@ -652,6 +759,15 @@ def install_openpilot_mocks(root: str) -> None:
   op.common = common
   common.params = params_mod
   common.swaglog = swaglog_mod
+
+  # The fake "openpilot" package must still expose the real subpackages on disk
+  # (openpilot.cereal.log, openpilot.selfdrive.locationd.calibrationd,
+  # openpilot.sunnypilot.carrot.bluetooth, ...). Without __path__ Python refuses to
+  # resolve any submodule and the server dies on import.
+  real_openpilot = os.path.join(root, "openpilot")
+  if os.path.isdir(real_openpilot):
+    op.__path__ = [real_openpilot]
+  common.__path__ = [os.path.join(real_openpilot, "common")] if os.path.isdir(os.path.join(real_openpilot, "common")) else []
 
   if root not in sys.path:
     sys.path.insert(0, root)

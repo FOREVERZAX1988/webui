@@ -6,7 +6,6 @@ import ast
 import os
 import re
 import unittest
-from pathlib import Path
 from unittest import mock
 
 from webui.server.bridge import carrot_tuning_api
@@ -19,6 +18,8 @@ from webui.server.bridge.panel_catalog import (CARROT_TUNING_HIDDEN_WITH_READERS
 # in this tree consumes (see CARROT_TUNING_UNAVAILABLE for the reasons), plus the handful
 # that do have a reader but no widget that could honestly drive them.
 _PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE) | set(CARROT_TUNING_HIDDEN_WITH_READERS)
+# Carrot keys exposed outside the navigation__carrot_tuning tree. Each needs a home panel.
+_PANEL_EXCLUDED |= {"CustomSR"}  # exposed as "Custom Steer Ratio" in the steering panel
 
 
 def _repo_config_py() -> str:
@@ -33,31 +34,10 @@ def _repo_config_py() -> str:
   return os.path.join(root, "openpilot", "sunnypilot", "carrot", "config.py")
 
 
-_CONFIG_RELPATHS = (
-  Path("sunnypilot") / "carrot" / "config.py",          # nested: <repo>/openpilot/sunnypilot/carrot/config.py
-  Path("openpilot") / "sunnypilot" / "carrot" / "config.py",  # flat: <repo>/sunnypilot/carrot/config.py
-)
-
-
-def _find_config_py() -> Path:
-  """Locate sunnypilot/carrot/config.py from the checkout this test lives in.
-
-  The path must be derived from the repo, never hardcoded to a developer machine
-  (the previous literal pointed at a Windows dev checkout, so these tests could
-  never run on the device).
-  """
-  for base in Path(__file__).resolve().parents:
-    for rel in _CONFIG_RELPATHS:
-      candidate = base / rel
-      if candidate.is_file():
-        return candidate
-  raise FileNotFoundError(
-    f"sunnypilot/carrot/config.py not found above {Path(__file__).resolve()}")
-
-
 def _config_nav_param_keys() -> set[str]:
   """Parse _DEFAULT_NAV_PARAMS keys from config.py without importing openpilot."""
-  src = _find_config_py().read_text(encoding="utf-8")
+  with open(_repo_config_py(), encoding="utf-8") as f:
+    src = f.read()
   for node in ast.walk(ast.parse(src)):
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) \
        and node.target.id == "_DEFAULT_NAV_PARAMS":

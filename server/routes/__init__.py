@@ -77,6 +77,25 @@ from webui.server.bridge.bluetooth_api import api_bluetooth_status, api_bluetoot
 from webui.server.bridge.ws_handler import ws_opui_handler
 
 
+async def api_jetlink_status(_request: web.Request) -> web.Response:
+  """Return jetlink accelerator link status."""
+  try:
+    from openpilot.sunnypilot import jetlink_adapter
+    status = jetlink_adapter.status()
+    if status is None:
+      return json_response({"ok": True, "status": {"mode": "none", "connected": False, "enabled": False}})
+    return json_response({
+      "ok": True,
+      "status": {
+        "mode": getattr(status, "mode", "unknown"),
+        "connected": getattr(status, "connected", False),
+        "enabled": getattr(status, "enabled", False),
+      }
+    })
+  except Exception as exc:
+    return json_response({"ok": False, "error": str(exc), "status": {"mode": "none", "connected": False, "enabled": False}})
+
+
 async def api_bootstrap(_request: web.Request) -> web.Response:
   if os.environ.get("WEBUI_DEV_PC") == "1":
     from webui.dev.agnos_sim import dev_bootstrap_blocked
@@ -150,6 +169,44 @@ async def api_params_batch(request: web.Request) -> web.Response:
   except Exception:
     return json_response({"ok": False, "error": "invalid json"}, status=400)
   return json_response(batch_get(keys))
+
+
+async def api_params_backup(request: web.Request) -> web.Response:
+  from webui.server.bridge.params_backup_api import backup_params
+  return json_response(backup_params())
+
+
+async def api_params_backup_restore(request: web.Request) -> web.Response:
+  try:
+    body = await request.json()
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  from webui.server.bridge.params_backup_api import restore_params
+  return json_response(restore_params(body.get("snapshot")))
+
+
+async def api_navcard_get(request: web.Request) -> web.Response:
+  from webui.server.bridge.navcard_api import navcard_snapshot
+  return json_response(navcard_snapshot())
+
+
+async def api_navcard_cancel(request: web.Request) -> web.Response:
+  from webui.server.bridge.navcard_api import cancel_navigation
+  return json_response(cancel_navigation())
+
+
+async def api_following_profile_get(request: web.Request) -> web.Response:
+  from webui.server.bridge.following_profile_api import snapshot_following_profile
+  return json_response(snapshot_following_profile())
+
+
+async def api_following_profile_put(request: web.Request) -> web.Response:
+  try:
+    body = await request.json()
+  except Exception:
+    return json_response({"ok": False, "error": "invalid json"}, status=400)
+  from webui.server.bridge.following_profile_api import apply_following_profile
+  return json_response(apply_following_profile(body))
 
 
 async def api_action(request: web.Request) -> web.Response:
@@ -755,10 +812,17 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/i18n", api_i18n)
   app.router.add_get("/api/opui/panels", api_panels_schema)
   app.router.add_get("/api/opui/panels/{panel_id}", api_panel_get)
+  # Fixed segments must be registered before /api/opui/params/{key}.
+  app.router.add_get("/api/opui/params/backup", api_params_backup)
+  app.router.add_post("/api/opui/params/backup/restore", api_params_backup_restore)
   app.router.add_get("/api/opui/params/{key}", api_param_get)
   app.router.add_put("/api/opui/params/{key}", api_param_put)
   app.router.add_delete("/api/opui/params/{key}", api_param_delete)
   app.router.add_post("/api/opui/params/batch", api_params_batch)
+  app.router.add_get("/api/opui/navcard", api_navcard_get)
+  app.router.add_post("/api/opui/navcard/cancel", api_navcard_cancel)
+  app.router.add_get("/api/opui/following-profile", api_following_profile_get)
+  app.router.add_put("/api/opui/following-profile", api_following_profile_put)
   app.router.add_post("/api/opui/action/{action}", api_action)
   app.router.add_get("/api/opui/software", api_software)
   app.router.add_get("/api/opui/system/manager_error", api_manager_error)
@@ -841,6 +905,7 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)
   app.router.add_post("/api/opui/webrtc/offer", api_webrtc_offer)
   app.router.add_post("/api/opui/webrtc/notify", api_webrtc_notify)
+  app.router.add_get("/api/opui/jetlink/status", api_jetlink_status)
   app.router.add_get("/ws/opui", ws_opui_handler)
 
   # Legacy alias

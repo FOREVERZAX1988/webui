@@ -25,6 +25,9 @@ BRAND_WIDGETS: dict[str, list[dict[str, Any]]] = {
     {"type": "bool", "param": "ToyotaStopAndGoHack", "label": "Stop and Go Hack (Alpha)",
      "desc": "sunnypilot will allow some Toyota/Lexus cars to auto resume during stop and go traffic.",
      "confirm_enable_rich": True, "needs_cycle": True},
+    {"type": "bool", "param": "ToyotaTSS2Smooth", "label": "TSS2 Smooth Longitudinal (Alpha)",
+     "desc": "Enable smoother longitudinal control for TSS2 vehicles. Uses a custom speed-dependent integral gain curve for smoother traffic driving.",
+     "confirm_enable_rich": True, "needs_cycle": True},
   ],
   "tesla": [
     {"type": "bool", "param": "TeslaCoopSteering", "label": "Cooperative Steering (Beta)", "offroad_only": True},

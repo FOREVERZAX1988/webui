@@ -27,11 +27,12 @@ export const CAM = {
 };
 
 
-/** Matches openpilot onroad wide/road hysteresis (m/s). */
+/** Matches openpilot onroad wide/road hysteresis (m/s).
+ * Big UI: WIDE_CAM_MAX_SPEED=5.0, ROAD_CAM_MIN_SPEED=10.0 */
 
-const WIDE_MAX_MS = 10.0;
+const WIDE_MAX_MS = 5.0;
 
-const ROAD_MIN_MS = 15.0;
+const ROAD_MIN_MS = 10.0;
 
 
 const ICE = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
@@ -311,6 +312,8 @@ function pickRoadCamera(st) {
 
   if (manualCameraOverride && manualCamera) return manualCamera;
 
+  // Big UI: openpilotLongitudinalControl gates the wide-cam switch.
+  // WebUI: use experimental_mode as the equivalent gate (e2e uses wide cam).
   if (!st?.experimental_mode) return CAM.ROAD;
 
   const v = Number(st.speed_raw);

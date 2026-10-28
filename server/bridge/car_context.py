@@ -52,6 +52,20 @@ class WebuiCarContext:
   max_lateral_accel: float = 3.0
   is_body: bool = False
   car_platform_bundle: dict[str, Any] = field(default_factory=dict)
+  # StarPilot-era onroad widgets. Each gates a HUD element that Big UI renders
+  # (stopping point, torque arc, personality button, dev sidebar, speed-limit
+  # source drawer, navigation card).
+  show_stopping_point: bool = False
+  show_stopping_point_metrics: bool = False
+  show_torque_bar: bool = False
+  show_personality_button: bool = False
+  show_speed_limit_sources: bool = False
+  developer_sidebar: bool = False
+  developer_sidebar_metrics: list[int] = field(default_factory=list)
+  navigation_card_enabled: bool = True
+  conditional_experimental: bool = False
+  speed_limit_changed_alert: bool = False
+  pearl_eyes: bool = False
 
 
 _ctx = WebuiCarContext()
@@ -181,6 +195,22 @@ def refresh_car_context(sm: Any, started: bool) -> WebuiCarContext:
     ctx.blindspot = p.get_bool("BlindSpot")
     ctx.rocket_fuel_enabled = p.get_bool("RocketFuel")
     ctx.rainbow_path = p.get_bool("RainbowMode")
+    ctx.show_stopping_point = p.get_bool("ShowStoppingPoint")
+    ctx.show_stopping_point_metrics = p.get_bool("ShowStoppingPointMetrics")
+    ctx.show_torque_bar = p.get_bool("ShowTorqueBar")
+    ctx.show_personality_button = p.get_bool("ShowPersonalityButton")
+    ctx.show_speed_limit_sources = p.get_bool("ShowSpeedLimitSources")
+    ctx.developer_sidebar = p.get_bool("DeveloperSidebar")
+    try:
+      ctx.developer_sidebar_metrics = [
+        int(p.get(f"DeveloperSidebarMetric{i}", return_default=True) or 0) for i in range(1, 8)
+      ]
+    except Exception:
+      ctx.developer_sidebar_metrics = []
+    ctx.navigation_card_enabled = p.get_bool("NavigationCardEnabled")
+    ctx.conditional_experimental = p.get_bool("ConditionalExperimental")
+    ctx.speed_limit_changed_alert = p.get_bool("SpeedLimitChangedAlert")
+    ctx.pearl_eyes = p.get_bool("CarrotDMPearlEyes")
     ctx.enforce_torque_control = p.get_bool("EnforceTorqueControl")
     ctx.custom_torque_params = p.get_bool("CustomTorqueParams")
     ctx.torque_override_enabled = p.get_bool("TorqueParamsOverrideEnabled")

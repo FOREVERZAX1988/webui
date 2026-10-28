@@ -199,6 +199,7 @@ def device_extras() -> dict[str, Any]:
       "driver_view_enabled": driver_view_enabled,
       "onroad_preview": onroad_preview,
       "chestnut": chestnut_snapshot(),
+      "safe_mode": False,
     }
   try:
     from openpilot.common.params import Params
@@ -217,6 +218,7 @@ def device_extras() -> dict[str, Any]:
       "driver_view_enabled": p.get_bool("IsDriverViewEnabled"),
       "onroad_preview": p.get_bool("IsOnroadPreview"),
       "chestnut": chestnut_snapshot(),
+      "safe_mode": p.get_bool("SafeMode"),
     }
   except Exception as exc:
     return {"ok": False, "error": str(exc)}
