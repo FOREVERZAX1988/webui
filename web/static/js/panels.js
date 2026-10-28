@@ -1619,6 +1619,59 @@ function renderAlwaysOffroadRow(active) {
   return row;
 }
 
+function renderSafeModeRow(active) {
+  const row = document.createElement("div");
+  row.className = "opui-dual-row opui-dual-row--single";
+  const label = active ? t("Exit Safe Mode") : t("Enable Safe Mode");
+  row.innerHTML = `<button type="button" class="opui-dual-btn ${active ? "primary" : "danger"}">${escapeHtml(label)}</button>`;
+  row.querySelector("button")?.addEventListener("click", async () => {
+    if (globalState.engaged) {
+      toast(t("Disengage to Toggle Safe Mode"));
+      return;
+    }
+    const msg = active
+      ? t("Are you sure you want to exit Safe Mode? All settings will be restored.")
+      : t("Are you sure you want to enter Safe Mode? All current settings will be backed up and defaults restored.");
+    if (!(await showConfirm({ message: msg, confirmText: t("Confirm") }))) return;
+    const res = await apiPost("/api/opui/action/safe_mode", { enable: !active });
+    if (res.ok) {
+      deviceExtrasCache = { ...(deviceExtrasCache || {}), safe_mode: !active };
+      toast(label);
+      requestPanelRefresh();
+    } else toast(res.error || "Failed");
+  });
+  return row;
+}
+
+function renderJetlinkLinkRow() {
+  const row = document.createElement("div");
+  row.className = "opui-row opui-row--action";
+  row.innerHTML = `
+    <div class="opui-row-label">
+      <div class="opui-row-title">${escapeHtml(t("Jetlink"))}</div>
+      <div class="opui-row-desc">${escapeHtml(t("Connect an Android phone or Jetson as an accelerator for model inference."))}</div>
+    </div>
+    <div class="opui-row-value" id="jetlink-status">${escapeHtml(t("Checking..."))}</div>
+  `;
+  // Fetch jetlink status asynchronously
+  apiGet("/api/opui/jetlink/status").then((res) => {
+    const el = row.querySelector("#jetlink-status");
+    if (el) {
+      if (res.ok && res.status) {
+        const mode = res.status.mode || "none";
+        const connected = res.status.connected ? t("Connected") : t("Disconnected");
+        el.textContent = `${mode} — ${connected}`;
+      } else {
+        el.textContent = t("Not available");
+      }
+    }
+  }).catch(() => {
+    const el = row.querySelector("#jetlink-status");
+    if (el) el.textContent = t("Not available");
+  });
+  return row;
+}
+
 function prunePanelWidgets(widgets, panelData) {
   const kept = [];
   for (const w of widgets || []) {
@@ -1786,6 +1839,11 @@ function renderWidget(w, panelData) {
       const active = !!deviceExtrasCache?.offroad_mode;
       return renderAlwaysOffroadRow(active);
     }
+    if (w.custom === "safe_mode") {
+      const active = !!deviceExtrasCache?.safe_mode;
+      return renderSafeModeRow(active);
+    }
+    if (w.custom === "jetlink_link") return renderJetlinkLinkRow();
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
     if (w.custom === "device_calibration") return null;

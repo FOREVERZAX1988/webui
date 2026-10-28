@@ -9,6 +9,7 @@ from __future__ import annotations
 import enum
 import json
 import os
+import time
 import types
 from typing import Any
 
@@ -557,6 +558,39 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "quiet_mode": _mock_quiet_mode(),
     "is_body": bool(s.get("is_body", False)),
     "carrot_web_enabled": bool(s.get("carrot_web_enabled", _mock_carrot_web_enabled())),
+    "pearl_eyes": bool(s.get("pearl_eyes", False)),
+    "dm_state": {
+      "valid": True,
+      "faceDetected": True,
+      "isDistracted": False,
+      "lockout": False,
+      "alwaysOnLockout": False,
+      "isRHD": False,
+      "cameraUnavailable": False,
+      "activePolicy": "vision",
+    } if s["started"] else None,
+    "driver_state": {
+      "valid": True,
+      "frameId": int(time.monotonic() * 20),
+      "leftDriverData": {
+        "faceOrientation": [0.1, 0.05, 0.0],
+        "faceOrientationStd": [0.1, 0.1, 0.1],
+        "sunglassesProb": 0.0,
+        "leftEyeProb": 0.9,
+        "rightEyeProb": 0.9,
+        "leftBlinkProb": 0.0,
+        "rightBlinkProb": 0.0,
+      },
+      "rightDriverData": {
+        "faceOrientation": [0.1, 0.05, 0.0],
+        "faceOrientationStd": [0.1, 0.1, 0.1],
+        "sunglassesProb": 0.0,
+        "leftEyeProb": 0.9,
+        "rightEyeProb": 0.9,
+        "leftBlinkProb": 0.0,
+        "rightBlinkProb": 0.0,
+      },
+    } if s["started"] else None,
   }
 
 

@@ -246,6 +246,35 @@ def put_param(key: str, value: str, *, needs_cycle: bool = False) -> dict[str, A
       if not isinstance(exc, UnknownKeyName):
         raise
 
+    # ExperimentalMode goes through mode_state_runtime for SafeMode lock +
+    # road-state gate + read-back verification (mirrors big UI).
+    if key == "ExperimentalMode":
+      coerced = _coerce_write_value(ptype_enum, value)
+      try:
+        from openpilot.sunnypilot.common.mode_state_runtime import set_experimental_mode
+        result = set_experimental_mode(p, bool(coerced), acknowledged=True)
+        return {"ok": True, "key": key, "value": "1" if result["mode"] == "experimental" else "0"}
+      except ImportError:
+        # Fallback: direct param write if runtime not available
+        p.put_bool(key, coerced, block=True)
+        return {"ok": True, "key": key, "value": _read_param_value(p, key, ptype)}
+      except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+    # OffroadMode goes through set_always_offroad runtime (mirrors big UI).
+    if key == "OffroadMode":
+      coerced = _coerce_write_value(ptype_enum, value)
+      try:
+        from openpilot.sunnypilot.ui_state import set_always_offroad
+        set_always_offroad(p, bool(coerced))
+        return {"ok": True, "key": key, "value": "1" if coerced else "0"}
+      except ImportError:
+        # Fallback: direct param write
+        p.put_bool(key, coerced, block=True)
+        return {"ok": True, "key": key, "value": _read_param_value(p, key, ptype)}
+      except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
     if ptype_enum == ParamKeyType.BOOL:
       coerced = _coerce_write_value(ptype_enum, value)
       if key == "QuickBootToggle":

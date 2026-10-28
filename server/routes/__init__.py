@@ -77,6 +77,25 @@ from webui.server.bridge.bluetooth_api import api_bluetooth_status, api_bluetoot
 from webui.server.bridge.ws_handler import ws_opui_handler
 
 
+async def api_jetlink_status(_request: web.Request) -> web.Response:
+  """Return jetlink accelerator link status."""
+  try:
+    from openpilot.sunnypilot import jetlink_adapter
+    status = jetlink_adapter.status()
+    if status is None:
+      return json_response({"ok": True, "status": {"mode": "none", "connected": False, "enabled": False}})
+    return json_response({
+      "ok": True,
+      "status": {
+        "mode": getattr(status, "mode", "unknown"),
+        "connected": getattr(status, "connected", False),
+        "enabled": getattr(status, "enabled", False),
+      }
+    })
+  except Exception as exc:
+    return json_response({"ok": False, "error": str(exc), "status": {"mode": "none", "connected": False, "enabled": False}})
+
+
 async def api_bootstrap(_request: web.Request) -> web.Response:
   if os.environ.get("WEBUI_DEV_PC") == "1":
     from webui.dev.agnos_sim import dev_bootstrap_blocked
@@ -886,6 +905,7 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/webrtc/schema", api_webrtc_schema)
   app.router.add_post("/api/opui/webrtc/offer", api_webrtc_offer)
   app.router.add_post("/api/opui/webrtc/notify", api_webrtc_notify)
+  app.router.add_get("/api/opui/jetlink/status", api_jetlink_status)
   app.router.add_get("/ws/opui", ws_opui_handler)
 
   # Legacy alias

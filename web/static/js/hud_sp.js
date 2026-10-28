@@ -2,6 +2,7 @@
 
 import { tr } from "./i18n.js?v=3";
 import { AlertFadeAnimator } from "./fade_anim.js";
+import { drawPearlEyes, hidePearlEyes } from "./dm_pearl_eyes.js";
 
 const TURN_IMG = "/api/opui/assets/icons_mici/onroad/turn_signal_left.png";
 const BSM_IMG = "/api/opui/assets/icons_mici/onroad/blind_spot_left.png";
@@ -52,7 +53,15 @@ export function updateSpHud(st) {
 
   const roadName = st.road_name_toggle ? sp.road_name : "";
   updateRoadName(roadName);
-  drawDmArc(st.dm_arc, hideDm, Number(st.developer_ui) || 0);
+  const pearlEyes = !!st.pearl_eyes || !!(st.driver_face && st.driver_face.pearl_eyes);
+  if (pearlEyes) {
+    // Pearl eyes mode: canvas-rendered cartoon eyes, hide stock DM arc face
+    drawDmArc(st.dm_arc, hideDm, Number(st.developer_ui) || 0, true);
+    drawPearlEyes(st.dm_state, st.driver_state, st.engaged, hideDm);
+  } else {
+    hidePearlEyes();
+    drawDmArc(st.dm_arc, hideDm, Number(st.developer_ui) || 0, false);
+  }
 }
 
 function measureRoadText(text, fontSize = 46) {
@@ -475,7 +484,7 @@ const sccMapFade = new AlertFadeAnimator();
 let sccVisionActive = false;
 let sccMapActive = false;
 
-function drawDmArc(dm, hideDm, devUi) {
+function drawDmArc(dm, hideDm, devUi, pearlEyes) {
   const wrap = document.getElementById("dm-arc-wrap");
   const svg = document.getElementById("dm-arc");
   if (!wrap || !svg) return;
@@ -483,6 +492,7 @@ function drawDmArc(dm, hideDm, devUi) {
     wrap.hidden = true;
     wrap.classList.remove("is-clickable");
     dmFadeFiltered = hideDm ? 1 : 0;
+    hidePearlEyes();
     return;
   }
   wrap.hidden = false;
@@ -504,18 +514,29 @@ function drawDmArc(dm, hideDm, devUi) {
   const faceLine = svg.querySelector(".dm-arc-face");
   const faceImg = wrap.querySelector(".opui-dm-face");
   const outline = dm.face_outline || [];
-  if (faceImg) {
-    faceImg.hidden = false;
-    faceImg.style.opacity = String(faceAlpha);
-  }
-  if (faceLine) {
-    if (outline.length >= 2) {
-      faceLine.setAttribute("d", smoothSplinePath(outline, true));
-      faceLine.hidden = false;
-      faceLine.setAttribute("stroke-opacity", String(faceAlpha));
-    } else {
+
+  // Pearl eyes mode: hide face outline and face image (canvas handles rendering)
+  if (pearlEyes) {
+    if (faceImg) faceImg.hidden = true;
+    if (faceLine) {
       faceLine.setAttribute("d", "");
       faceLine.hidden = true;
+    }
+  } else {
+    // Stock mode: show face outline and face image
+    if (faceImg) {
+      faceImg.hidden = false;
+      faceImg.style.opacity = String(faceAlpha);
+    }
+    if (faceLine) {
+      if (outline.length >= 2) {
+        faceLine.setAttribute("d", smoothSplinePath(outline, true));
+        faceLine.hidden = false;
+        faceLine.setAttribute("stroke-opacity", String(faceAlpha));
+      } else {
+        faceLine.setAttribute("d", "");
+        faceLine.hidden = true;
+      }
     }
   }
 

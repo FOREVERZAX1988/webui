@@ -978,6 +978,10 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     radar_tracks = []
 
   driver_face = _driver_face(sm)
+  # Pearl eyes: replace face outline with pearl eyes style when enabled
+  pearl_eyes = car_ctx.pearl_eyes if hasattr(car_ctx, "pearl_eyes") else False
+  if pearl_eyes and driver_face:
+    driver_face["pearl_eyes"] = True
   confidence_ball = _confidence_ball(sm, ui_status, started)
 
   try:
@@ -1070,6 +1074,9 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "controls": {
       "lat_active": bool(ctrl.latActive) if hasattr(ctrl, "latActive") else None,
       "long_active": bool(ctrl.longActive) if hasattr(ctrl, "longActive") else None,
+      "lat_control_state": str(ctrl.lateralControlState.which()) if hasattr(ctrl, "lateralControlState") and ctrl.lateralControlState else "",
+      "curvature": float(ctrl.curvature) if hasattr(ctrl, "curvature") else 0.0,
+      "desired_curvature": float(ctrl.desiredCurvature) if hasattr(ctrl, "desiredCurvature") else 0.0,
     },
     "sp_hud": sp_hud,
     "dm_arc": dm_arc,
@@ -1090,6 +1097,9 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "conditional_experimental": car_ctx.conditional_experimental,
     "speed_limit_changed_alert": car_ctx.speed_limit_changed_alert,
     "a_ego": float(cs.aEgo) if cs.aEgo == cs.aEgo else 0.0,
+    "speed_ms": speed_ms,
+    "roll": float(sm["vehicleParameters"].roll) if sm.valid.get("vehicleParameters") else 0.0,
+    "max_lateral_accel": float(car_ctx.max_lateral_accel or 3.0),
     "developer_ui": developer_ui,
     "dev_ui": dev_ui,
     "recording_audio": recording_audio,
@@ -1114,6 +1124,9 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "can_start": bool(gate.get("can_start", True)),
     "alert_sound": alert_sound,
     "quiet_mode": quiet_mode,
+    "pearl_eyes": pearl_eyes,
+    "dm_state": _dm_state_payload(sm),
+    "driver_state": _driver_state_payload(sm),
   }
 
 
@@ -1157,6 +1170,58 @@ def _driver_face(sm: Any) -> dict[str, Any] | None:
 
 def _clamp(v: float, lo: float, hi: float) -> float:
   return max(lo, min(hi, v))
+
+
+def _dm_state_payload(sm: Any) -> dict[str, Any] | None:
+  """DriverMonitoringState payload for pearl eyes rendering."""
+  if not sm.valid.get("driverMonitoringState"):
+    return None
+  try:
+    dm = sm["driverMonitoringState"]
+    return {
+      "valid": True,
+      "faceDetected": bool(getattr(dm, "faceDetected", False)),
+      "isDistracted": bool(getattr(dm, "isDistracted", False)),
+      "lockout": bool(getattr(dm, "lockout", False)),
+      "alwaysOnLockout": bool(getattr(dm, "alwaysOnLockout", False)),
+      "isRHD": bool(getattr(dm, "isRHD", False)),
+      "cameraUnavailable": bool(getattr(dm, "cameraUnavailable", False)),
+      "activePolicy": str(getattr(dm, "activePolicy", "")),
+    }
+  except Exception:
+    return None
+
+
+def _driver_state_payload(sm: Any) -> dict[str, Any] | None:
+  """DriverStateV2 payload for pearl eyes rendering."""
+  if not sm.valid.get("driverStateV2"):
+    return None
+  try:
+    ds = sm["driverStateV2"]
+    left = getattr(ds, "leftDriverData", None)
+    right = getattr(ds, "rightDriverData", None)
+
+    def _driver_data(d):
+      if d is None:
+        return None
+      return {
+        "faceOrientation": list(getattr(d, "faceOrientation", [0, 0, 0])),
+        "faceOrientationStd": list(getattr(d, "faceOrientationStd", [0, 0, 0])),
+        "sunglassesProb": float(getattr(d, "sunglassesProb", 0) or 0),
+        "leftEyeProb": float(getattr(d, "leftEyeProb", 0) or 0),
+        "rightEyeProb": float(getattr(d, "rightEyeProb", 0) or 0),
+        "leftBlinkProb": float(getattr(d, "leftBlinkProb", 0) or 0),
+        "rightBlinkProb": float(getattr(d, "rightBlinkProb", 0) or 0),
+      }
+
+    return {
+      "valid": True,
+      "frameId": int(getattr(ds, "frameId", 0)),
+      "leftDriverData": _driver_data(left),
+      "rightDriverData": _driver_data(right),
+    }
+  except Exception:
+    return None
 
 
 def _confidence_ball(sm: Any, ui_status: str, started: bool) -> dict[str, Any] | None:

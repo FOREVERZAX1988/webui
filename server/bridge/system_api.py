@@ -158,6 +158,27 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
           return {"ok": True, "action": action, "dev_pc": True}
         return {"ok": False, "error": str(exc)}
 
+    if action == "safe_mode":
+      from webui.server.bridge.offroad_guard import require_offroad
+      blocked = require_offroad()
+      if blocked:
+        return blocked
+      enable = bool(payload.get("enable", False))
+      try:
+        from openpilot.sunnypilot.common.safe_mode_runtime import set_safe_mode
+        set_safe_mode(enable)
+        return {"ok": True, "action": action, "safe_mode": enable}
+      except ImportError:
+        # Fallback: direct param writes if runtime module not available
+        if enable:
+          p.put_bool("SafeMode", True, block=True)
+        else:
+          p.remove("SafeMode")
+          p.remove("SafeModeBackup")
+        return {"ok": True, "action": action, "safe_mode": enable}
+      except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
     if action == "dismiss_offroad_alert":
       key = str(payload.get("key", "")).strip()
       if not key:

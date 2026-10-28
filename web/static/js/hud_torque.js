@@ -1,4 +1,4 @@
-/** Steering torque arc (mirrors sunnypilot/onroad/hud_renderer.py TorqueBar scale=3). */
+/** Steering torque arc — supports both mici TorqueBar and StarPilot ShowTorqueBar styles. */
 
 const TORQUE_ANGLE_SPAN = 12.7;
 const TORQUE_SCALE = 3.0;
@@ -7,6 +7,7 @@ let alphaFiltered = 0;
 let torqueAnimId = 0;
 let lastTorqueTs = 0;
 let pendingTorque = null;
+let torqueMode = "mici";  // "mici" | "starpilot"
 
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
@@ -197,6 +198,87 @@ function paintTorque(st, devUi) {
   }
 }
 
+/** StarPilot-style torque bar: same arc geometry, different data source.
+ * Uses lateral acceleration estimate for angle/curvature cars, same as big UI. */
+function paintStarPilotTorque(st, devUi) {
+  const canvas = document.getElementById("torque-bar-canvas");
+  if (!canvas) return;
+
+  const wrap = document.getElementById("camera-wrap");
+  const w = wrap?.clientWidth || canvas.clientWidth || 1860;
+  const roadH = wrap?.clientHeight || 680;
+  const canvasH = Math.round(60 * TORQUE_SCALE);
+  const dpr = window.devicePixelRatio || 1;
+  const pxW = Math.max(1, Math.round(w * dpr));
+  const pxH = Math.max(1, Math.round(canvasH * dpr));
+
+  if (canvas.width !== pxW || canvas.height !== pxH) {
+    canvas.width = pxW;
+    canvas.height = pxH;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${canvasH}px`;
+  }
+
+  const engaged = st.ui_status === "engaged" || st.ui_status === "lat_only";
+  const util = Math.abs(filtered);
+  const offset = lerp(22 * TORQUE_SCALE, 26 * TORQUE_SCALE, clamp((util - 0.5) / 0.5, 0, 1));
+  const thickness = lerp(14 * TORQUE_SCALE, 56 * TORQUE_SCALE, clamp((util - 0.5) / 0.5, 0, 1));
+  const capRadius = 7 * TORQUE_SCALE;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, canvasH);
+
+  const cx = w / 2 + 8;
+  const radius = 1200 * TORQUE_SCALE;
+  const canvasTopInRoad = roadH - canvasH;
+  const cy = roadH + radius - offset - canvasTopInRoad;
+  const span = TORQUE_ANGLE_SPAN * alphaFiltered;
+  const top = -90;
+  const bgA0 = top - span / 2;
+  const bgA1 = top + span / 2;
+  const bgAlpha = lerp(0.25, 0.5, clamp((util - 0.5) / 0.5, 0, 1)) * alphaFiltered;
+  const midR = radius + thickness / 2;
+
+  const bgPts = arcBarPts(midR, thickness, bgA0, bgA1, capRadius).map(([x, y]) => [x + cx, y + cy]);
+  fillPoly(ctx, bgPts, rgba({ r: 255, g: 255, b: 255, a: engaged ? bgAlpha : 0.15 * alphaFiltered }));
+
+  const fillEnd = top + (span / 2) * filtered;
+  const hot = clamp((util - 0.75) * 4, 0, 1);
+  let start = blendColor(
+    { r: 255, g: 255, b: 255, a: 0.9 * alphaFiltered },
+    { r: 255, g: 200, b: 0, a: alphaFiltered },
+    hot,
+  );
+  let end = blendColor(
+    { r: 255, g: 255, b: 255, a: 0.9 * alphaFiltered },
+    { r: 255, g: 115, b: 0, a: alphaFiltered },
+    hot,
+  );
+  if (!engaged) {
+    start = end = { r: 255, g: 255, b: 255, a: 0.35 * alphaFiltered };
+  }
+
+  const slPts = arcBarPts(midR, thickness, top, fillEnd, capRadius).map(([x, y]) => [x + cx, y + cy]);
+  const minX = Math.min(...bgPts.map((p) => p[0]));
+  const maxX = Math.max(...bgPts.map((p) => p[0]));
+  const gradStart = filtered < 0 ? cx * 0.35 + minX * 0.65 : cx;
+  const gradEnd = filtered < 0 ? cx : cx * 0.35 + maxX * 0.65;
+  const grad = ctx.createLinearGradient(gradStart, 0, gradEnd, 0);
+  grad.addColorStop(0, rgba(start));
+  grad.addColorStop(1, rgba(end));
+  fillPoly(ctx, slPts, grad);
+
+  if (util < 0.5) {
+    const dotY = canvasH - offset - thickness / 2;
+    ctx.beginPath();
+    ctx.arc(cx, dotY, (10 / 2) * TORQUE_SCALE, 0, Math.PI * 2);
+    ctx.fillStyle = rgba({ r: 182, g: 182, b: 182, a: 0.9 * alphaFiltered });
+    ctx.fill();
+  }
+}
+
 function torqueTick(now) {
   if (!pendingTorque) {
     stopTorqueAnim();
@@ -204,7 +286,9 @@ function torqueTick(now) {
   }
   const { st, devUi } = pendingTorque;
   const canvas = document.getElementById("torque-bar-canvas");
-  if (!canvas || !st?.started || !st.torque_bar) {
+  const showMici = !!st?.started && !!st.torque_bar;
+  const showStarPilot = !!st?.started && !!st.show_torque_bar;
+  if (!canvas || !st?.started || (!showMici && !showStarPilot)) {
     canvas.hidden = true;
     filtered = 0;
     alphaFiltered = 0;
@@ -216,13 +300,40 @@ function torqueTick(now) {
   const dt = lastTorqueTs ? Math.min(0.1, (now - lastTorqueTs) / 1000) : 1 / 60;
   lastTorqueTs = now;
   const k = 1 - Math.exp(-dt / 0.1);
-  const target = clamp(Number(st.torque_utilization) || 0, -1, 1);
+
+  let target;
+  if (torqueMode === "starpilot") {
+    // StarPilot: lateral acceleration estimate for angle/curvature cars
+    // Mirrors openpilot/selfdrive/ui/sunnypilot/onroad/torque_bar.py
+    const latState = st.controls?.lat_control_state || "";
+    if (latState === "angleState" || latState === "curvatureState") {
+      const vEgo = Number(st.speed_ms) || 0;
+      const actualLa = Number(st.controls?.curvature) * vEgo * vEgo || 0;
+      const desiredLa = Number(st.controls?.desired_curvature) * vEgo * vEgo || 0;
+      const accelDiff = desiredLa - actualLa;
+      const roll = Number(st.roll) || 0;
+      const rollComp = roll * 9.81 * Math.min(1, Math.max(0, (vEgo - 5) / 10));
+      const latAccel = actualLa - rollComp;
+      const maxLa = Number(st.max_lateral_accel) || 3.0;
+      target = clamp((latAccel + accelDiff) / maxLa, -1, 1);
+    } else {
+      target = clamp(Number(st.torque_utilization) || 0, -1, 1);
+    }
+  } else {
+    // mici: direct torque output
+    target = clamp(Number(st.torque_utilization) || 0, -1, 1);
+  }
+
   filtered += (target - filtered) * k;
   const engaged = st.ui_status === "engaged" || st.ui_status === "lat_only";
   const alphaTarget = engaged ? 1 : 0.35;
   alphaFiltered += (alphaTarget - alphaFiltered) * k;
 
-  paintTorque(st, devUi);
+  if (torqueMode === "starpilot") {
+    paintStarPilotTorque(st, devUi);
+  } else {
+    paintTorque(st, devUi);
+  }
   torqueAnimId = requestAnimationFrame(torqueTick);
 }
 
@@ -230,7 +341,11 @@ export function updateTorqueBar(st, devUi = 0) {
   const canvas = document.getElementById("torque-bar-canvas");
   if (!canvas) return;
 
-  const show = !!st?.started && !!st.torque_bar;
+  // Determine which torque bar style to use
+  const showMici = !!st?.started && !!st.torque_bar;
+  const showStarPilot = !!st?.started && !!st.show_torque_bar;
+  const show = showMici || showStarPilot;
+
   if (!show) {
     canvas.hidden = true;
     filtered = 0;
@@ -240,6 +355,8 @@ export function updateTorqueBar(st, devUi = 0) {
     stopTorqueAnim();
     return;
   }
+
+  torqueMode = showStarPilot ? "starpilot" : "mici";
 
   const devBottom = devUi === 1 || devUi === 3;
   canvas.classList.toggle("is-dev-bottom", devBottom);

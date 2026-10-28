@@ -1554,6 +1554,16 @@ html.opui-portrait-host .opui-modal-scroll {
   opacity: 0.65;
   object-fit: contain;
 }
+.opui-dm-pearl-eyes {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 144px;
+  height: 144px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  object-fit: contain;
+}
 
 .opui-dm-arc {
   width: 192px;
