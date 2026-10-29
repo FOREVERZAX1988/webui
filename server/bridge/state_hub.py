@@ -245,16 +245,31 @@ def _device_loop() -> None:
   home_interval = 50 if headless else 25
 
   services = filter_known_services(list(STATE_HUB_SERVICES))
-  try:
-    sm = make_submaster(services)
-  except Exception as exc:
-    _set_state({
-      "ok": False,
-      "error": str(exc),
-      "started": False,
-      "engaged": False,
-      "ui_status": "disengaged",
-    })
+  # msgq 的 Cython 扩展（msgq/ipc_pyx.so）由 build.py 编译，而 webuid 是
+  # launch_chffrplus.sh 在 build.py *之前* 拉起的 —— 有意如此：AGNOS 更新可能
+  # 循环等用户确认，面板必须提前可达。代价是全新刷机时 webuid 会比 .so 早启动
+  # 几十秒（实测 22:19:03 vs 22:19:37），make_submaster 内部的
+  # `import openpilot.cereal.messaging` 必然抛
+  # ImportError: No module named 'msgq.ipc_pyx'。
+  # 原实现在这里直接 return，线程随之死掉、永不重试，于是 state 永久 ok=false：
+  # 前端常驻「无法获取行车状态」，AGNOS 的 INSTALL/REBOOT 按钮也不可点，只能靠
+  # 重启 webuid 恢复。改为退避重试，依赖就绪后自动恢复，无需人工干预。
+  sm = None
+  backoff = 1.0
+  while _running and sm is None:
+    try:
+      sm = make_submaster(services)
+    except Exception as exc:
+      _set_state({
+        "ok": False,
+        "error": str(exc),
+        "started": False,
+        "engaged": False,
+        "ui_status": "disengaged",
+      })
+      time.sleep(backoff)
+      backoff = min(backoff * 2.0, 30.0)
+  if sm is None:
     return
   _publish_shared_sm(sm)
   home_ticks = 0
