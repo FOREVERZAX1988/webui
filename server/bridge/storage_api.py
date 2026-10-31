@@ -122,7 +122,8 @@ def _disk_totals(mount: str) -> tuple[int, int, int]:
     free = int(st.f_bavail * st.f_frsize)
     used = max(0, total - free)
     return total, used, free
-  except OSError:
+  except (OSError, AttributeError):
+    # AttributeError: statvfs is POSIX-only; a PC host simply reports zeros
     return 0, 0, 0
 
 
