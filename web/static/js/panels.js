@@ -327,6 +327,10 @@ function formatOptionLabel(w, rawVal, panelData = panelDataRef) {
   if (fmt === "screensaver_timeout") return `${Math.floor(val / 60)} m`;
   if (fmt === "lagd_delay") return `${(val / 100).toFixed(2)}s`;
   if (fmt === "camera_offset") return `${(val / 100).toFixed(2)} m`;
+  if (fmt === "seconds_1") return `${(val / 100).toFixed(1)}s`;
+  if (fmt === "meters_1") return `${(val / 100).toFixed(1)}m`;
+  if (fmt === "percent") return `${val} %`;
+  if (fmt === "ms") return `${val} ms`;
   if (fmt === "lane_turn_speed") {
     const mph = val / 100;
     const shown = globalState.is_metric ? Math.round(mph * 1.60934) : Math.round(mph);

@@ -20,6 +20,7 @@ from webui.server.bridge.panel_catalog import (CARROT_TUNING_HIDDEN_WITH_READERS
 _PANEL_EXCLUDED = {"CarrotException"} | set(CARROT_TUNING_UNAVAILABLE) | set(CARROT_TUNING_HIDDEN_WITH_READERS)
 # Carrot keys exposed outside the navigation__carrot_tuning tree. Each needs a home panel.
 _PANEL_EXCLUDED |= {"CustomSR"}  # exposed as "Custom Steer Ratio" in the steering panel
+_PANEL_EXCLUDED |= {"ShowRadarInfo"}  # exposed in the visuals panel, mirroring big UI visuals.py
 
 
 def _repo_config_py() -> str:
@@ -114,7 +115,12 @@ class CarrotTuningFullCoverageTests(unittest.TestCase):
     # master toggle the panel gates on, and the weather keys are registered
     # Params read by the planner rather than entries in the tuning surface, so
     # carrot_tuning_api has nothing to say about any of them.
-    not_tuning_keys = {"CarrotEnabled", "WeatherOffsetsEnabled", "WeatherAutoDetect", "WeatherState"}
+    not_tuning_keys = {
+      "CarrotEnabled",
+      "WeatherOffsetsEnabled", "WeatherAutoDetect", "WeatherState",
+      "WeatherIncreaseFollowing", "WeatherIncreaseStoppedDistance",
+      "WeatherReduceAcceleration", "WeatherReduceLateralAcceleration",
+    }
     orphan = panel_keys - api_keys - not_tuning_keys
     self.assertFalse(orphan, f"panel params not in API: {sorted(orphan)}")
 
@@ -281,8 +287,10 @@ class TuningMetadataTests(unittest.TestCase):
   def test_the_four_unhidden_controls_are_reachable(self):
     """These were hidden as dead while shipped code reads them; they must stay reachable."""
     keys = set(panel_param_keys("navigation__carrot_tuning"))
-    for name in ("UseLaneLineCurveSpeed", "SteerRatioRate", "ShowRadarInfo", "HotspotOnBoot"):
+    for name in ("UseLaneLineCurveSpeed", "SteerRatioRate", "HotspotOnBoot"):
       self.assertIn(name, keys, f"{name} lost its control")
+    # ShowRadarInfo moved to the visuals panel, mirroring big UI visuals.py.
+    self.assertIn("ShowRadarInfo", set(panel_param_keys("visuals")), "ShowRadarInfo lost its control")
 
   def test_no_names_means_no_store_read(self):
     """An empty request must not build a Params handle just to answer nothing."""

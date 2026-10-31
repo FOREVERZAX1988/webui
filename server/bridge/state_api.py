@@ -596,6 +596,17 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   is_release_branch = car_ctx.is_release_branch
   is_development_branch = car_ctx.is_development_branch
   custom_model_active = car_ctx.custom_model_active
+  # Big UI gates Lane Center Assist (Blendful) on the tinygrad runner being
+  # active (models.py `blendful_allowed`); mirror that state for the webui.
+  tinygrad_runner_active = False
+  try:
+    for _key in ("ActiveBundleUsbgpu", "ActiveBundleTici"):
+      _bundle = p.get(_key)
+      if _bundle:
+        tinygrad_runner_active = _bundle.get("runner") == "tinygrad" if isinstance(_bundle, dict) else False
+        break
+  except Exception:
+    pass
   is_body = car_ctx.is_body
   live_lateral_delay = None
   steer_actuator_delay = car_ctx.steer_actuator_delay
@@ -1037,6 +1048,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "is_release_branch": is_release_branch,
     "is_development_branch": is_development_branch,
     "custom_model_active": custom_model_active,
+    "tinygrad_runner_active": tinygrad_runner_active,
     "is_body": is_body,
     "models_state": _models_state(p),
     "live_lateral_delay": live_lateral_delay,

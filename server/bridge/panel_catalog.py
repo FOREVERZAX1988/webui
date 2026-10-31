@@ -37,10 +37,8 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "CarrotYouTubeTimestamp",
   "ContinuousLaneChange",
   "LaneChangeDelay",
-  "LaneChangeNeedTorque",
   "LaneLineCheck",
   "LatMpcAccelCost",
-  "LatMpcInputOffset",
   "LatMpcJerkCost",
   "LatMpcMotionCost",
   "LatMpcPathCost",
@@ -65,17 +63,11 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "MuteDoor",
   "MuteSeatbelt",
   "NewLaneWidthDiff",
-  "OnnxBsdIntervalMs",
-  "OnnxBsdSmoothingMs",
-  "OnnxBsdThreshold",
-  "OnnxLaneIntervalMs",
-  "OnnxLaneThreshold",
   "PathOffset",
   "RecordRoadCam",
   "ShareData",
   "ShowCameraWithCluster",
   "ShowCustomBrightness",
-  "ShowDateTime",
   "ShowDebugUI",
   "ShowDeviceState",
   "ShowLaneInfo",
@@ -93,7 +85,6 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "SoftwareMenu",
   "SteerActuatorDelay",
   "StockBlinkerCtrl",
-  "UseWideCamera",
 })
 
 
@@ -106,6 +97,16 @@ CARROT_TUNING_HIDDEN_WITH_READERS: dict[str, str] = {
   # it from LanguageSetting. This catalogue has no free-text or option widget type, so a
   # control would have to invent one - add it back once the vocabulary has a select.
   "SoundLanguageSetting": "no widget type for a language code; 'auto' follows LanguageSetting",
+  # Read by system/manager/camera_config.py and selfdrived (wide-camera streaming),
+  # but the big UI exposes no control for it either - big UI parity keeps it hidden.
+  "UseWideCamera": "read by camera_config/selfdrived; no control in big UI either",
+  # Read by sunnypilot lane_planner_2 (library-only lateral MPC stack).
+  "LatMpcInputOffset": "read by lane_planner_2; no control in big UI either",
+  # Read by the external-cluster renderer (sunnypilot/carrot/cluster/main.py).
+  "ShowDateTime": "read by cluster/main.py; no control in big UI either",
+  # CarrotPilot semantics read by selfdrive/controls/lib/desire_helper.py
+  # (negative disables signal-gated lane changes), but big UI has no control.
+  "LaneChangeNeedTorque": "read by desire_helper cp semantics; no control in big UI either",
 }
 
 
@@ -201,6 +202,13 @@ PANELS: list[dict[str, Any]] = [
        "icon": "selfdrive/assets/icons/speed_limit.png",
        "buttons": ["Aggressive", "Standard", "Relaxed"],
        "desc": "Standard is recommended. In aggressive mode, sunnypilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode sunnypilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button."},
+      {"type": "bool", "param": "AccelPersonalityEnabled", "label": "Enable Accel Controller",
+       "layout": "stacked", "capability": "longitudinal", "icon": "selfdrive/assets/icons/speed_limit.png",
+       "desc": "Lets you choose how sunnypilot starts, catches up, and settles at the cruise speed. Emergency braking and stopping are unchanged."},
+      {"type": "multiple_button", "param": "AccelPersonality", "label": "Acceleration Profile",
+       "layout": "stacked", "capability": "longitudinal", "icon": "selfdrive/assets/icons/speed_limit.png",
+       "buttons": ["Eco", "Normal", "Sport"],
+       "desc": "Eco is gentlest, Normal balances a prompt start with smooth catch-up, and Sport is more responsive."},
       {"type": "bool", "param": "IsLdwEnabled", "label": "Enable Lane Departure Warnings",
        "icon": "selfdrive/assets/icons/warning.png",
        "desc": "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."},
@@ -277,6 +285,9 @@ PANELS: list[dict[str, Any]] = [
        "desc": "Adjust the software delay when Live Learning Steer Delay is toggled off. The default software delay value is 0.2",
        "visible_if": {"param": "LagdToggle", "eq": "0"},
        "advanced_if": {"param": "ShowAdvancedControls", "eq": "1"}},
+      {"type": "bool", "param": "Blendful", "label": "Lane Center Assist (Alpha)",
+       "desc": "Adds a gentle nudge toward lane center on top of the model's own steering, stronger when lane lines are clear. Yields around obstacles. Not available with the Default model.",
+       "visible_if": {"state": "tinygrad_runner_active"}},
       {"type": "option", "param": "CameraOffset", "label": "Adjust Camera Offset",
        "min": -35, "max": 35, "step": 1, "label_format": "camera_offset",
        "desc": "Virtually shift camera's perspective to move model's center to Left(+ values) or Right (- values)",
@@ -384,6 +395,7 @@ PANELS: list[dict[str, Any]] = [
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Use navigation desired speed to limit cruise set speed."},
       {"type": "int", "param": "HapticFeedbackWhenSpeedCamera", "label": "Haptic Feedback (Speed Camera)", "default": 0,
+       "min": 0, "max": 2, "step": 1,
        "visible_if": {"param": "CarrotEnabled", "eq": "1"},
        "desc": "Steering-wheel nudge when carrot decelerates for a speed camera. 0=off, 1/2 = lane-warning styles."},
       {"type": "separator", "visible_if": {"param": "CarrotEnabled", "eq": "1"}},
@@ -445,6 +457,8 @@ PANELS: list[dict[str, Any]] = [
        "desc": "Show a timer on the HUD when the car is at a standstill."},
       {"type": "bool", "param": "RoadNameToggle", "label": "Display Road Name",
        "desc": "Displays the name of the road the car is traveling on. The OpenStreetMap database of the location must be downloaded from the OSM panel to fetch the road name."},
+      {"type": "bool", "param": "E2EAlertsWhenEngaged", "label": "Chime Alerts While Engaged (Beta)",
+       "desc": "Play the green traffic light and lead departure alerts even when cruise is engaged and holding the car at a standstill.<br>Without this, those alerts only chime while cruise is disengaged. ACC holding at a light never starts moving by itself.<br>Note: This chime is only designed as a notification. It is the driver's responsibility to observe their environment and make decisions accordingly."},
       {"type": "bool", "param": "GreenLightAlert", "label": "Green Traffic Light Alert (Beta)",
        "desc": "A chime and on-screen alert will play when the traffic light you are waiting for turns green and you have no vehicle in front of you. Note: This chime is only designed as a notification. It is the driver's responsibility to observe their environment and make decisions accordingly."},
       {"type": "bool", "param": "LeadDepartAlert", "label": "Lead Departure Alert (Beta)",
@@ -457,6 +471,13 @@ PANELS: list[dict[str, Any]] = [
        "desc": "When enabled, visual turn indicators are drawn on the HUD."},
       {"type": "bool", "param": "RocketFuel", "label": "Real-time Acceleration Bar",
        "desc": "Show an indicator on the left side of the screen to display real-time vehicle acceleration and deceleration. This displays what the car is currently doing, not what the planner is requesting."},
+      {"type": "bool", "param": "CarrotSignalHudEnabled", "label": "Neural Signal Assist Indicator (Experimental)",
+       "desc": "Draw a ring on the HUD with the traffic light evidence the neural model currently sees.<br>The outer ring is what the model observes; the centre dot is what the planner actually applies, and only appears with SignalAssistMode set to 2.<br><br>Experimental and advisory only. Nothing here lets openpilot act on a traffic light on your behalf. Always check the light yourself."},
+      {"type": "bool", "param": "SignalYoloEnabled", "label": "Traffic Light Vision Boxes (YOLO)",
+       "desc": "Run the YOLOv8 traffic-light detector on the road camera and draw a box around each detected signal housing on the driving view, with the observed signal (red light, green light, turn arrows) written under the box.<br>Runs at most 2 Hz on the little cores and is display only: it never feeds the planner and never lets openpilot act on a traffic light on your behalf. Always check the light yourself."},
+      {"type": "multiple_button", "param": "ShowRadarInfo", "label": "Display Radar Points",
+       "desc": "Label what the front radar tracks on the road view.<br>Speed Only: relative speed on moving tracks. Speed + Distance: adds lateral offset and distance. Full: every measured point, plus a marker for static returns.<br><br>Display only. It does not change how the car drives.",
+       "buttons": ["Off", "Speed Only", "Speed + Distance", "Full"]},
       {"type": "multiple_button", "param": "ChevronInfo", "label": "Display Metrics Below Chevron",
        "dynamic_desc": "chevron", "capability": "longitudinal",
        "buttons": ["Off", "Distance", "Speed", "Time", "All"]},
@@ -916,7 +937,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the T Follow Gap1 setting.",
         "min": 50,
         "max": 300,
-        "step": 5,
+        "step": 5, "label_format": "lagd_delay",
       },
       {
         "type": "int",
@@ -925,7 +946,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the T Follow Gap2 setting.",
         "min": 50,
         "max": 300,
-        "step": 5,
+        "step": 5, "label_format": "lagd_delay",
       },
       {
         "type": "int",
@@ -934,7 +955,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the T Follow Gap3 setting.",
         "min": 50,
         "max": 300,
-        "step": 5,
+        "step": 5, "label_format": "lagd_delay",
       },
       {
         "type": "int",
@@ -943,7 +964,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the T Follow Gap4 setting.",
         "min": 50,
         "max": 300,
-        "step": 5,
+        "step": 5, "label_format": "lagd_delay",
       },
       
       {
@@ -953,7 +974,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "desc": "Adjust the Dynamic T Follow L C setting.",
         "min": 0,
         "max": 200,
-        "step": 5,
+        "step": 5, "label_format": "lagd_delay",
       },
       {
         "type": "separator"
@@ -999,6 +1020,38 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "param": "WeatherAutoDetect",
         "label": "Detect Weather Automatically",
         "desc": "Ask Open-Meteo for the conditions where the car is. Nothing is requested unless Weather Adaptation is on.",
+        "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
+      },
+      {
+        "type": "int",
+        "param": "WeatherIncreaseFollowing",
+        "label": "Extra Follow Time",
+        "desc": "Seconds added to the follow time in bad weather.",
+        "min": 0, "max": 300, "step": 10, "label_format": "seconds_1",
+        "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
+      },
+      {
+        "type": "int",
+        "param": "WeatherIncreaseStoppedDistance",
+        "label": "Extra Stopped Gap",
+        "desc": "Metres added to the distance held behind a stopped lead in bad weather.",
+        "min": 0, "max": 2000, "step": 25, "label_format": "meters_1",
+        "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
+      },
+      {
+        "type": "int",
+        "param": "WeatherReduceAcceleration",
+        "label": "Acceleration Reduction",
+        "desc": "Percent taken off the acceleration ceiling in bad weather.",
+        "min": 0, "max": 100, "step": 5, "label_format": "percent",
+        "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
+      },
+      {
+        "type": "int",
+        "param": "WeatherReduceLateralAcceleration",
+        "label": "Lateral Acceleration Reduction",
+        "desc": "Percent taken off the lateral acceleration ceiling in bad weather, so curves are taken slower.",
+        "min": 0, "max": 100, "step": 5, "label_format": "percent",
         "visible_if": {"param": "WeatherOffsetsEnabled", "eq": "1"},
       },
       {
@@ -1558,7 +1611,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Line Curve Gate (km/h)",
         "desc": "Lane-line centring is skipped in bends slower than this curve speed; 0 never skips it.",
         "min": 0,
-        "max": 120,
+        "max": 100,
         "step": 5
       }],
   },
@@ -1714,10 +1767,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       },{
         "type": "int", "param": "ClusterHudTheme", "label": "Cluster HUD Theme",
         "desc": "0 = Auto, 1 = Dark, 2 = Light.", "min": 0, "max": 2, "step": 1
-      },{
-        "type": "int", "param": "ShowRadarInfo", "label": "Display Radar Points",
-        "desc": "0 = off, 1 = speed only, 2 = speed + distance, 3 = every point incl. static. Display only.",
-        "min": 0, "max": 3, "step": 1
       }],
   },
 
@@ -1786,6 +1835,15 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "separator"
       },{
         "type": "section",
+        "label": "Longitudinal Control (advanced)"
+      },{
+        "type": "bool",
+        "param": "CarrotLongitudinalSourceEnabled",
+        "label": "Carrot Longitudinal Source",
+        "desc": "Let the phone app drive the longitudinal plan: its target speed becomes a plan source, and its follow time, comfort braking and stop point reach the MPC. Off keeps stock sunnypilot behaviour. Needs a connected phone - without a fresh packet the source stays inactive.",
+        "default": False
+      },{
+        "type": "section",
         "label": "Navigation Control (advanced)"
       },{
         "type": "bool",
@@ -1799,6 +1857,45 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "label": "Lane Guide Blocking",
         "desc": "Let the phone app guided-lane arrows block lane changes toward non-guided lanes. Only ever adds blocking.",
         "default": False
+      },{
+        "type": "section",
+        "label": "ONNX Vision Detection (BSD / Lane)"
+      },{
+        "type": "bool",
+        "param": "OnnxBsdEnabled",
+        "label": "ONNX Blind Spot Detection",
+        "desc": "Run the ONNX blind-spot model on the camera image and report side obstacles in the UI. Off unloads the model and frees its memory; the thresholds below have no effect.",
+        "default": False
+      },{
+        "type": "int",
+        "param": "OnnxBsdThreshold",
+        "label": "BSD Detection Threshold",
+        "desc": "Confidence threshold for ONNX blind-spot detection, in percent. Higher means fewer, more certain detections.",
+        "min": 25, "max": 100, "step": 5, "label_format": "percent"
+      },{
+        "type": "int",
+        "param": "OnnxBsdSmoothingMs",
+        "label": "BSD Smoothing Time",
+        "desc": "How long a blind-spot object must persist before it is reported.",
+        "min": 100, "max": 500, "step": 50, "label_format": "ms"
+      },{
+        "type": "int",
+        "param": "OnnxBsdIntervalMs",
+        "label": "BSD Inference Interval",
+        "desc": "Time between blind-spot inferences.",
+        "min": 50, "max": 1000, "step": 50, "label_format": "ms"
+      },{
+        "type": "int",
+        "param": "OnnxLaneThreshold",
+        "label": "Lane Detection Threshold",
+        "desc": "Confidence threshold for ONNX lane detection, in percent.",
+        "min": 5, "max": 100, "step": 5, "label_format": "percent"
+      },{
+        "type": "int",
+        "param": "OnnxLaneIntervalMs",
+        "label": "Lane Inference Interval",
+        "desc": "Time between lane inferences. Values below 600 ms are raised by the server, which would saturate a CPU core.",
+        "min": 600, "max": 2000, "step": 100, "label_format": "ms"
       },{
         "type": "bool",
         "param": "BydBsdType2",
