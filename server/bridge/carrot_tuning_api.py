@@ -167,7 +167,9 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "AutoNaviSpeedBumpTime": ("int", 1),
   "AutoNaviSpeedCtrlEnd": ("int", 6),
   "AutoRoadSpeedLimitOffset": ("int", -1),
-  "AutoTurnControl": ("int", 0),
+  # cp full ATC: aligned with params_keys.h / config.py (see CarrotAtcMigrated
+  # migration in carrot_serv for devices carrying the old seeded 0).
+  "AutoTurnControl": ("int", 2),
   "AutoTurnControlSpeedTurn": ("int", 20),
   "AutoTurnControlTurnEnd": ("int", 6),
   "AutoTurnMapChange": ("bool", 0),
