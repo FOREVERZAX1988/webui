@@ -402,7 +402,7 @@ def flm_status() -> dict[str, Any]:
   """One-line flmanalysisd daemon status, read from the FLMAnalysisStatus param."""
   try:
     import json as _json
-    raw = _params().get("FLMAnalysisStatus", encoding="utf-8") or ""
+    raw = _params().get("FLMAnalysisStatus") or ""
     if not raw:
       return {"ok": True, "state": "", "detail": "", "text": "从未运行"}
     d = _json.loads(raw)

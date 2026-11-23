@@ -67,7 +67,7 @@ def tailscale_state() -> dict[str, Any]:
   if os.environ.get("WEBUI_DEV_PC") == "1":
     return {"ok": True, "status": "", "url": "", "ip": "", "qr_data_url": "", "dev_pc": True}
   try:
-    raw = _params().get("TailscaleState", encoding="utf-8")
+    raw = _params().get("TailscaleState")
   except Exception as exc:
     return {"ok": False, "error": str(exc)}
   value = str(raw or "").strip()
