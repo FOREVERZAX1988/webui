@@ -64,7 +64,6 @@ class WebuiCarContext:
   developer_sidebar_metrics: list[int] = field(default_factory=list)
   navigation_card_enabled: bool = True
   conditional_experimental: bool = False
-  speed_limit_changed_alert: bool = False
   pearl_eyes: bool = False
 
 
@@ -209,7 +208,6 @@ def refresh_car_context(sm: Any, started: bool) -> WebuiCarContext:
       ctx.developer_sidebar_metrics = []
     ctx.navigation_card_enabled = p.get_bool("NavigationCardEnabled")
     ctx.conditional_experimental = p.get_bool("ConditionalExperimental")
-    ctx.speed_limit_changed_alert = p.get_bool("SpeedLimitChangedAlert")
     ctx.pearl_eyes = p.get_bool("CarrotDMPearlEyes")
     ctx.enforce_torque_control = p.get_bool("EnforceTorqueControl")
     ctx.custom_torque_params = p.get_bool("CustomTorqueParams")

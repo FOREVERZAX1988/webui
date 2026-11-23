@@ -462,6 +462,10 @@ async function applyParamSideEffects(key, value) {
     updateDeveloperCapabilities(globalState);
   } else if (key === "AlphaLongitudinalEnabled") {
     await off("OnroadCycleRequested", "1", true);
+  } else if (key === "AgentEnabled" && value === "1") {
+    // Big GUI developer.py: enabling the agent clears the idle-suspend marker
+    // so the manager spawns it now.
+    await removeParam("AgentSuspended");
   } else if (key === "EnforceTorqueControl" && value === "1") {
     await off("NeuralNetworkLateralControl", "0");
   } else if (key === "NeuralNetworkLateralControl" && value === "1") {
@@ -868,10 +872,23 @@ function updateTorqueSubpanel(st) {
   const jerkRow = document.querySelector('[data-param="LateralJerkTorqueController"]');
   if (jerkRow) {
     const nnlc = paramIsOn(panelDataRef?.values?.NeuralNetworkLateralControl);
+    // Big GUI torque_settings.py: v2 replaces the jerk-aware mechanisms, so the
+    // toggle only does something while some model size runs a non-v2 tune. With
+    // EnforceTorqueControl off the controller resolves to v0 either way.
+    let jerkHasEffect = true;
+    try {
+      const enforce = paramIsOn(panelDataRef?.values?.EnforceTorqueControl);
+      if (enforce) {
+        const small = parseFloat(panelDataRef?.values?.TorqueControlTune ?? "0");
+        const big = parseFloat(panelDataRef?.values?.TorqueControlTuneBig ?? "1");
+        jerkHasEffect = small !== 2 || big !== 2;
+      }
+    } catch (_) { /* keep enabled on parse failure */ }
+    const disabled = nnlc || !globalState.is_offroad || !jerkHasEffect;
     const input = jerkRow.querySelector("input");
     const label = jerkRow.querySelector(".opui-sp-toggle");
-    if (input) input.disabled = nnlc || !globalState.is_offroad;
-    label?.classList.toggle("disabled", nnlc || !globalState.is_offroad);
+    if (input) input.disabled = disabled;
+    label?.classList.toggle("disabled", disabled);
   }
 }
 
@@ -981,14 +998,22 @@ function updateCruiseCapabilities(st) {
     clearIfOn("IntelligentCruiseButtonManagement");
   }
 
-  setToggleRowState("DynamicExperimentalControl", { disabled: !hasLong });
-  if (!hasLong) clearIfOn("DynamicExperimentalControl");
-
   setToggleRowState("SmartCruiseControlVision", { disabled: !sccOk });
   setToggleRowState("SmartCruiseControlMap", { disabled: !sccOk });
   if (!sccOk) {
     clearIfOn("SmartCruiseControlVision");
     clearIfOn("SmartCruiseControlMap");
+  }
+
+  // Curve Speed mirrors Big GUI cruise_zp.py: nothing reads it with both curve
+  // features off, so it is disabled when cruise is unavailable or both are off.
+  const curveRow = document.querySelector('[data-param="CurveSpeedProfile"]');
+  if (curveRow) {
+    const sccOn = paramIsOn(panelDataRef?.values?.SmartCruiseControlVision)
+      || paramIsOn(panelDataRef?.values?.SmartCruiseControlMap);
+    const curveDisabled = !sccOk || !sccOn;
+    curveRow.querySelectorAll("button").forEach((b) => { b.disabled = curveDisabled; });
+    curveRow.classList.toggle("opui-sp-row--disabled", curveDisabled);
   }
 
   let customDesc = "Enable custom Short & Long press increments for cruise speed increase/decrease.";
@@ -1068,6 +1093,16 @@ function updateSteeringCapabilities(st) {
 
   const torqueOn = paramIsOn(panelDataRef?.values?.EnforceTorqueControl);
   const nnlcOn = paramIsOn(panelDataRef?.values?.NeuralNetworkLateralControl);
+  // Big GUI steering.py: the two lateral systems are mutually exclusive; if both
+  // ended up on (e.g. restored from a backup), both get switched off.
+  if (torqueOn && nnlcOn) {
+    putParam("EnforceTorqueControl", "0", false, true);
+    putParam("NeuralNetworkLateralControl", "0", false, true);
+    if (panelDataRef?.values) {
+      panelDataRef.values.EnforceTorqueControl = "0";
+      panelDataRef.values.NeuralNetworkLateralControl = "0";
+    }
+  }
   setToggleDisabled("EnforceTorqueControl", !offroad || !torqueAllowed || nnlcOn);
   setToggleDisabled("NeuralNetworkLateralControl", !offroad || !torqueAllowed || jerk || torqueOn);
 
@@ -1340,13 +1375,25 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
     let val = kind === "option" ? resolveOptionIndex(w, w.value) : parseInt(w.value, 10);
     if (Number.isNaN(val)) val = min;
     const span = el.querySelector(".opui-option-value, .opui-int-control span");
-    if (span) {
-      span.textContent = kind === "option" ? formatOptionLabel(w, w.value, panelData) : String(val);
+    // Option+switch rows (e.g. Pause Lateral Control with Blinker): the switch
+    // param rides on the same row and gates stepping.
+    const sw = w.switch || null;
+    const swInput = sw?.param ? el.querySelector('input[type=checkbox]') : null;
+    const swLabel = sw?.param ? el.querySelector(".opui-sp-toggle") : null;
+    const switchOff = swInput ? !swInput.checked : false;
+    if (swInput && sw?.param) {
+      const on = paramIsOn(panelData?.values?.[sw.param]);
+      swInput.checked = on;
+      swLabel?.classList.toggle("on", on);
     }
-    const minus = el.querySelector(".opui-option-bar button:first-child, .opui-int-control button:first-child");
-    const plus = el.querySelector(".opui-option-bar button:last-child, .opui-int-control button:last-child");
-    if (minus) minus.disabled = val <= min;
-    if (plus) plus.disabled = val >= max;
+    if (span) {
+      if (switchOff) span.textContent = t(sw.off_label || "Off");
+      else span.textContent = kind === "option" ? formatOptionLabel(w, w.value, panelData) : String(val);
+    }
+    const minus = el.querySelector(".opui-option-bar button:first-of-type, .opui-int-control button:first-child");
+    const plus = el.querySelector(".opui-option-bar button:last-of-type, .opui-int-control button:last-child");
+    if (minus) minus.disabled = val <= min || switchOff;
+    if (plus) plus.disabled = val >= max || switchOff;
   }
 }
 
@@ -1850,6 +1897,7 @@ function renderWidget(w, panelData) {
     if (w.custom === "jetlink_link") return renderJetlinkLinkRow();
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
+    if (w.custom === "flm_status") return renderFlmStatusRow(w);
     if (w.custom === "device_calibration") return null;
     return null;
   }
@@ -2288,6 +2336,54 @@ function renderOptionRow(w, panelData) {
   plus.type = "button";
   plus.textContent = "+";
 
+  // Big GUI option+switch form (steering.py): the switch is a separate param on
+  // the same row; while it is off the value reads as "Off" and stepping is locked.
+  const sw = w.switch || null;
+  let swInput = null;
+  if (sw?.param) {
+    const swLabel = document.createElement("label");
+    swLabel.className = "opui-sp-toggle";
+    swInput = document.createElement("input");
+    swInput.type = "checkbox";
+    swInput.checked = paramIsOn(panelData?.values?.[sw.param]);
+    const track = document.createElement("span");
+    track.className = "opui-sp-toggle-track";
+    const thumb = document.createElement("span");
+    thumb.className = "opui-sp-toggle-thumb";
+    track.appendChild(thumb);
+    swLabel.append(swInput, track);
+    swLabel.classList.toggle("on", swInput.checked);
+    swInput.addEventListener("change", async () => {
+      const on = swInput.checked;
+      const res = await putParam(sw.param, on ? "1" : "0");
+      if (!res.ok) {
+        toast(res.error || t("Save failed"));
+        swInput.checked = !on;
+        swLabel.classList.toggle("on", swInput.checked);
+        return;
+      }
+      swLabel.classList.toggle("on", on);
+      if (panelData?.values) panelData.values[sw.param] = on ? "1" : "0";
+      if (on) {
+        const cur = resolveOptionIndex(w, panelData?.values?.[w.param]);
+        if (cur < min) {
+          await putParam(w.param, String(optionParamValue(w, min)));
+          idx = min;
+          if (panelData?.values) panelData.values[w.param] = String(optionParamValue(w, min));
+        }
+        span.textContent = formatOptionLabel(w, panelData?.values?.[w.param], panelData);
+        minus.disabled = idx <= min;
+        plus.disabled = idx >= max;
+      } else {
+        span.textContent = t(sw.off_label || "Off");
+        minus.disabled = true;
+        plus.disabled = true;
+      }
+      requestPanelRefresh();
+    });
+  }
+  const switchOff = () => swInput && !swInput.checked;
+
   const save = async (v) => {
     idx = Math.max(min, Math.min(max, v));
     const paramVal = optionParamValue(w, idx);
@@ -2315,11 +2411,13 @@ function renderOptionRow(w, panelData) {
       }
     }
   };
-  minus.disabled = idx <= min;
-  plus.disabled = idx >= max;
+  minus.disabled = idx <= min || switchOff();
+  plus.disabled = idx >= max || switchOff();
+  if (switchOff()) span.textContent = t(sw.off_label || "Off");
   minus.addEventListener("click", () => save(idx - step));
   plus.addEventListener("click", () => save(idx + step));
   bar.append(minus, span, plus);
+  if (swLabel) bar.appendChild(swLabel);
   row.appendChild(bar);
   bindRowExpand(row, { ...w, desc: w.desc ? t(w.desc) : "" });
   return row;
@@ -2725,6 +2823,28 @@ function renderCarrotNaviDebugRow(w) {
   return row;
 }
 
+/* FLM analysis status row: reads the one-line daemon status written by
+   flmanalysisd to the FLMAnalysisStatus param (mirrors Big GUI carrot
+   tuning's 分析状态 row). */
+function renderFlmStatusRow(w) {
+  const row = document.createElement("div");
+  row.className = "opui-sp-row";
+  row.dataset.custom = "flm_status";
+  row.innerHTML = `
+    <div class="opui-sp-row-text">
+      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
+      <div class="opui-sp-row-desc">${escapeHtml(t("Loading..."))}</div>
+    </div>`;
+  apiGet("/api/opui/carrot/flm/status").then((st) => {
+    const desc = row.querySelector(".opui-sp-row-desc");
+    if (desc) desc.textContent = st?.text || t("N/A");
+  }).catch(() => {
+    const desc = row.querySelector(".opui-sp-row-desc");
+    if (desc) desc.textContent = t("N/A");
+  });
+  return row;
+}
+
 function renderActionRow(w) {
   const row = document.createElement("div");
   row.className = "opui-sp-row";
@@ -2820,7 +2940,8 @@ function renderActionRow(w) {
       }
       return;
     }
-    if (w.action === "torque_tune_version") {
+    if (w.action === "torque_tune_version_small" || w.action === "torque_tune_version_big") {
+      const big = w.action === "torque_tune_version_big";
       const tv = await apiGet("/api/opui/steering/torque-versions");
       if (!tv.ok) {
         toast(tv.error || "Failed");
@@ -2831,20 +2952,46 @@ function renderActionRow(w) {
         bundles: (tv.options || []).map((o) => ({ name: o.label, ref: o.label })),
       }];
       const ref = await showTree({
-        title: t("Torque Control Tune Version"),
+        title: t(w.label),
         folders,
-        selectedRef: tv.current_label || "Default",
+        selectedRef: big ? (tv.current_label_big || "Default") : (tv.current_label || "Default"),
         searchable: true,
       });
       if (!ref) return;
       const pick = (tv.options || []).find((o) => o.label === ref);
+      const param = big ? "TorqueControlTuneBig" : "TorqueControlTune";
       if (!pick || pick.version == null) {
-        await apiPut("/api/opui/params/TorqueControlTune", { value: "" });
+        await apiPut(`/api/opui/params/${param}`, { value: "" });
       } else {
-        await apiPut("/api/opui/params/TorqueControlTune", { value: String(pick.version) });
+        await apiPut(`/api/opui/params/${param}`, { value: String(pick.version) });
       }
       toast(t("Torque tune updated"));
       requestPanelRefresh();
+      return;
+    }
+    if (w.action === "tailscale_qr") {
+      const ts = await apiGet("/api/opui/developer/tailscale");
+      if (!ts.ok) {
+        toast(ts.error || t("Failed"));
+        return;
+      }
+      if (ts.status === "pairing" && ts.url) {
+        await showQrPair({
+          title: t("Pairing QR Code"),
+          url: ts.url,
+          qrDataUrl: ts.qr_data_url,
+        });
+      } else if (ts.status === "joined") {
+        await showHtml({
+          title: t("Pairing QR Code"),
+          html: `<p>${escapeHtml(t("Tailscale joined"))}</p><p>${escapeHtml((ts.name || "") + "  " + (ts.ip || ""))}</p>`,
+        });
+      } else {
+        await showHtml({
+          title: t("Pairing QR Code"),
+          html: `<p class="opui-muted">${escapeHtml(t("Remote SSH (Tailscale) is not active. Enable it first."))}</p>`,
+        });
+      }
       return;
     }
     if (w.action === "network_set_apn") {
@@ -4489,81 +4636,6 @@ function buildModelsClearCacheRow(w, m) {
   return row;
 }
 
-function buildModelsMirrorRows(m) {
-  const mirror = m?.mirror;
-  if (!mirror || !mirror.hf_param) return [];
-  const rows = [];
-
-  const mkRow = (which, title, desc, modes, current, effective) => {
-    const row = document.createElement("div");
-    row.className = "opui-sp-row";
-    row.dataset.modelsMirror = which;
-    row.innerHTML = `
-      <div class="opui-sp-row-text">
-        <div class="opui-sp-row-title">${escapeHtml(t(title))}</div>
-        <div class="opui-sp-row-desc"></div>
-      </div>
-      <div class="opui-multi-btn-group" data-mirror-buttons="1"></div>`;
-    const descEl = row.querySelector(".opui-sp-row-desc");
-    descEl.innerHTML = `${escapeHtml(t(desc))}<br>${escapeHtml(t("Current"))}: ${escapeHtml(String(effective))}`;
-    const group = row.querySelector("[data-mirror-buttons]");
-    for (const [key, label] of modes) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = t(label);
-      btn.dataset.mode = key;
-      btn.classList.toggle("selected", key === current);
-      btn.setAttribute("aria-pressed", key === current ? "true" : "false");
-      btn.addEventListener("click", async () => {
-        let url = "";
-        if (which === "hf" && key === "custom") {
-          url = await showTextInput({
-            title: t("Base URL replacing https://huggingface.co, e.g. https://hf-mirror.com"),
-            value: mirror.hf_custom || "",
-            placeholder: "https://hf-mirror.com",
-          });
-          if (url === null) return;
-        } else if (which === "gh" && key === "proxy") {
-          url = await showTextInput({
-            title: t("Prefix prepended to the catalog URL, e.g. https://gh-proxy.com"),
-            value: mirror.gh_custom || "",
-            placeholder: "https://gh-proxy.com",
-          });
-          if (url === null) return;
-        }
-        const res = await apiPost("/api/opui/models/mirror", { which, mode: key, url });
-        if (!res.ok) {
-          toast(res.error || t("Failed"));
-          return;
-        }
-        toast(t(title));
-        const c2 = document.getElementById("panel-content");
-        if (c2 && panelDataRef) await renderModelsPanel(c2, panelDataRef);
-      });
-      group.appendChild(btn);
-    }
-    return row;
-  };
-
-  rows.push(mkRow(
-    "hf",
-    "Model Download Mirror",
-    "huggingface.co is unreachable on many networks. Mirror sends model downloads to a mirror site instead; " +
-      "Direct uses huggingface.co as-is; Custom lets you enter your own mirror. Applies to the next download.",
-    [["mirror", "Mirror"], ["direct", "Direct"], ["custom", "Custom"]],
-    mirror.hf_mode, mirror.hf_effective));
-
-  rows.push(mkRow(
-    "gh",
-    "Model List Source",
-    "The model list lives on GitHub raw. Auto tries direct first and falls back to a CDN mirror when it fails; " +
-      "Direct never falls back; Proxy always fetches through your own prefix. Press Refresh Model List to apply.",
-    [["auto", "Auto"], ["direct", "Direct"], ["proxy", "Proxy"]],
-    mirror.gh_mode, mirror.gh_effective));
-
-  return rows;
-}
-
 function buildModelsPanelWidgets(container, data, m) {
   for (const w of data.widgets || []) {
     if (w.type === "action" && w.action === "models_sync") {
@@ -4580,9 +4652,6 @@ function buildModelsPanelWidgets(container, data, m) {
       container.appendChild(el);
     }
   }
-  // The two download-source rows the native Models page carries; appended after
-  // the catalog widgets so Refresh/Clear keep their place.
-  for (const row of buildModelsMirrorRows(m)) container.appendChild(row);
 }
 
 function updateModelsSlotRows(m, container) {
@@ -4972,6 +5041,18 @@ const LONGITUDINAL_MPC_TUNING_PARAMS = [
   { param: "LongitudinalMpcTuningAChangeCost", label: "Acceleration Change Cost", min: 5000, max: 60000, step: 500, digits: 0, defaultInternal: 20000 },
   { param: "LongitudinalMpcTuningDangerZoneCost", label: "Danger Zone Cost", min: 0, max: 50000, step: 500, digits: 0, defaultInternal: 10000 },
   { param: "LongitudinalMpcTuningLeadDangerFactor", label: "Lead Danger Factor", min: 25, max: 150, step: 5, digits: 2, defaultInternal: 75 },
+  { param: "LongitudinalMpcTuningAggressiveJerkAccel", label: "Accel Smoothness - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningAggressiveJerkSpeed", label: "Speed Smoothness - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningAggressiveDangerBias", label: "Safety Gap Bias - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningAggressiveJerkDanger", label: "Danger Smoothness - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardJerkAccel", label: "Accel Smoothness - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardJerkSpeed", label: "Speed Smoothness - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardDangerBias", label: "Safety Gap Bias - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardJerkDanger", label: "Danger Smoothness - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedJerkAccel", label: "Accel Smoothness - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedJerkSpeed", label: "Speed Smoothness - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedDangerBias", label: "Safety Gap Bias - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedJerkDanger", label: "Danger Smoothness - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
 ];
 
 function formatMpcLabel(internal, digits) {

@@ -515,6 +515,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   personality = str(ss.personality).split(".")[-1].lower() if hasattr(ss, "personality") else ""
 
   experimental_confirmed = False
+  experimental_mode_set_speed = False
   screensaver_enabled = False
   screensaver_timeout_sec = 300
   recording_audio = car_ctx.recording_audio
@@ -531,6 +532,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     from openpilot.common.params import Params
     p = Params()
     experimental_confirmed = p.get_bool("ExperimentalModeConfirmed")
+    experimental_mode_set_speed = p.get_bool("ExperimentalModeSetSpeed")
     screensaver_enabled = p.get_bool("ScreenSaverEnabled")
     screensaver_timeout_sec = int(p.get("ScreenSaverTimeout", return_default=True) or 300)
     speed_limit_mode = int(p.get("SpeedLimitMode", return_default=True) or 0)
@@ -1027,6 +1029,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "car_control_enabled": car_control_enabled,
     "experimental_mode": experimental,
     "experimental_mode_confirmed": experimental_confirmed,
+    "experimental_mode_set_speed": experimental_mode_set_speed,
     "screensaver_enabled": screensaver_enabled,
     "screensaver_timeout_sec": screensaver_timeout_sec,
     "engageable": bool(getattr(ss, "engageable", False) or engaged),
@@ -1107,7 +1110,6 @@ def build_state_from_sm(sm) -> dict[str, Any]:
     "navigation_card_enabled": car_ctx.navigation_card_enabled,
     "nav_card": nav_card,
     "conditional_experimental": car_ctx.conditional_experimental,
-    "speed_limit_changed_alert": car_ctx.speed_limit_changed_alert,
     "a_ego": float(cs.aEgo) if cs.aEgo == cs.aEgo else 0.0,
     "speed_ms": speed_ms,
     "roll": float(sm["vehicleParameters"].roll) if sm.valid.get("vehicleParameters") else 0.0,

@@ -55,10 +55,13 @@ def torque_versions() -> dict[str, Any]:
       continue
 
   current_label = "Default"
+  current_label_big = "Default"
   try:
     from openpilot.common.params import Params
-    current_label = _current_torque_label(Params().get("TorqueControlTune"), versions)
+    params = Params()
+    current_label = _current_torque_label(params.get("TorqueControlTune"), versions)
+    current_label_big = _current_torque_label(params.get("TorqueControlTuneBig"), versions)
   except Exception:
     pass
 
-  return {"ok": True, "options": options, "current_label": current_label}
+  return {"ok": True, "options": options, "current_label": current_label, "current_label_big": current_label_big}

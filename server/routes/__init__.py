@@ -472,6 +472,16 @@ async def api_developer_error_log(_request: web.Request) -> web.Response:
   return json_response(developer_error_log())
 
 
+async def api_developer_tailscale(_request: web.Request) -> web.Response:
+  from webui.server.bridge.developer_api import tailscale_state
+  return json_response(tailscale_state())
+
+
+async def api_carrot_flm_status(_request: web.Request) -> web.Response:
+  from webui.server.bridge.carrot_tuning_api import flm_status
+  return json_response(flm_status())
+
+
 async def api_osm_delete(_request: web.Request) -> web.Response:
   return json_response(osm_delete_maps())
 
@@ -869,6 +879,8 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/steering/torque-versions", api_torque_versions)
   app.router.add_get("/api/opui/device/regulatory", api_device_regulatory)
   app.router.add_get("/api/opui/developer/error-log", api_developer_error_log)
+  app.router.add_get("/api/opui/developer/tailscale", api_developer_tailscale)
+  app.router.add_get("/api/opui/carrot/flm/status", api_carrot_flm_status)
   app.router.add_post("/api/opui/device/language", api_set_language)
   app.router.add_get("/api/opui/imu/calibration", api_imu_calibration)
   app.router.add_post("/api/opui/imu/calibration/{action}", api_imu_calibration_control)

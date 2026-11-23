@@ -42,6 +42,14 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
       from webui.server.bridge.carrot_tuning_api import carrot_reset_all
       return carrot_reset_all()
 
+    if action == "flm_analysis_request":
+      from webui.server.bridge.carrot_tuning_api import flm_request_analysis
+      return flm_request_analysis()
+
+    if action == "agent_password_reset":
+      from webui.server.bridge.developer_api import agent_password_reset
+      return agent_password_reset()
+
     if action == "imu_calibration_start":
       from webui.server.bridge.imu_calibration_api import start_imu_calibration
       return start_imu_calibration()

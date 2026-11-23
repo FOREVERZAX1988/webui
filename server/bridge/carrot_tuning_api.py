@@ -384,3 +384,40 @@ def carrot_reset_all() -> dict[str, Any]:
     except Exception as exc:
       errors.append(f"{key}: {exc}")
   return {"ok": not errors, "action": "carrot_tuning_reset", "count": count, "errors": errors}
+
+
+# State labels for the FLM analysis status row, mirroring the Big GUI
+# (carrot_tuning_items.py _FLM_STATE_LABELS, simplified Chinese).
+_FLM_STATE_LABELS = {
+  "idle": "空闲",
+  "collecting": "采集中",
+  "fitting": "拟合中",
+  "accepted": "已应用",
+  "rolled_back": "已回滚",
+  "error": "出错",
+}
+
+
+def flm_status() -> dict[str, Any]:
+  """One-line flmanalysisd daemon status, read from the FLMAnalysisStatus param."""
+  try:
+    import json as _json
+    raw = _params().get("FLMAnalysisStatus", encoding="utf-8") or ""
+    if not raw:
+      return {"ok": True, "state": "", "detail": "", "text": "从未运行"}
+    d = _json.loads(raw)
+    state = str(d.get("state", "idle"))
+    detail = str(d.get("detail", "")).strip()
+    label = _FLM_STATE_LABELS.get(state, state)
+    return {"ok": True, "state": state, "detail": detail, "text": f"{label}: {detail}" if detail else label}
+  except Exception as exc:
+    return {"ok": False, "error": str(exc), "text": "从未运行"}
+
+
+def flm_request_analysis() -> dict[str, Any]:
+  """Raise the request flag the flmanalysisd daemon watches (never runs it inline)."""
+  try:
+    _params().put_bool("FLMAnalysisRequested", True)
+    return {"ok": True, "action": "flm_analysis_request"}
+  except Exception as exc:
+    return {"ok": False, "action": "flm_analysis_request", "error": str(exc)}

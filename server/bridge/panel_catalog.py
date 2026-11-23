@@ -60,8 +60,6 @@ CARROT_TUNING_UNAVAILABLE: frozenset[str] = frozenset({
   "LongTuningKiV",
   "LongTuningKpV",
   "MapboxStyle",
-  "MuteDoor",
-  "MuteSeatbelt",
   "NewLaneWidthDiff",
   "PathOffset",
   "RecordRoadCam",
@@ -271,6 +269,9 @@ PANELS: list[dict[str, Any]] = [
        "confirm_button": "Clear Cache"},
       {"type": "custom", "custom": "jetlink_link", "label": "Jetlink",
        "desc": "Connect an Android phone or Jetson as an accelerator for model inference."},
+      {"type": "multiple_button", "param": "BigModelSmoothing", "label": "smooth big model",
+       "buttons": ["Off", "On"],
+       "desc": "Gives big models the small models' steering smoothing. Can calm small side-to-side wiggles on straight roads."},
       {"type": "bool", "param": "LaneTurnDesire", "label": "Use Lane Turn Desires",
        "desc": "If you're driving at 20 mph (32 km/h) or below and have your blinker on, the car will plan a turn in that direction at the nearest drivable path. This prevents situations (like at red lights) where the car might plan the wrong turn direction."},
       {"type": "option", "param": "LaneTurnValue", "label": "Adjust Lane Turn Speed",
@@ -305,11 +306,10 @@ PANELS: list[dict[str, Any]] = [
       {"type": "separator"},
       {"type": "subpanel", "target": "steering__lane_change", "label": "Customize Lane Change", "button": "CUSTOMIZE"},
       {"type": "separator"},
-      {"type": "bool", "param": "BlinkerPauseLateralControl", "label": "Pause Lateral Control with Blinker",
-       "desc": "Pause lateral control with blinker when traveling below the desired speed selected."},
-      {"type": "option", "param": "BlinkerMinLateralControlSpeed", "label": "Minimum Speed to Pause Lateral Control",
-       "min": 0, "max": 255, "step": 5, "label_format": "blinker_min_speed", "layout": "stacked",
-       "visible_if": {"param": "BlinkerPauseLateralControl", "eq": "1"}},
+      {"type": "option", "param": "BlinkerMinLateralControlSpeed", "label": "Pause Lateral Control with Blinker",
+       "min": 5, "max": 255, "step": 5, "label_format": "blinker_min_speed", "layout": "inline",
+       "desc": "Pause lateral control with blinker when traveling below the desired speed selected.",
+       "switch": {"param": "BlinkerPauseLateralControl", "off_label": "Off"}},
       {"type": "option", "param": "BlinkerLateralReengageDelay", "label": "Post-Blinker Delay",
        "min": 0, "max": 10, "step": 1, "label_format": "blinker_delay", "layout": "stacked",
        "desc": "Delay before lateral control resumes after the turn signal ends.",
@@ -333,18 +333,24 @@ PANELS: list[dict[str, Any]] = [
     "id": "cruise",
     "title": "Cruise",
     "widgets": [
+      {"type": "bool", "param": "AlphaLongitudinalEnabled", "label": "sunnypilot Longitudinal Control (Alpha)",
+       "needs_cycle": True, "offroad_only": True, "capability": "alpha_longitudinal",
+       "desc": "WARNING: sunnypilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB). On this car, sunnypilot defaults to the car's built-in ACC instead of sunnypilot's longitudinal control. Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha. Changing this setting will restart sunnypilot if the car is powered on."},
+      {"type": "bool", "param": "ExperimentalModeSetSpeed", "label": "Set Speed Assist",
+       "capability": "longitudinal",
+       "desc": "Drive toward your set speed and following distance whenever the driving model holds back. The model still makes every slowdown. The onroad button and a long press of the distance button switch it too."},
       {"type": "bool", "param": "IntelligentCruiseButtonManagement", "label": "Intelligent Cruise Button Management (ICBM) (Alpha)",
        "offroad_only": True, "dynamic_desc": "icbm",
        "desc": "When enabled, sunnypilot will attempt to manage the built-in cruise control buttons by emulating button presses for limited longitudinal control."},
-      {"type": "bool", "param": "DynamicExperimentalControl", "label": "Enable Dynamic Experimental Control",
-       "desc": "Let the model decide when to use sunnypilot ACC or sunnypilot End to End Longitudinal.",
-       "capability": "longitudinal"},
       {"type": "bool", "param": "SmartCruiseControlVision", "label": "Smart Cruise Control - Vision",
        "desc": "Use vision path predictions to estimate the appropriate speed to drive through turns ahead.",
        "capability": "scc"},
       {"type": "bool", "param": "SmartCruiseControlMap", "label": "Smart Cruise Control - Map",
        "desc": "Use map data to estimate the appropriate speed to drive through turns ahead.",
        "capability": "scc"},
+      {"type": "multiple_button", "param": "CurveSpeedProfile", "label": "Curve Speed",
+       "desc": "How fast Slow for Curves takes turns. Gentle slows more, Sporty slows less.",
+       "buttons": ["Gentle", "Normal", "Sporty"], "capability": "scc"},
       {"type": "bool", "param": "CustomAccIncrementsEnabled", "label": "Custom ACC Speed Increments",
        "offroad_only": True, "dynamic_desc": "custom_acc",
        "desc": "Enable custom Short & Long press increments for cruise speed increase/decrease.",
@@ -367,6 +373,9 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "CELead", "label": "  CEM: Slow Leads",
        "desc": "Experimental mode follows when closing on a slower lead.",
        "visible_if": {"param": "ConditionalExperimental", "eq": "1"}},
+      {"type": "bool", "param": "AccelBoostSP", "label": "Acceleration Boost",
+       "desc": "Adds a small push on top of sunnypilot's own acceleration, stronger in Aggressive and gentler in Relaxed. Eases off in curves and when sunnypilot slows or stops. Never goes past your set speed, and lead-car following still comes first.",
+       "capability": "longitudinal"},
       {"type": "separator", "visible_if": {"param": "ConditionalExperimental", "eq": "1"}},
       {"type": "subpanel", "target": "cruise__following_profiles", "label": "Following Profile", "button": "CUSTOMIZE",
        "desc": "Custom Following Profiles"},
@@ -451,6 +460,11 @@ PANELS: list[dict[str, Any]] = [
        "desc": "Enabling this will display warnings when a vehicle is detected in your blind spot as long as your car has BSM supported."},
       {"type": "bool", "param": "TorqueBar", "label": "Steering Arc",
        "desc": "Display steering arc on the driving screen when lateral control is enabled."},
+      {"type": "bool", "param": "LaneCenterUI", "label": "Lane Center Gauge",
+       "desc": "Shows lane center assist's nudge as a gauge under the steering arc. This feature requires Lane Center Assist, in Models, to be on.",
+       "visible_if": {"param": "Blendful", "eq": "1"}},
+      {"type": "bool", "param": "ConfidenceBall", "label": "Confidence Ball",
+       "desc": "Shows the model's confidence as a ball on your side of the screen, as on the comma 4: higher is more confident, and while engaged it is green, then yellow, then red as confidence drops."},
       {"type": "bool", "param": "RainbowMode", "label": "Enable Tesla Rainbow Mode",
        "desc": "A beautiful rainbow effect on the path the model wants to take. It does not affect driving in any way."},
       {"type": "bool", "param": "StandstillTimer", "label": "Enable Standstill Timer",
@@ -576,6 +590,11 @@ PANELS: list[dict[str, Any]] = [
        "desc": "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."},
       {"type": "bool", "param": "SshEnabled", "label": "Enable SSH"},
       {"type": "custom", "custom": "ssh_keys", "label": "SSH Keys"},
+      {"type": "bool", "param": "TailscaleEnabled", "label": "Remote SSH (Tailscale)",
+       "desc": "Remote SSH from anywhere via Tailscale. Enable, then scan the QR with the Tailscale app on your phone. Works over LTE too. An AGNOS update with tailscaled is required."},
+      {"type": "action", "action": "tailscale_qr", "label": "Pairing QR Code", "button": "SHOW",
+       "desc": "Reopen the Tailscale pairing QR and the SSH address while Remote SSH is enabled."},
+      {"type": "readonly", "param": "NetworkAddress", "label": "Network Address"},
       {"type": "custom", "custom": "params_backup", "label": "Settings Backup"},
       {"type": "bool", "param": "JoystickDebugMode", "label": "Joystick Debug Mode",
        "offroad_only": True, "capability": "not_release"},
@@ -583,13 +602,12 @@ PANELS: list[dict[str, Any]] = [
        "offroad_only": True, "capability": "longitudinal_not_release"},
       {"type": "bool", "param": "LateralManeuverMode", "label": "Lateral Maneuver Mode",
        "offroad_only": True, "capability": "not_release"},
-      {"type": "bool", "param": "AlphaLongitudinalEnabled", "label": "sunnypilot Longitudinal Control (Alpha)",
-       "needs_cycle": True, "offroad_only": True, "capability": "alpha_longitudinal",
-       "desc": "WARNING: sunnypilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB). On this car, sunnypilot defaults to the car's built-in ACC instead of sunnypilot's longitudinal control. Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha. Changing this setting will restart sunnypilot if the car is powered on."},
-      {"type": "bool", "param": "ExperimentalModeSetSpeed", "label": "Experimental Mode Speed Assist",
-       "desc": "In Experimental Mode, gently raise speed toward the set speed when nothing calls for slowing down. Has no effect while Dynamic Experimental Control is on."},
-      {"type": "bool", "param": "ExperimentalModeLeadGap", "label": "Experimental Mode Lead Follow Assist",
-       "desc": "Closes the gap to your driving personality's following distance behind a steady car. Never closer than chill mode. No effect while Dynamic Experimental Control is on."},
+      {"type": "bool", "param": "AgentEnabled", "label": "AI Agent", "offroad_only": True,
+       "desc": "Built-in AI agent (opencode). Offroad only; browser access on port 5095; the password is shown in the next row. Vehicle-control parameters are hard-blocked. Requires an AGNOS update with opencode."},
+      {"type": "text", "param": "AgentPassword", "label": "Agent Password", "maxlength": 64,
+       "desc": "Web login for the AI agent browser page (port 5095): username is always opencode, the password is shown below. Set to type a custom one; Reset to generate a random one. The change takes effect within a minute, when the agent restarts."},
+      {"type": "action", "action": "agent_password_reset", "label": "Agent Password Reset", "button": "RESET",
+       "desc": "Generate a new random web login password for the AI agent browser page (port 5095)."},
       {"type": "bool", "param": "ShowDebugInfo", "label": "UI Debug Mode", "capability": "not_release"},
       {"type": "bool", "param": "ShowAdvancedControls", "label": "Show Advanced Controls",
        "desc": "Toggle visibility of advanced sunnypilot controls. This only changes the visibility of the toggles; it does not change the actual enabled/disabled state."},
@@ -1621,6 +1639,25 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "title": "Lateral Tuning",
     "parent": "carrot",
     "widgets": [{
+        "type": "section",
+        "label": "FLM Torque Learning"
+      },{
+        "type": "bool",
+        "param": "FlmRuntimeOverridesEnabled",
+        "label": "FLM Runtime Overrides",
+        "desc": "Apply the friction curve / vehicle knobs learned by FLM analysis to the torque controller.",
+        "default": False
+      },{
+        "type": "action",
+        "action": "flm_analysis_request",
+        "label": "Run FLM Analysis",
+        "button": "RUN",
+        "desc": "Analyses recent driving routes while parked to auto-tune torque friction (requires offroad and lane centering off)."
+      },{
+        "type": "custom",
+        "custom": "flm_status",
+        "label": "Analysis Status"
+      },{
         "type": "separator"
       },{
         "type": "section",
@@ -1807,7 +1844,7 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 1,
         "max": 4,
         "step": 1,
-      },{
+      },      {
         "type": "int",
         "param": "MyDrivingModeAuto",
         "label": "My Driving Mode Auto",
@@ -1815,6 +1852,23 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 2,
         "step": 1
+      },{
+        "type": "separator"
+      },{
+        "type": "section",
+        "label": "Alerts"
+      },{
+        "type": "bool",
+        "param": "MuteSeatbelt",
+        "label": "Mute Seatbelt Alert",
+        "desc": "Suppress the seatbelt-not-latched engage block. The car still shows its own warning; use only where the belt is genuinely fastened.",
+        "default": False
+      },{
+        "type": "bool",
+        "param": "MuteDoor",
+        "label": "Mute Door Alert",
+        "desc": "Suppress the door-open engage block. The car still shows its own warning; use only if a sensor falsely reports an open door.",
+        "default": False
       }],
   },
 
@@ -2033,8 +2087,10 @@ SUBPANELS: dict[str, dict[str, Any]] = {
     "widgets": [
       {"type": "bool", "param": "LateralJerkTorqueController", "label": "Lateral Jerk Torque Controller", "offroad_only": True,
        "desc": "Looks ahead at planned steering to reduce sudden corrections, so the wheel moves more smoothly through turns. Works with Self-Tune and custom tuning. Thanks to @twilsonco for the implementation."},
-      {"type": "action", "action": "torque_tune_version", "label": "Torque Control Tune Version", "button": "SELECT",
-       "desc": "Select the version of Torque Control Tune to use."},
+      {"type": "action", "action": "torque_tune_version_small", "label": "Torque Control Tune Version (Small Models)", "button": "SELECT",
+       "desc": "Select the version of Torque Control Tune to use while the small model is driving."},
+      {"type": "action", "action": "torque_tune_version_big", "label": "Torque Control Tune Version (Big Models)", "button": "SELECT",
+       "desc": "Select the version of Torque Control Tune to use while a big model is driving."},
       {"type": "bool", "param": "LiveTorqueParamsToggle", "label": "Self-Tune", "offroad_only": True,
        "desc": "Enables self-tune for Torque lateral control for platforms that do not use Torque lateral control by default."},
       {"type": "bool", "param": "LiveTorqueParamsRelaxedToggle", "label": "Less Restrict Settings for Self-Tune (Beta)",
@@ -2071,8 +2127,6 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       {"type": "multiple_button", "param": "SpeedLimitConfirmOnChange", "label": "Confirm Limit Changes",
        "buttons": ["Never", "Lower", "Higher", "Both"],
        "desc": "Ask before taking a new speed limit. Adds to the low-speed confirmation, never replaces it."},
-      {"type": "bool", "param": "SpeedLimitChangedAlert", "label": "Speed Limit Change Alert",
-       "desc": "Play a chime and show an alert whenever the displayed speed limit changes (jump larger than 5 km/h within 2 seconds)."},
     ],
   },
   "cruise__sla__tiered": {

@@ -537,7 +537,6 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
       },
     },
     "conditional_experimental": False,
-    "speed_limit_changed_alert": False,
     "a_ego": -0.8,
     "dm_arc": {
       "visible": True,

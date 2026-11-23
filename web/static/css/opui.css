@@ -2398,6 +2398,37 @@ html.opui-portrait-host .opui-modal-scroll {
 .opui-exp-btn.is-not-engageable .opui-exp-icon { opacity: 0.706; }
 .opui-exp-btn:active:not(.is-disabled) .opui-exp-icon { opacity: 0.706; }
 
+/* Set Speed Assist quick toggle — mirrors the Big GUI SpeedAssistButton
+   (tizi onroad corner button in the ExpButton shape): dim when off, green ring
+   when on. */
+.opui-speed-assist-btn {
+  position: absolute;
+  top: 30px;
+  right: 240px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 8px solid transparent;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.opui-speed-assist-btn.is-on { border-color: #167f40; }
+.opui-speed-assist-btn .opui-speed-assist-gauge::before {
+  content: "▶";
+  font-size: 34px;
+  line-height: 1;
+  opacity: 0.9;
+}
+.opui-speed-assist-btn:not(.is-on) .opui-speed-assist-gauge::before { opacity: 0.35; }
+.opui-speed-assist-btn.is-disabled { cursor: default; }
+.opui-speed-assist-btn.is-disabled .opui-speed-assist-gauge::before { opacity: 0.2; }
+
 .opui-alert {
   position: absolute;
   left: calc(var(--border-w) + var(--alert-margin));
