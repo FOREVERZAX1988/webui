@@ -9,7 +9,7 @@ import { runSoftwareInstallFlow, runRebootFlow } from "./system_wait_overlay.js"
 import { opuiWs } from "./ws.js";
 import {
   showConfirm, showKeyboard, showTextInput, showTree, showHtml, showMultiOption, showQrPair,
-  createSpToggle, createProgressRow, createDualButton, bindRowExpand, experimentalE2eHtml,
+  createSpToggle, createProgressRow, createDualButton, bindRowExpand,
 } from "./components.js?v=2";
 import { reopenOnboarding } from "./onboarding.js";
 
@@ -270,6 +270,10 @@ function widgetVisible(w, panelData) {
   if (w.visible_if.state) return !!globalState[w.visible_if.state];
   const dep = panelData.values?.[w.visible_if.param];
   if (w.visible_if.ne != null) return String(dep) !== String(w.visible_if.ne);
+  if (w.visible_if.gte != null) {
+    const n = parseInt(dep, 10);
+    return !Number.isNaN(n) && n >= parseInt(w.visible_if.gte, 10);
+  }
   return String(dep) === String(w.visible_if.eq);
 }
 
@@ -329,6 +333,7 @@ function formatOptionLabel(w, rawVal, panelData = panelDataRef) {
   if (fmt === "camera_offset") return `${(val / 100).toFixed(2)} m`;
   if (fmt === "seconds_1") return `${(val / 100).toFixed(1)}s`;
   if (fmt === "meters_1") return `${(val / 100).toFixed(1)}m`;
+  if (fmt === "custom_sr") return val === 0 ? t("Stock") : (val / 10.0).toFixed(1);
   if (fmt === "percent") return `${val} %`;
   if (fmt === "ms") return `${val} ms`;
   if (fmt === "lane_turn_speed") {
@@ -404,7 +409,7 @@ let homeState = { paired: false };
 let onNavigateSubpanel = null;
 let deviceExtrasCache = null;
 
-async function putParam(key, value, needsCycle = false, skipEffects = false) {
+async function putParam(key, value, needsCycle = false, skipEffects = false, extra = null) {
   // Snapshot scroll position before any async work so it survives re-renders.
   // Only capture on the first putParam of an interaction; side-effect puts
   // must not overwrite the original user scroll position.
@@ -413,11 +418,11 @@ async function putParam(key, value, needsCycle = false, skipEffects = false) {
   let res;
   try {
     if (opuiWs.connected) {
-      res = await opuiWs.putParam(key, value, needsCycle);
+      res = await opuiWs.putParam(key, value, needsCycle, extra);
       res = res || { ok: false, error: "ws failed" };
     } else {
       res = await apiPut(`/api/opui/params/${encodeURIComponent(key)}`, {
-        value, needs_cycle: !!needsCycle,
+        value, needs_cycle: !!needsCycle, ...(extra || {}),
       });
     }
   } catch (err) {
@@ -533,10 +538,6 @@ export function setHomeState(home) {
 function updateToggleCapabilities(st) {
   if (!st) return;
   const hasLong = st.has_longitudinal_control !== false;
-  const spRelease = !!st.is_release_branch;
-  const expRow = document.querySelector('[data-param="ExperimentalMode"]');
-  const expInput = expRow?.querySelector("input[type=checkbox]");
-  const expDesc = expRow?.querySelector(".opui-sp-row-desc--expandable, .opui-sp-row-desc:not(.opui-sp-row-desc--hint):not(.opui-sp-row-desc--experimental)");
 
   // Generic longitudinal capability gating
   document.querySelectorAll('[data-capability="longitudinal"]').forEach((row) => {
@@ -554,29 +555,6 @@ function updateToggleCapabilities(st) {
       if (param) removeParam(param);
     }
   });
-
-  if (expInput) {
-    const e2e = experimentalE2eHtml();
-    if (expDesc) {
-      if (!hasLong) {
-        let unavailable = t(
-          "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.",
-        );
-        if (st.alpha_longitudinal_available) {
-          if (spRelease) {
-            unavailable += ` ${t("An alpha version of sunnypilot longitudinal control can be tested, along with Experimental mode, on non-release branches.")}`;
-          } else {
-            unavailable += ` ${t("Enable the sunnypilot longitudinal control (alpha) toggle to allow Experimental mode.")}`;
-          }
-        } else {
-          unavailable += ` ${t("sunnypilot longitudinal control may come in a future update.")}`;
-        }
-        expDesc.innerHTML = `<b>${unavailable}</b><br><br>${e2e}`;
-      } else {
-        expDesc.innerHTML = e2e;
-      }
-    }
-  }
 }
 
 function syncToggleLocksFromPanel() {
@@ -1058,6 +1036,15 @@ function updateVisualsCapabilities(st) {
       putParam(param, "0", false, true);
     }
   });
+  // Lane Center Gauge follows the Lane Center Assist (Blendful) switch with a
+  // dynamic description, mirroring big UI visuals_zp.py:36-43.
+  const laneCenterOn = paramIsOn(panelDataRef?.values?.Blendful);
+  setToggleRowState("LaneCenterUI", {
+    disabled: !laneCenterOn,
+    desc: laneCenterOn
+      ? "Shows lane center assist's nudge as a gauge under the steering arc."
+      : "This feature requires Lane Center Assist, in Models, to be on.",
+  });
 }
 
 function updateSteeringCapabilities(st) {
@@ -1078,7 +1065,7 @@ function updateSteeringCapabilities(st) {
   setToggleDisabled("Mads", !offroad);
   const madsRow = document.querySelector('[data-param="Mads"]');
   if (madsRow) {
-    const baseDesc = t("Enable the beloved MADS feature. Disable toggle to revert back to stock sunnypilot engagement/disengagement.");
+    const baseDesc = t("Lets sunnypilot steer while cruise control is off. When off, steering and cruise engage and disengage together.");
     if (!st.cp_loaded) {
       setPanelRowDescHtml(madsRow, `<b>${escapeHtml(t("Start the vehicle to check vehicle compatibility."))}</b><br><br>${escapeHtml(baseDesc)}`);
     } else {
@@ -1397,6 +1384,12 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
   }
 }
 
+// Onroad Uploads is a no-op when RecordingMode is "Disable All" (0): nothing
+// is recorded, so there is nothing to upload (big UI device.py:119-126).
+function recordingUploadsDisabled() {
+  return parseInt(panelDataRef?.values?.RecordingMode ?? "2", 10) === 0;
+}
+
 function updateDualButtonRow(root, w) {
   const left = w.left || {};
   const right = w.right || {};
@@ -1414,6 +1407,7 @@ function updateDualButtonRow(root, w) {
     }
     if (cfg?.toggle && cfg.param) {
       btn.classList.toggle("primary", paramIsOn(cfg.value));
+      if (cfg.param === "OnroadUploads") btn.disabled = btn.disabled || recordingUploadsDisabled();
     }
     if (cfg?.action === "onroad_preview" || cfg?.action === "driver_view") {
       const active = cfg.action === "onroad_preview"
@@ -1999,10 +1993,8 @@ function renderBoolRow(w) {
       return "handled";
     };
   }
-  if (w.param === "AlphaLongitudinalEnabled") {
-    toggleDef.confirm_rich = true;
-    toggleDef.confirm_message = w.desc || "";
-  }
+  // AlphaLongitudinalEnabled rich confirm now comes from the catalog
+  // (confirm_enable_rich, mirroring big UI developer.py rich ConfirmDialog).
   if (w.confirm_enable) {
     toggleDef.confirm_enable = true;
     toggleDef.confirm_message = w.desc || w.label;
@@ -2572,6 +2564,7 @@ function renderDualButtonRow(w) {
 
     if (side.toggle) {
       btn.classList.toggle("primary", paramIsOn(side.value));
+      if (side.param === "OnroadUploads" && recordingUploadsDisabled()) btn.disabled = true;
     }
     // offroad_only: onroad_preview is also enabled when already in preview mode
     if (side.offroad_only) {

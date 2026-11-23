@@ -244,7 +244,7 @@ class OpuiSocket {
     });
   }
 
-  putParam(key, value, needsCycle = false) {
+  putParam(key, value, needsCycle = false, extra = null) {
     if (!this._connected) return null;
     const id = `p${++this._req}`;
     return new Promise((resolve, reject) => {
@@ -258,7 +258,7 @@ class OpuiSocket {
           resolve(msg);
         },
       });
-      if (!this._send({ type: "put_param", id, key, value: String(value), needs_cycle: !!needsCycle })) {
+      if (!this._send({ type: "put_param", id, key, value: String(value), needs_cycle: !!needsCycle, ...(extra || {}) })) {
         clearTimeout(timer);
         this._pending.delete(id);
         reject(new Error("not connected"));

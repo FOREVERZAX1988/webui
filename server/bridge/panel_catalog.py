@@ -188,10 +188,9 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "OpenpilotEnabledToggle", "label": "Enable sunnypilot", "needs_cycle": True,
        "icon": "selfdrive/assets/icons/chffr_wheel.png",
        "desc": "Use the sunnypilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature."},
-      {"type": "bool", "param": "ExperimentalMode", "label": "Experimental Mode", "confirm_experimental": True,
-       "capability": "longitudinal",
-       "icon": "selfdrive/assets/icons/experimental_white.png",
-       "icon_active": "selfdrive/assets/icons/experimental.png"},
+      # No ExperimentalMode toggle row since the chill rework: entry points are the
+      # onroad wheel buttons and the server-side mode-state machine, which run the
+      # confirmation/acknowledgement flow (big UI alpha_longitudinal_toggles.py).
       {"type": "bool", "param": "DisengageOnAccelerator", "label": "Disengage on Accelerator Pedal",
        "icon": "selfdrive/assets/icons/disengage_on_accelerator.png",
        "desc": "When enabled, pressing the accelerator pedal will disengage sunnypilot."},
@@ -220,16 +219,23 @@ PANELS: list[dict[str, Any]] = [
       {"type": "multiple_button", "param": "DistractionDetectionLevel", "label": "Distraction Detection Level",
        "layout": "stacked",
        "icon": "selfdrive/assets/icons/monitoring.png",
-       "buttons": ["Strict", "Moderate", "Lenient"],
+       "buttons": ["Strict", "Moderate", "Lenient", "Extra Lenient"],
        "visible_if": {"param": "AlwaysOnDM", "eq": "1"},
        "hide_if": {"param": "DisableDM", "eq": "1"},
-       "desc": "Set how sensitive the driver distraction detection should be. Strict: Very sensitive, warns on minor distractions. Moderate: Balanced between sensitivity and false positives. Lenient: Only alerts on clear distractions."},
+       "desc": "Set how sensitive the driver distraction detection should be. Strict: Very sensitive, warns on minor distractions. Moderate: Balanced between sensitivity and false positives. Lenient: Only alerts on clear distractions. Extra Lenient: Alerts only on sustained, obvious distractions (longest grace period)."},
+      {"type": "multiple_button", "param": "RecordingMode", "label": "Recording",
+       "layout": "stacked",
+       "icon": "selfdrive/assets/icons/monitoring.png",
+       "buttons": ["Disable All", "Logs Only", "Full Recording"], "default": "2",
+       "desc": "Choose what gets recorded on each route. Full Recording: logs plus all camera video (default, uses the most storage). Logs Only: keeps the route log files for later analysis but records no video. Disable All: no logs and no video. A change applies to the next route after openpilot restarts."},
       {"type": "bool", "param": "RecordFront", "label": "Record and Upload Driver Camera", "needs_cycle": True,
        "icon": "selfdrive/assets/icons/monitoring.png",
        "hide_if": {"param": "DisableDM", "eq": "1"},
+       "visible_if": {"param": "RecordingMode", "gte": "2"},
        "desc": "Upload data from the driver facing camera and help improve the driver monitoring algorithm."},
       {"type": "bool", "param": "RecordAudio", "label": "Record and Upload Microphone Audio", "needs_cycle": True,
        "icon": "selfdrive/assets/icons/microphone.png",
+       "visible_if": {"param": "RecordingMode", "gte": "2"},
        "desc": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."},
       {"type": "bool", "param": "SpDevBeep", "label": "Beeper Feedback", "lite_only": True, "needs_cycle": True,
        "icon": "selfdrive/assets/icons/warning.png",
@@ -299,9 +305,9 @@ PANELS: list[dict[str, Any]] = [
     "id": "steering",
     "title": "Steering",
     "widgets": [
-      {"type": "bool", "param": "Mads", "label": "Modular Assistive Driving System (MADS)", "offroad_only": True,
-       "desc": "Enable the beloved MADS feature. Disable toggle to revert back to stock sunnypilot engagement/disengagement."},
-      {"type": "subpanel", "target": "steering__mads", "label": "Customize MADS", "button": "CUSTOMIZE",
+      {"type": "bool", "param": "Mads", "label": "Steer Without Cruise", "offroad_only": True,
+       "desc": "Lets sunnypilot steer while cruise control is off. When off, steering and cruise engage and disengage together."},
+      {"type": "subpanel", "target": "steering__mads", "label": "When to Steer", "button": "CUSTOMIZE",
        "requires": {"param": "Mads", "eq": "1"}, "offroad_only": True},
       {"type": "separator"},
       {"type": "subpanel", "target": "steering__lane_change", "label": "Customize Lane Change", "button": "CUSTOMIZE"},
@@ -324,8 +330,13 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "NeuralNetworkLateralControl", "label": "Neural Network Lateral Control (NNLC)",
        "offroad_only": True, "capability": "torque_allowed"},
       {"type": "separator"},
+      # Steer-ratio resolution knobs consumed by controlsd via
+      # steer_ratio.resolve_vehicle_model_steer_ratio (big UI steering.py:100-117).
+      {"type": "option", "param": "SteerRatioRate", "label": "Steer Ratio Rate",
+       "min": 30, "max": 200, "step": 5, "label_format": "percent", "layout": "inline",
+       "desc": "Scales the live steering ratio, in percent. 100 keeps the vehicle's ratio."},
       {"type": "option", "param": "CustomSR", "label": "Custom Steer Ratio",
-       "min": 0, "max": 300, "step": 5, "layout": "inline",
+       "min": 0, "max": 300, "step": 5, "label_format": "custom_sr", "layout": "inline",
        "desc": "Fixed steering ratio in 0.1 units (e.g. 130 = 13.0). Overrides the live ratio when above 10. 0 uses the vehicle's ratio."},
     ],
   },
@@ -335,32 +346,25 @@ PANELS: list[dict[str, Any]] = [
     "widgets": [
       {"type": "bool", "param": "AlphaLongitudinalEnabled", "label": "sunnypilot Longitudinal Control (Alpha)",
        "needs_cycle": True, "offroad_only": True, "capability": "alpha_longitudinal",
+       "confirm_enable_rich": True,
        "desc": "WARNING: sunnypilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB). On this car, sunnypilot defaults to the car's built-in ACC instead of sunnypilot's longitudinal control. Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha. Changing this setting will restart sunnypilot if the car is powered on."},
       {"type": "bool", "param": "ExperimentalModeSetSpeed", "label": "Set Speed Assist",
        "capability": "longitudinal",
        "desc": "Drive toward your set speed and following distance whenever the driving model holds back. The model still makes every slowdown. The onroad button and a long press of the distance button switch it too."},
+      {"type": "subpanel", "target": "cruise__following_profiles", "label": "Following Profile", "button": "CUSTOMIZE",
+       "desc": "Custom Following Profiles"},
       {"type": "bool", "param": "IntelligentCruiseButtonManagement", "label": "Intelligent Cruise Button Management (ICBM) (Alpha)",
        "offroad_only": True, "dynamic_desc": "icbm",
        "desc": "When enabled, sunnypilot will attempt to manage the built-in cruise control buttons by emulating button presses for limited longitudinal control."},
-      {"type": "bool", "param": "SmartCruiseControlVision", "label": "Smart Cruise Control - Vision",
+      {"type": "bool", "param": "SmartCruiseControlVision", "label": "Slow for Curves: Vision",
        "desc": "Use vision path predictions to estimate the appropriate speed to drive through turns ahead.",
        "capability": "scc"},
-      {"type": "bool", "param": "SmartCruiseControlMap", "label": "Smart Cruise Control - Map",
+      {"type": "bool", "param": "SmartCruiseControlMap", "label": "Slow for Curves: Map",
        "desc": "Use map data to estimate the appropriate speed to drive through turns ahead.",
        "capability": "scc"},
       {"type": "multiple_button", "param": "CurveSpeedProfile", "label": "Curve Speed",
        "desc": "How fast Slow for Curves takes turns. Gentle slows more, Sporty slows less.",
        "buttons": ["Gentle", "Normal", "Sporty"], "capability": "scc"},
-      {"type": "bool", "param": "CustomAccIncrementsEnabled", "label": "Custom ACC Speed Increments",
-       "offroad_only": True, "dynamic_desc": "custom_acc",
-       "desc": "Enable custom Short & Long press increments for cruise speed increase/decrease.",
-       "capability": "custom_acc"},
-      {"type": "int", "param": "CustomAccShortPressIncrement", "label": "Short Press Increment", "min": 1, "max": 10, "step": 1,
-       "visible_if": {"param": "CustomAccIncrementsEnabled", "eq": "1"}, "capability": "custom_acc"},
-      {"type": "option", "param": "CustomAccLongPressIncrement", "label": "Long Press Increment",
-       "min": 1, "max": 3, "step": 1, "label_format": "acc_long_press",
-       "value_map": {"1": 1, "2": 5, "3": 10},
-       "visible_if": {"param": "CustomAccIncrementsEnabled", "eq": "1"}, "capability": "custom_acc"},
       {"type": "subpanel", "target": "cruise__sla", "label": "Speed Limit", "button": "CUSTOMIZE"},
       {"type": "bool", "param": "ConditionalExperimental", "label": "Conditional Experimental Mode",
        "desc": "Automatically switch experimental mode on demanding curves, slow leads and low-speed turns. A manual switch keeps priority for a minute."},
@@ -376,9 +380,16 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "AccelBoostSP", "label": "Acceleration Boost",
        "desc": "Adds a small push on top of sunnypilot's own acceleration, stronger in Aggressive and gentler in Relaxed. Eases off in curves and when sunnypilot slows or stops. Never goes past your set speed, and lead-car following still comes first.",
        "capability": "longitudinal"},
-      {"type": "separator", "visible_if": {"param": "ConditionalExperimental", "eq": "1"}},
-      {"type": "subpanel", "target": "cruise__following_profiles", "label": "Following Profile", "button": "CUSTOMIZE",
-       "desc": "Custom Following Profiles"},
+      {"type": "bool", "param": "CustomAccIncrementsEnabled", "label": "Custom ACC Speed Increments",
+       "offroad_only": True, "dynamic_desc": "custom_acc",
+       "desc": "Enable custom Short & Long press increments for cruise speed increase/decrease.",
+       "capability": "custom_acc"},
+      {"type": "int", "param": "CustomAccShortPressIncrement", "label": "Short Press Increment", "min": 1, "max": 10, "step": 1,
+       "visible_if": {"param": "CustomAccIncrementsEnabled", "eq": "1"}, "capability": "custom_acc"},
+      {"type": "option", "param": "CustomAccLongPressIncrement", "label": "Long Press Increment",
+       "min": 1, "max": 3, "step": 1, "label_format": "acc_long_press",
+       "value_map": {"1": 1, "2": 5, "3": 10},
+       "visible_if": {"param": "CustomAccIncrementsEnabled", "eq": "1"}, "capability": "custom_acc"},
       {"type": "subpanel", "target": "cruise__longitudinal_mpc_tuning", "label": "Longitudinal MPC Tuning", "button": "CUSTOMIZE",
        "capability": "longitudinal"},
     ],
@@ -461,8 +472,8 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "TorqueBar", "label": "Steering Arc",
        "desc": "Display steering arc on the driving screen when lateral control is enabled."},
       {"type": "bool", "param": "LaneCenterUI", "label": "Lane Center Gauge",
-       "desc": "Shows lane center assist's nudge as a gauge under the steering arc. This feature requires Lane Center Assist, in Models, to be on.",
-       "visible_if": {"param": "Blendful", "eq": "1"}},
+       "desc": "Shows lane center assist's nudge as a gauge under the steering arc.",
+       "desc_disabled": "This feature requires Lane Center Assist, in Models, to be on."},
       {"type": "bool", "param": "ConfidenceBall", "label": "Confidence Ball",
        "desc": "Shows the model's confidence as a ball on your side of the screen, as on the comma 4: higher is more confident, and while engaged it is green, then yellow, then red as confidence drops."},
       {"type": "bool", "param": "RainbowMode", "label": "Enable Tesla Rainbow Mode",
@@ -624,6 +635,19 @@ PANELS: list[dict[str, Any]] = [
     ],
   },
 ]
+
+# Sidebar order mirrors the big UI SettingsLayoutSP._build_panels
+# (sunnypilot/layouts/settings/settings.py:124-148): Storage follows Models;
+# OSM / Navigation / Carrot follow Display.
+_PANEL_ORDER: list[str] = [
+  "device", "network", "bluetooth", "sunnylink", "toggles", "software",
+  "models", "storage", "steering", "cruise", "visuals", "display",
+  "osm", "navigation", "carrot", "trips", "vehicle", "firehose",
+  "imu_calibration", "developer",
+]
+_by_id = {panel["id"]: panel for panel in PANELS}
+assert set(_by_id) == set(_PANEL_ORDER), "panel order list is out of sync with PANELS"
+PANELS = [_by_id[panel_id] for panel_id in _PANEL_ORDER]
 
 SUBPANELS: dict[str, dict[str, Any]] = {
   "navigation__carrot_tuning": {
@@ -1708,15 +1732,9 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "min": 0,
         "max": 50,
         "step": 1,
-      },{
-        "type": "int",
-        "param": "SteerRatioRate",
-        "label": "Steer Ratio Rate (%)",
-        "desc": "Percent applied to the live steer ratio: 100 as measured, lower turns in less, higher more. Outside 30-200 the controller uses 100.",
-        "min": 30,
-        "max": 200,
-        "step": 5
       }],
+      # NOTE: SteerRatioRate deliberately not listed here — the control lives in the
+      # Steering panel (big UI steering.py:100-108), keeping one control per param.
   },
 
   "navigation__carrot_tuning__display": {

@@ -287,10 +287,12 @@ class TuningMetadataTests(unittest.TestCase):
   def test_the_four_unhidden_controls_are_reachable(self):
     """These were hidden as dead while shipped code reads them; they must stay reachable."""
     keys = set(panel_param_keys("navigation__carrot_tuning"))
-    for name in ("UseLaneLineCurveSpeed", "SteerRatioRate", "HotspotOnBoot"):
+    for name in ("UseLaneLineCurveSpeed", "HotspotOnBoot"):
       self.assertIn(name, keys, f"{name} lost its control")
     # ShowRadarInfo moved to the visuals panel, mirroring big UI visuals.py.
     self.assertIn("ShowRadarInfo", set(panel_param_keys("visuals")), "ShowRadarInfo lost its control")
+    # SteerRatioRate moved to the steering panel, mirroring big UI steering.py:100-108.
+    self.assertIn("SteerRatioRate", set(panel_param_keys("steering")), "SteerRatioRate lost its control")
 
   def test_no_names_means_no_store_read(self):
     """An empty request must not build a Params handle just to answer nothing."""

@@ -238,7 +238,9 @@ async def _handle_client(ws: web.WebSocketResponse, msg: dict[str, Any]) -> None
     key = str(msg.get("key") or "")
     value = str(msg.get("value", ""))
     needs_cycle = bool(msg.get("needs_cycle", False))
-    result = await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle)
+    acknowledge = bool(msg.get("acknowledge", False))
+    result = await asyncio.to_thread(
+      put_param, key, value, needs_cycle=needs_cycle, acknowledged=acknowledge)
     await ws.send_json({"type": "put_param_result", "id": req_id, **result})
     if result.get("ok"):
       await _broadcast_panel_updates_for_key(key)

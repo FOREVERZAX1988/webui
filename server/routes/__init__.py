@@ -145,12 +145,14 @@ async def api_param_put(request: web.Request) -> web.Response:
     body = await request.json()
     value = str(body.get("value", ""))
     needs_cycle = bool(body.get("needs_cycle", False))
+    acknowledge = bool(body.get("acknowledge", False))
   except Exception:
     return json_response({"ok": False, "error": "invalid json"}, status=400)
   # Read previous value for history tracking
   prev_result = get_param(key)
   previous = prev_result.get("value") if prev_result.get("ok") else None
-  result = await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle)
+  result = await asyncio.to_thread(
+    put_param, key, value, needs_cycle=needs_cycle, acknowledged=acknowledge)
   # Log to change history if value actually changed
   if result.get("ok") and previous is not None and str(previous) != value:
     append_param_change(key, previous, value, source="web_ui")

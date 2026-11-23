@@ -1,5 +1,6 @@
 import { apiGet, apiPut } from "./api.js";
 import { tr } from "./i18n.js?v=3";
+import { showConfirm, experimentalE2eHtml } from "./components.js";
 import { updateSpHud } from "./hud_sp.js";
 import { updateSpWidgets } from "./hud_sp_widgets.js";
 import { updateNavCard } from "./hud_navcard.js";
@@ -183,7 +184,10 @@ function applyExperimentalButton(st) {
   const show = !!st.started;
   expBtn.hidden = !show;
 
-  const canToggle = !!st.experimental_mode_confirmed && !!st.has_longitudinal_control;
+  // Gate only on longitudinal capability: when Experimental Mode was never
+  // confirmed, tapping runs the confirmation dialog first (same flow as the
+  // big UI wheel buttons, alpha_longitudinal_toggles.py _on_experimental_mode).
+  const canToggle = !!st.has_longitudinal_control;
   const engageable = !!st.engageable || !!st.engaged;
   expBtn.classList.toggle("is-engageable", engageable);
   expBtn.classList.toggle("is-disabled", !canToggle);
@@ -415,10 +419,26 @@ export function bindExperimentalButton() {
   document.getElementById("btn-experimental")?.addEventListener("click", async () => {
     const boot = await apiGet("/api/opui/bootstrap").catch(() => ({}));
     const st = boot?.state || lastOnroadState || {};
-    if (!st.experimental_mode_confirmed || !st.has_longitudinal_control) return;
+    if (!st.has_longitudinal_control) return;
     const cur = !!st.experimental_mode;
-    const next = !cur;
-    await apiPut("/api/opui/params/ExperimentalMode", { value: next ? "1" : "0" });
+    let next = !cur;
+    let extra = null;
+    if (next && !st.experimental_mode_confirmed) {
+      const ok = await showConfirm({
+        rich: true,
+        message: experimentalE2eHtml(),
+        confirmText: tr("Enable"),
+        cancelText: tr("Cancel"),
+      });
+      if (!ok) return;
+      // The acknowledgement rides with the mode write; the server-side mode
+      // machine persists ExperimentalModeConfirmed (never written directly).
+      extra = { acknowledge: true };
+    }
+    const res = await apiPut("/api/opui/params/ExperimentalMode", {
+      value: next ? "1" : "0", ...(extra || {}),
+    });
+    if (!res?.ok) return;
     expHeldMode = next;
     expHoldUntil = performance.now() + 2000;
     applyExperimentalButton({ ...st, experimental_mode: next });

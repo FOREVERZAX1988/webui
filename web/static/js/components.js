@@ -16,21 +16,16 @@ function paramIsOn(val) {
 }
 
 export function experimentalE2eHtml() {
+  // Legacy-chill confirmation text, mirroring big UI
+  // alpha_longitudinal_toggles.py LEGACY_CHILL_DESCRIPTION (the stand-in
+  // dialog's description since the chill rework removed the toggle row).
   return (
     `<h1>${tr("Experimental Mode")}</h1><br>`
     + `<p>${tr(
-      "sunnypilot defaults to driving in chill mode. Experimental mode enables alpha-level features that aren't ready for chill mode. "
-      + "Experimental features are listed below:",
-    )}</p>`
-    + `<h4>${tr("End-to-End Longitudinal Control")}</h4><br>`
-    + `<p>${tr(
-      "Let the driving model control the gas and brakes. sunnypilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-      + "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.",
-    )}</p>`
-    + `<h4>${tr("New Driving Visualization")}</h4><br>`
-    + `<p>${tr(
-      "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. "
-      + "The Experimental mode logo will also be shown in the top right corner.",
+      "The older way to drive the gas and brakes: hold your set speed and follow the car ahead. "
+      + "It won't stop for red lights or stop signs.<br><br>"
+      + "Off, the default, lets the driving model drive the gas and brakes as it thinks a human would, "
+      + "including stopping for red lights and stop signs. The set speed is then a maximum.",
     )}</p>`
   );
 }
@@ -678,7 +673,9 @@ export function createSpToggle(w, panelData, globalState, handlers) {
         label?.classList.remove("on");
         return;
       }
-      await handlers.putParam("ExperimentalModeConfirmed", "1");
+      // The server-side mode machine records the acknowledgement itself
+      // (ExperimentalModeConfirmed is written by set_experimental_mode, never
+      // directly from the client).
     }
     if (w.confirm_enable && next) {
       const ok = await showConfirm({
@@ -706,7 +703,10 @@ export function createSpToggle(w, panelData, globalState, handlers) {
       }
     }
     label?.classList.toggle("on", next);
-    const res = await handlers.putParam(w.param, next ? "1" : "0", !!w.needs_cycle);
+    // Enabling Experimental Mode carries the user's acknowledgement so the
+    // server-side mode machine accepts the write (SP params.py:143 semantics).
+    const extra = w.confirm_experimental && next ? { acknowledge: true } : null;
+    const res = await handlers.putParam(w.param, next ? "1" : "0", !!w.needs_cycle, false, extra);
     if (!res.ok) {
       handlers.toast(res.error || "Save failed");
       input.checked = !input.checked;

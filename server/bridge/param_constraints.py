@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+# sunnypilot/mads/helpers.py: MadsSteeringModeOnBrake.DISENGAGE
+MADS_DISENGAGE_MODE = 2
+
 
 def _enforce_usb_port(p: Any) -> None:
   """Mirror UIStateSP._enforce_usb_port: ADB and Jetlink both need the comma's USB
@@ -113,11 +116,11 @@ def enforce_param_constraints(p: Any | None = None) -> None:
       p.put_bool("IntelligentCruiseButtonManagement", False, block=True)
       has_icbm = False
 
-    # MADS limited 平台强制重写
+    # MADS limited 平台强制重写（mads_settings.py:143：Disengage=2 是唯一可用档）
     if mads_limited:
       p.put_bool("MadsMainCruiseAllowed", False, block=True)
       p.put_bool("MadsUnifiedEngagementMode", True, block=True)
-      p.put("MadsSteeringMode", 0, block=True)
+      p.put("MadsSteeringMode", MADS_DISENGAGE_MODE, block=True)
 
     if not has_long:
       p.remove("ExperimentalMode")
@@ -145,9 +148,10 @@ def enforce_param_constraints(p: Any | None = None) -> None:
       except Exception:
         pass
 
-    # LiveTorqueParamsToggle 关 → 清 LiveTorqueParamsRelaxedToggle
+    # LiveTorqueParamsToggle 关 → 移除 LiveTorqueParamsRelaxedToggle（对齐
+    # torque_settings.py:119：remove 而非写 False，避免参数残留）
     if not p.get_bool("LiveTorqueParamsToggle"):
-      p.put_bool("LiveTorqueParamsRelaxedToggle", False, block=True)
+      p.remove("LiveTorqueParamsRelaxedToggle")
 
     # JoystickDebugMode 与 Long/Lat Maneuver 互斥
     if p.get_bool("JoystickDebugMode"):
