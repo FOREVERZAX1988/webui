@@ -1118,6 +1118,10 @@ function applySoftwareCustom(sw) {
   const dlRow = document.getElementById("software-download-row");
   if (dlRow) dlRow.hidden = !sw.is_offroad;
   if (dlVal) dlVal.textContent = formatSoftwareDownloadStatus(sw);
+  const curDesc = document.getElementById("software-current-desc");
+  if (curDesc && sw.current) curDesc.textContent = sw.current;
+  const branchVal = document.getElementById("software-branch-value");
+  if (branchVal && sw.target_branch) branchVal.textContent = sw.target_branch;
   if (dlBtn) {
     dlBtn.textContent = t(sw.download_label || "CHECK");
     const waiting = softwareDownloadWaitUntil > Date.now();
@@ -1226,6 +1230,16 @@ export function applyPanelSync(data) {
   if (!data?.ok) return;
   panelDataRef = data;
   syncToggleLocksFromPanel();
+  if (data.custom === "software") {
+    // The software panel's version/download/branch rows live outside the
+    // widget DOM, so the value-patching path below never touches them —
+    // refresh their live values explicitly.
+    queueMicrotask(() => {
+      apiGet("/api/opui/software").then((sw) => {
+        if (sw?.ok) applySoftwareCustom(sw);
+      }).catch(() => {});
+    });
+  }
   const hash = panelVisibilityHash(data);
   if (hash !== lastPanelVisibilityHash) {
     if (currentPanelRef) panelDomCache.delete(currentPanelRef);
@@ -6703,7 +6717,7 @@ async function renderSoftwarePanel(container, data) {
       <div class="opui-sp-row-text">
         <div class="opui-sp-row-title">${escapeHtml(t("Target Branch"))}</div>
       </div>
-      <div class="opui-sp-row-value">${escapeHtml(sw.target_branch || t("N/A"))}</div>
+      <div class="opui-sp-row-value" id="software-branch-value">${escapeHtml(sw.target_branch || t("N/A"))}</div>
       <button type="button" class="opui-btn opui-btn--action">${escapeHtml(t("SELECT"))}</button>`;
     branchRow.querySelector("button")?.addEventListener("click", async () => {
       const idx = Math.max(0, sw.branches.indexOf(sw.target_branch));
@@ -6718,6 +6732,8 @@ async function renderSoftwarePanel(container, data) {
       const res = await apiPost("/api/opui/action/set_branch", { branch: b });
       if (res.ok) {
         toast(`${t("Target Branch")}: ${b}`);
+        const branchVal = document.getElementById("software-branch-value");
+        if (branchVal) branchVal.textContent = b;
         requestPanelRefresh();
       }
     });

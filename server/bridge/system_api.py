@@ -270,6 +270,29 @@ def software_status(*, started: bool | None = None) -> dict[str, Any]:
     download_value = ""
     download_enabled = is_offroad and updater_state == "idle"
 
+    def _epoch_from_param(raw: Any) -> int | None:
+      # Params stores naive UTC datetimes; interpreting them with .timestamp()
+      # alone would apply the device's local zone (CST here) and skew every
+      # "last checked" display by the UTC offset (8 hours on this device).
+      if raw is None:
+        return None
+      try:
+        if hasattr(raw, "timestamp"):
+          dt = raw
+          if dt.tzinfo is None:
+            import datetime
+            dt = dt.replace(tzinfo=datetime.UTC)
+          return int(dt.timestamp())
+        if hasattr(raw, "isoformat"):
+          import datetime
+          dt = raw
+          if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.UTC)
+          return int(dt.timestamp())
+      except Exception:
+        return None
+      return None
+
     state_labels = {
       "checking...": "checking...",
       "downloading...": "downloading...",
@@ -285,44 +308,17 @@ def software_status(*, started: bool | None = None) -> dict[str, Any]:
       download_value = "update available"
       download_label = "DOWNLOAD"
     else:
-      last_update = p.get("LastUpdateTime")
-      last_update_epoch = None
-      if last_update is not None:
-        try:
-          if hasattr(last_update, "timestamp"):
-            last_update_epoch = int(last_update.timestamp())
-          elif hasattr(last_update, "isoformat"):
-            import datetime
-            dt = last_update
-            if dt.tzinfo is None:
-              dt = dt.replace(tzinfo=datetime.timezone.utc)
-            last_update_epoch = int(dt.timestamp())
-        except Exception:
-          last_update_epoch = None
-      if not last_update:
+      last_update_epoch = _epoch_from_param(p.get("LastUpdateTime"))
+      if not last_update_epoch:
         download_value = "up to date, last checked never"
-      elif last_update_epoch:
-        download_value = "up to date, last checked {}"  # formatted client-side
       else:
-        download_value = f"up to date, last checked {last_update}"
+        download_value = "up to date, last checked {}"  # formatted client-side
       download_label = "CHECK"
 
     last_update_raw = p.get("LastUpdateTime")
-    last_update_epoch_out = None
-    if last_update_raw is not None:
-      try:
-        if hasattr(last_update_raw, "timestamp"):
-          last_update_epoch_out = int(last_update_raw.timestamp())
-        elif hasattr(last_update_raw, "isoformat"):
-          import datetime
-          dt = last_update_raw
-          if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=datetime.timezone.utc)
-          last_update_epoch_out = int(dt.timestamp())
-      except Exception:
-        last_update_epoch_out = None
-    if last_update_raw is not None and hasattr(last_update_raw, "isoformat"):
+    if hasattr(last_update_raw, "isoformat"):
       last_update_raw = last_update_raw.isoformat()
+    last_update_epoch_out = _epoch_from_param(p.get("LastUpdateTime"))
     if updater_state == "idle" and failed_count == 0 and not fetch_available and last_update_epoch_out:
       download_value = "up to date, last checked {}"
 
