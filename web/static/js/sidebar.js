@@ -2,7 +2,7 @@
 
 import { tr } from "./i18n.js?v=3";
 
-const METRIC_KEYS = ["temp", "cpu", "gpu", "vehicle"];
+const METRIC_KEYS = ["temp", "cpu", "mem", "vehicle"];
 
 const VALUE_KEYS = {
   GOOD: "GOOD",
@@ -16,7 +16,7 @@ function metricLabel(key) {
   const labels = {
     temp: tr("TEMP"),
     cpu: "CPU",
-    gpu: "GPU",
+    mem: "MEM",
     vehicle: tr("VEHICLE"),
   };
   return labels[key] || key;
@@ -89,8 +89,11 @@ export function updateSidebarMetrics(st) {
   const cpu = usageTone(d.cpu_usage_percent);
   setMetric("cpu", { label: metricLabel("cpu"), value: cpu.value, warn: cpu.warn, danger: cpu.danger, visible: true });
 
-  const gpu = usageTone(d.gpu_usage_percent);
-  setMetric("gpu", { label: metricLabel("gpu"), value: gpu.value, warn: gpu.warn, danger: gpu.danger, visible: true });
+  // memory usage instead of GPU: gpubusy counters never tick on this SoC
+  // (always 0), while memory reflects real pressure (same source as the
+  // lowMemory alert)
+  const mem = usageTone(d.memory_usage_percent);
+  setMetric("mem", { label: metricLabel("mem"), value: mem.value, warn: mem.warn, danger: mem.danger, visible: true });
 
   if (d.panda_unknown) {
     setMetric("vehicle", {

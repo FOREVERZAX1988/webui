@@ -817,6 +817,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
   },
   "zh-CHS": {
     "Web UI": "Web UI",
+    "{} days ago": "{} 天前",
+    "{} hours ago": "{} 小时前",
+    "{} minutes ago": "{} 分钟前",
+    "{standin} drives until {name} is ready.": "在 {name} 就绪前由 {standin} 驾驶。",
     "Local": "本地",
     "Cloud": "云端",
     "Cloud account not paired — showing local stats": "云端账号未配对，已显示本地数据",
@@ -1635,6 +1639,10 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
   },
   "zh-CHT": {
     "Web UI": "Web UI",
+    "{} days ago": "{} 天前",
+    "{} hours ago": "{} 小時前",
+    "{} minutes ago": "{} 分鐘前",
+    "{standin} drives until {name} is ready.": "在 {name} 就緒前由 {standin} 駕駛。",
     "Local": "本機",
     "Cloud": "雲端",
     "Cloud account not paired — showing local stats": "雲端帳號未配對，已顯示本地資料",
