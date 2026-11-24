@@ -3350,8 +3350,9 @@ body.opui-modal-open {
   padding: 40px 60px;
   box-sizing: border-box;
 }
-/* Keyboard opens on top of other modals (tree search etc.); DOM order alone
-   would hide it behind later siblings at the same z-index. */
+/* Text-input prompts (wifi/apn/bt pin/device name/search) open on top of other
+   modals (tree search etc.); DOM order alone would hide them behind later
+   siblings at the same z-index. */
 .opui-modal--keyboard {
   z-index: 600;
 }
@@ -3587,71 +3588,6 @@ body.opui-modal-open {
   background: transparent !important;
   color: inherit;
 }
-
-.opui-modal--keyboard {
-  padding: 22px 48px 18px;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.opui-modal-card--keyboard {
-  width: min(1600px, calc(100% - 80px));
-  height: auto;
-  max-height: none;
-  min-height: 0;
-  padding: 50px;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  margin: 0 auto;
-}
-.opui-modal-card--keyboard .opui-modal-footer {
-  margin-top: 24px;
-}
-.opui-modal-card--keyboard #keyboard-confirm:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.opui-keyboard-card { width: 100%; }
-.opui-keyboard-display {
-  flex-shrink: 0;
-  background: #111;
-  border-radius: 12px;
-  padding: 20px;
-  font-size: 48px;
-  min-height: 88px;
-  margin-bottom: 20px;
-  letter-spacing: 0.1em;
-}
-.opui-keyboard-grid {
-  display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  gap: 14px;
-  flex: 0 0 auto;
-  overflow: visible;
-  margin-bottom: 0;
-  align-content: start;
-}
-.opui-kb-key {
-  height: 148px;
-  min-height: 148px;
-  border: none;
-  border-radius: 16px;
-  background: #444;
-  color: #fff;
-  font-size: 46px;
-  font-weight: 500;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.opui-kb-key:active {
-  background: #555;
-}
-.opui-kb-key:disabled {
-  visibility: hidden;
-}
-.opui-kb-key--wide { grid-column: span 2; }
 
 .opui-vehicle-legend {
   padding: 20px 0 8px;

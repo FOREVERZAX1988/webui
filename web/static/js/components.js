@@ -157,84 +157,13 @@ export function showQrPair(opts = {}) {
   });
 }
 
+// Self-drawn on-screen keyboard removed: browsers already provide a keyboard on
+// every platform (hardware on desktop, native virtual keyboard on tablets/phones)
+// once a focused <input> exists. All prompts now go through showTextInput.
+// Kept as an alias so all existing call sites (wifi/apn/bt pin/device name/
+// search) keep working unchanged.
 export function showKeyboard(opts = {}) {
-  const {
-    title = "Enter text",
-    value = "",
-    password = false,
-    minLen = 0,
-    maxLen = 64,
-  } = opts;
-
-  return new Promise((resolve) => {
-    const root = document.getElementById("modal-keyboard");
-    const titleEl = document.getElementById("keyboard-title");
-    const display = document.getElementById("keyboard-display");
-    const grid = document.getElementById("keyboard-grid");
-    if (!root || !grid || !display) {
-      resolve(window.prompt(title, value));
-      return;
-    }
-    titleEl.textContent = title;
-    const cancelBtn = document.getElementById("keyboard-cancel");
-    const confirmBtn = document.getElementById("keyboard-confirm");
-    if (cancelBtn) cancelBtn.textContent = tr("Cancel");
-    if (confirmBtn) confirmBtn.textContent = tr("Confirm");
-    let buf = value;
-    const render = () => {
-      display.textContent = password ? "•".repeat(buf.length) : buf;
-      if (confirmBtn) confirmBtn.disabled = buf.length < minLen;
-    };
-    render();
-
-    const layouts = {
-      alpha: [
-        "123", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p",
-        "ABC", "a", "s", "d", "f", "g", "h", "j", "k", "l", "⌫",
-        "#+=", "z", "x", "c", "v", "b", "n", "m", "Enter",
-      ],
-      num: [
-        "ABC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-        "", "-", "_", ".", "@", "", "", "", "", "⌫", "Enter",
-      ],
-    };
-    let mode = "alpha";
-
-    const paint = () => {
-      grid.innerHTML = "";
-      for (const key of layouts[mode]) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "opui-kb-key" + (key === "Enter" ? " opui-kb-key--wide" : "");
-        btn.textContent = key || "";
-        if (!key) btn.disabled = true;
-        btn.addEventListener("click", () => {
-          if (key === "⌫") buf = buf.slice(0, -1);
-          else if (key === "Enter") {
-            if (buf.length >= minLen) finish(buf);
-          } else if (key === "123") mode = "num";
-          else if (key === "ABC") mode = "alpha";
-          else if (key === "#+=") mode = "num";
-          else if (buf.length < maxLen) buf += key;
-          render();
-          if (key === "123" || key === "ABC" || key === "#+=") paint();
-        });
-        grid.appendChild(btn);
-      }
-    };
-    paint();
-
-    const finish = (v) => {
-      popModal(root);
-      resolve(v);
-    };
-    const onConfirm = () => {
-      if (buf.length >= minLen) finish(buf);
-    };
-    document.getElementById("keyboard-cancel")?.addEventListener("click", () => finish(null), { once: true });
-    confirmBtn?.addEventListener("click", onConfirm, { once: true });
-    pushModal(root, () => finish(null));
-  });
+  return showTextInput(opts);
 }
 
 export function showTextInput(opts = {}) {
@@ -250,7 +179,7 @@ export function showTextInput(opts = {}) {
 
   return new Promise((resolve) => {
     const root = document.createElement("div");
-    root.className = "opui-modal";
+    root.className = "opui-modal opui-modal--keyboard";
     root.hidden = true;
     root.innerHTML = `
       <div class="opui-modal-card opui-modal-card--textinput">

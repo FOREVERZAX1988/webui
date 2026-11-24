@@ -58,7 +58,7 @@ def main() -> int:
     print("OK   CSS modal hidden fix present")
 
   html = urllib.request.urlopen(BASE + "/", timeout=8).read().decode()
-  for mid in ("modal-confirm", "modal-keyboard", "modal-tree", "modal-multi", "modal-html"):
+  for mid in ("modal-confirm", "modal-tree", "modal-multi", "modal-html"):
     if f'id="{mid}"' not in html:
       print(f"FAIL HTML missing {mid}")
       fails += 1

@@ -1907,8 +1907,6 @@ export function getLanguage() {
 const STATIC_UI_KEYS = {
   "modal-confirm-cancel": "Cancel",
   "modal-confirm-ok": "Confirm",
-  "keyboard-cancel": "Cancel",
-  "keyboard-confirm": "Confirm",
   "tree-cancel": "Cancel",
   "tree-select": "Select",
   "multi-cancel": "Cancel",

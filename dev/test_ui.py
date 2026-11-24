@@ -20,7 +20,7 @@ def main() -> int:
     page.goto(BASE, wait_until="networkidle")
 
     # Modals must be hidden on load (was the OK-only bug)
-    for mid in ("modal-confirm", "modal-keyboard", "modal-tree", "modal-multi", "modal-html"):
+    for mid in ("modal-confirm", "modal-tree", "modal-multi", "modal-html"):
       hidden = page.locator(f"#{mid}").evaluate("el => el.hasAttribute('hidden')")
       visible = page.locator(f"#{mid}").is_visible()
       if visible or not hidden:
