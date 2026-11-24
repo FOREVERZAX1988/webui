@@ -2332,8 +2332,9 @@ function renderOptionRow(w, panelData) {
   // the same row; while it is off the value reads as "Off" and stepping is locked.
   const sw = w.switch || null;
   let swInput = null;
+  let swLabel = null;
   if (sw?.param) {
-    const swLabel = document.createElement("label");
+    swLabel = document.createElement("label");
     swLabel.className = "opui-sp-toggle";
     swInput = document.createElement("input");
     swInput.type = "checkbox";
@@ -4209,7 +4210,7 @@ async function renderModelsPanel(container, data) {
     const m = await apiGet("/api/opui/models");
     if (panelRenderStale(gen)) return;
     if (!m.ok) {
-      container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(m.error || t("Failed"))}</p>`;
+      renderModelsError(container, data, m.error || t("Failed"));
       return;
     }
     lastModelsStatus = m;
@@ -4232,10 +4233,25 @@ async function renderModelsPanel(container, data) {
         }
       } catch { /* ignore transient poll errors */ }
     }, 500);
-  } catch {
+  } catch (err) {
     if (panelRenderStale(gen)) return;
-    container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(t("Failed"))}</p>`;
+    renderModelsError(container, data, err?.message || t("Failed"));
   }
+}
+
+function renderModelsError(container, data, message) {
+  stopModelsPanelPoll();
+  container.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "opui-models-error";
+  wrap.style.cssText = "padding:48px 24px;text-align:center";
+  wrap.innerHTML = `
+    <p class="opui-muted">${escapeHtml(t("Load failed"))}: ${escapeHtml(message || t("Failed"))}</p>
+    <button type="button" class="opui-btn opui-btn--action">${escapeHtml(t("Retry"))}</button>`;
+  wrap.querySelector("button")?.addEventListener("click", async () => {
+    await renderModelsPanel(container, data);
+  });
+  container.appendChild(wrap);
 }
 
 function buildModelSlots(m, data, gen, container) {

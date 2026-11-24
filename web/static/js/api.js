@@ -5,6 +5,7 @@ import { opuiWs } from "./ws.js";
 const ASSET_RE = /^\/api\/opui\/assets\//;
 const HTTP_FIRST_RE = /^\/api\/opui\/(panels|dev|i18n|device|bootstrap|agnos)/;
 const HTTP_TIMEOUT_MS = 8000;
+const MODELS_TIMEOUT_MS = 15000;
 const WEBUI_UPDATE_TIMEOUT_MS = 120000;
 const WEBRTC_TIMEOUT_MS = 45000;
 
@@ -26,7 +27,8 @@ async function fetchJson(path, init = {}) {
   const ctrl = new AbortController();
   const timeoutMs = isWebrtcPath(path)
     ? WEBRTC_TIMEOUT_MS
-    : (/^\/api\/opui\/webui-update/.test(path) ? WEBUI_UPDATE_TIMEOUT_MS : HTTP_TIMEOUT_MS);
+    : (/^\/api\/opui\/webui-update/.test(path) ? WEBUI_UPDATE_TIMEOUT_MS
+      : (/^\/api\/opui\/models/.test(path) ? MODELS_TIMEOUT_MS : HTTP_TIMEOUT_MS));
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(path, { ...init, signal: ctrl.signal });

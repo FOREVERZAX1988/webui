@@ -2084,8 +2084,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
        "desc": "Toggle to enable a delay timer for seamless lane changes when blind spot monitoring (BSM) "
                "detects a obstructing vehicle, ensuring safe maneuvering."},
       {"type": "separator"},
-      {"type": "bool", "param": "RoadEdgeLaneChangeEnabled", "label": "Block Lane Change: Road Edge Detection",
-       "desc": "Blocks the lane change if the model sees a road edge on your signaled side."},
+      # RoadEdgeLaneChangeMode (relc.RoadEdgeMode): 0=Off, 1=Audible, 2=Silent —
+      # mirrors big UI lane_change_settings.py multiple_button [Off, Audible, Silent].
+      {"type": "multiple_button", "param": "RoadEdgeLaneChangeEnabled", "label": "Block Lane Change: Road Edge Detection",
+       "buttons": ["Off", "Audible", "Silent"],
+       "desc": "Blocks the lane change if the model sees a road edge on your signaled side. "
+               "Silent shows the alert without the chime."},
       {"type": "multiple_button", "param": "LaneChangeSmoothing", "label": "Lane Change Smoothing",
        "buttons": ["Off", "Fast", "Medium", "Slow", "Extra Slow"],
        "desc": "Slow automatic lane changes to a chosen pace. Off is stock; every pace is gentler than stock. The end-of-maneuver correction keeps its authority at every pace, so the car settles into the new lane without a wheel snap."},

@@ -168,6 +168,8 @@ const LOCAL_FALLBACKS = {
     "fetching...": "获取中...",
     "Clear Model Cache": "清除模型缓存",
     "Failed": "失败",
+    "Load failed": "加载失败",
+    "Retry": "重试",
     "MB": "MB",
     "Lead / System": "前车 / 系统",
     "Lateral": "横向",

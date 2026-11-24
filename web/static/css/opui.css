@@ -3350,6 +3350,11 @@ body.opui-modal-open {
   padding: 40px 60px;
   box-sizing: border-box;
 }
+/* Keyboard opens on top of other modals (tree search etc.); DOM order alone
+   would hide it behind later siblings at the same z-index. */
+.opui-modal--keyboard {
+  z-index: 600;
+}
 .opui-modal-card {
   background: #1e1e1e;
   border-radius: 24px;
