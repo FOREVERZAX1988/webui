@@ -365,7 +365,7 @@ let panelDataRef = null;
 let lastPanelVisibilityHash = "";
 
 const UNREGISTERED_SUNNYLINK_DONGLE_ID = "UnregisteredDevice";
-const SOFTWARE_UPDATER_TIMEOUT_MS = 10000;
+const SOFTWARE_UPDATER_TIMEOUT_MS = 30000;
 let softwareDownloadWaitUntil = 0;
 let modelsPanelPoll = null;
 
