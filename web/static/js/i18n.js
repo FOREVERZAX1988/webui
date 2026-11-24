@@ -1038,7 +1038,7 @@ const LOCAL_FALLBACKS = {
     "Choose what gets recorded on each route. Full Recording: logs plus all camera video (default, uses the most storage). Logs Only: keeps the route log files for later analysis but records no video. Disable All: no logs and no video. A change applies to the next route after openpilot restarts.": "选择每段行程录制的内容。完整录制：日志加全部摄像头视频（默认，占用存储最多）。仅日志：保留行程日志文件供后续分析，但不录制视频。全部禁用：不录日志也不录视频。更改在 openpilot 重启后的下一段行程生效。",
     "Steer Ratio Rate": "转向比缩放",
     "Scales the live steering ratio, in percent. 100 keeps the vehicle's ratio.": "按百分比缩放车辆实时转向比。100 保持原厂。",
-    "Steer Without Cruise": "无巡航转向",
+    "Steer Without Cruise": "自动巡航转向",
     "Lets sunnypilot steer while cruise control is off. When off, steering and cruise engage and disengage together.": "允许 sunnypilot 在巡航关闭时转向。关闭时，转向与巡航同时启用或退出。",
     "When to Steer": "转向时机",
     "The older way to drive the gas and brakes: hold your set speed and follow the car ahead. It won't stop for red lights or stop signs.<br><br>Off, the default, lets the driving model drive the gas and brakes as it thinks a human would, including stopping for red lights and stop signs. The set speed is then a maximum.": "传统的油门刹车控制方式：保持设定车速并跟随前车。它不会在红灯或停车标志前停车。<br><br>关闭（默认）时，由驾驶模型自主控制油门和刹车，包括在红灯和停车标志前停车，设定车速此时为上限。",
