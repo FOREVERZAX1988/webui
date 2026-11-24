@@ -2853,11 +2853,26 @@ function renderActionRow(w) {
       buttonText = paramIsOn(panelDataRef?.values?.[dynLabel.param]) ? dynOn : dynOff;
     }
   }
+  const tuneVersionKey = w.action === "torque_tune_version_big" ? "big"
+    : w.action === "torque_tune_version_small" ? "small" : "";
+  const tuneValueHtml = tuneVersionKey
+    ? `<span class="opui-sp-row-value" data-tune-version="${tuneVersionKey}">${escapeHtml(t("Loading..."))}</span>` : "";
   row.innerHTML = `
     <div class="opui-sp-row-text">
       <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
     </div>
+    ${tuneValueHtml}
     <button type="button" class="opui-btn opui-btn--action" ${disabled ? "disabled" : ""}>${escapeHtml(t(buttonText))}</button>`;
+  if (tuneVersionKey) {
+    // show the currently selected tune version next to the SELECT button
+    apiGet("/api/opui/steering/torque-versions").then((tv) => {
+      if (!tv.ok) return;
+      const el = row.querySelector(`[data-tune-version="${tuneVersionKey}"]`);
+      if (!el) return;
+      const label = tuneVersionKey === "big" ? tv.current_label_big : tv.current_label;
+      if (label) el.textContent = label;
+    }).catch(() => {});
+  }
   if (calHtml) {
     bindRowExpand(row, { desc_html: calHtml });
   } else if (w.desc) {
@@ -4120,7 +4135,8 @@ async function renderTripsPanel(container, data) {
   if (panelRenderStale(gen)) return;
   container.innerHTML = "";
   if (!trips.ok) {
-    container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(trips.error || "")}</p>`;
+    const detail = trips.error ? ` (${String(trips.error).slice(0, 120)})` : "";
+    container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(t("Failed to load trips") + detail)}</p>`;
     return;
   }
   TripsState.source = trips.source || TripsState.source;

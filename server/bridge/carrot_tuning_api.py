@@ -222,7 +222,9 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "ShowPathMode": ("int", 9),
   "ShowPathModeLane": ("int", 11),
   "ShowPlotMode": ("bool", 0),
-  "ShowRadarInfo": ("bool", 0),
+  # 4-state multiple_button (0=Off 1=Speed Only 2=Speed+Distance 3=Full) in the
+  # visuals panel; a "bool" entry here made carrot_put() zero out values >= 2.
+  "ShowRadarInfo": ("int", 0),
   "ShowRouteInfo": ("bool", 0),
   "ShowTpms": ("bool", 1),
   "SoftwareMenu": ("bool", 0),
@@ -258,7 +260,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "LeadAccelResponseTF2": ("int", -1),
   "LeadAccelResponseTF3": ("int", -1),
   "LeadAccelResponseTF4": ("int", -1),
-  "AutoNaviRearCameraHoldDistance": ("int", 100),
   # --- unified-control killswitches (default OFF; surfaced in the Developer
   # page). Listed here so the webui read/write whitelist accepts them. ---
   "CarrotTrafficCongestionEnabled": ("bool", 0),
