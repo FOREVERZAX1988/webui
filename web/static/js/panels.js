@@ -1363,15 +1363,11 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
     if (Number.isNaN(val)) val = min;
     const span = el.querySelector(".opui-option-value, .opui-int-control span");
     // Option+switch rows (e.g. Pause Lateral Control with Blinker): the switch
-    // param rides on the same row and gates stepping.
+    // param is folded into the stepper as the Off step (BIG GUI lib/switch.py).
     const sw = w.switch || null;
-    const swInput = sw?.param ? el.querySelector('input[type=checkbox]') : null;
-    const swLabel = sw?.param ? el.querySelector(".opui-sp-toggle") : null;
-    const switchOff = swInput ? !swInput.checked : false;
-    if (swInput && sw?.param) {
-      const on = paramIsOn(panelData?.values?.[sw.param]);
-      swInput.checked = on;
-      swLabel?.classList.toggle("on", on);
+    let switchOff = false;
+    if (sw?.param) {
+      switchOff = String(panelData?.values?.[sw.param] ?? "") === (sw.at ? "1" : "0");
     }
     if (span) {
       if (switchOff) span.textContent = t(sw.off_label || "Off");
@@ -1379,8 +1375,8 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
     }
     const minus = el.querySelector(".opui-option-bar button:first-of-type, .opui-int-control button:first-child");
     const plus = el.querySelector(".opui-option-bar button:last-of-type, .opui-int-control button:last-child");
-    if (minus) minus.disabled = val <= min || switchOff;
-    if (plus) plus.disabled = val >= max || switchOff;
+    if (minus) minus.disabled = switchOff || (val <= min && !sw);
+    if (plus) plus.disabled = switchOff ? false : val >= max;
   }
 }
 
@@ -2328,60 +2324,41 @@ function renderOptionRow(w, panelData) {
   plus.type = "button";
   plus.textContent = "+";
 
-  // Big GUI option+switch form (steering.py): the switch is a separate param on
-  // the same row; while it is off the value reads as "Off" and stepping is locked.
+  // Big GUI option+switch form (option_control.py + lib/switch.py): the bool
+  // switch is folded into the stepper as the step below min — "Off" is just a
+  // value, not a separate toggle widget. Minus at min lands on Off; plus from
+  // Off restores the stored numeric value; the switch param tracks the step.
   const sw = w.switch || null;
-  let swInput = null;
-  let swLabel = null;
+  const swOffVal = sw ? (sw.at ? "1" : "0") : null;
+  const swOnVal = sw ? (sw.at ? "0" : "1") : null;
+  let swOff = false;
   if (sw?.param) {
-    swLabel = document.createElement("label");
-    swLabel.className = "opui-sp-toggle";
-    swInput = document.createElement("input");
-    swInput.type = "checkbox";
-    swInput.checked = paramIsOn(panelData?.values?.[sw.param]);
-    const track = document.createElement("span");
-    track.className = "opui-sp-toggle-track";
-    const thumb = document.createElement("span");
-    thumb.className = "opui-sp-toggle-thumb";
-    track.appendChild(thumb);
-    swLabel.append(swInput, track);
-    swLabel.classList.toggle("on", swInput.checked);
-    swInput.addEventListener("change", async () => {
-      const on = swInput.checked;
-      const res = await putParam(sw.param, on ? "1" : "0");
-      if (!res.ok) {
-        toast(res.error || t("Save failed"));
-        swInput.checked = !on;
-        swLabel.classList.toggle("on", swInput.checked);
-        return;
-      }
-      swLabel.classList.toggle("on", on);
-      if (panelData?.values) panelData.values[sw.param] = on ? "1" : "0";
-      if (on) {
-        const cur = resolveOptionIndex(w, panelData?.values?.[w.param]);
-        if (cur < min) {
-          await putParam(w.param, String(optionParamValue(w, min)));
-          idx = min;
-          if (panelData?.values) panelData.values[w.param] = String(optionParamValue(w, min));
-        }
-        span.textContent = formatOptionLabel(w, panelData?.values?.[w.param], panelData);
-        minus.disabled = idx <= min;
-        plus.disabled = idx >= max;
-      } else {
-        span.textContent = t(sw.off_label || "Off");
-        minus.disabled = true;
-        plus.disabled = true;
-      }
-      requestPanelRefresh();
-    });
+    swOff = String(panelData?.values?.[sw.param] ?? "") === swOffVal;
+    if (swOff) span.textContent = t(sw.off_label || "Off");
   }
-  const switchOff = () => swInput && !swInput.checked;
+  const switchOff = () => swOff;
+
+  const putSwitchParam = async (val) => {
+    const res = await putParam(sw.param, val);
+    if (!res.ok) {
+      toast(res.error || t("Save failed"));
+      return false;
+    }
+    if (panelData?.values) panelData.values[sw.param] = val;
+    return true;
+  };
 
   const save = async (v) => {
+    if (sw && swOff) {
+      // leaving the Off step: flip the switch param on, then restore the value
+      if (!(await putSwitchParam(swOnVal))) return;
+      swOff = false;
+      requestPanelRefresh();
+    }
     idx = Math.max(min, Math.min(max, v));
     const paramVal = optionParamValue(w, idx);
     span.textContent = formatOptionLabel(w, paramVal, panelData);
-    minus.disabled = idx <= min;
+    minus.disabled = idx <= min && !sw;
     plus.disabled = idx >= max;
     const res = await putParam(w.param, String(paramVal));
     if (!res.ok) toast(res.error || t("Save failed"));
@@ -2404,13 +2381,30 @@ function renderOptionRow(w, panelData) {
       }
     }
   };
-  minus.disabled = idx <= min || switchOff();
-  plus.disabled = idx >= max || switchOff();
+  minus.disabled = switchOff() || (idx <= min && !sw);
+  plus.disabled = switchOff() ? false : idx >= max;
   if (switchOff()) span.textContent = t(sw.off_label || "Off");
-  minus.addEventListener("click", () => save(idx - step));
-  plus.addEventListener("click", () => save(idx + step));
+  minus.addEventListener("click", () => {
+    if (switchOff()) return;
+    if (sw && idx <= min) {
+      // below min folds onto the Off step (BIG GUI OptionControlSP)
+      putSwitchParam(swOffVal).then((ok) => {
+        if (!ok) return;
+        swOff = true;
+        span.textContent = t(sw.off_label || "Off");
+        minus.disabled = true;
+        plus.disabled = false;
+        requestPanelRefresh();  // visible_if rows (e.g. reengage delay) follow the step
+      });
+      return;
+    }
+    save(idx - step);
+  });
+  plus.addEventListener("click", () => {
+    if (switchOff()) { save(idx); return; }  // leave Off at the stored value
+    save(idx + step);
+  });
   bar.append(minus, span, plus);
-  if (swLabel) bar.appendChild(swLabel);
   row.appendChild(bar);
   bindRowExpand(row, { ...w, desc: w.desc ? t(w.desc) : "" });
   return row;
