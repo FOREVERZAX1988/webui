@@ -16,6 +16,33 @@ _THREAD: threading.Thread | None = None
 
 _DEV_PARTITIONS = ("xbl", "abl", "boot", "system", "vendor")
 
+# verify_agnos_update hashes the full_check partitions (~50MB on mici, 0.3s
+# per call) every time _agnos_pending_status runs — which is every 2.5s from
+# the state hub loop. Cache per (manifest, target slot): a True verdict is
+# permanent (it certifies partition content against the manifest hashes);
+# False retries on a TTL so a freshly flashed slot is picked up.
+AGNOS_VERIFY_TTL_S = 120.0
+_agnos_verify_cache: dict[tuple[str, int, int, int], tuple[float, bool]] = {}
+
+
+def _verify_agnos_cached(manifest: str, slot: int) -> bool:
+  try:
+    st = os.stat(manifest)
+  except OSError:
+    return False
+  key = (manifest, st.st_mtime_ns, st.st_size, slot)
+  hit = _agnos_verify_cache.get(key)
+  if hit is not None:
+    cached_at, result = hit
+    if result or (time.monotonic() - cached_at) < AGNOS_VERIFY_TTL_S:
+      return result
+  from openpilot.common.hardware.comma.agnos import verify_agnos_update
+
+  result = verify_agnos_update(manifest, slot)
+  _agnos_verify_cache.clear()
+  _agnos_verify_cache[key] = (time.monotonic(), result)
+  return result
+
 
 def _openpilot_dir() -> Path:
   try:
@@ -189,8 +216,9 @@ def _agnos_pending_status() -> dict[str, Any]:
 
   if os.path.isfile(manifest):
     try:
-      from openpilot.common.hardware.comma.agnos import get_target_slot_number, verify_agnos_update
-      ready_to_reboot = verify_agnos_update(manifest, get_target_slot_number())
+      from openpilot.common.hardware.comma.agnos import get_target_slot_number
+
+      ready_to_reboot = _verify_agnos_cached(manifest, get_target_slot_number())
     except Exception as exc:
       verify_error = str(exc)
 
