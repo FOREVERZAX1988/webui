@@ -1650,7 +1650,7 @@ function renderAlwaysOffroadRow(active) {
       ? t("Are you sure you want to exit Always Offroad mode?")
       : t("Are you sure you want to enter Always Offroad mode?");
     if (!(await showConfirm({ message: msg, confirmText: t("Confirm") }))) return;
-    const res = await apiPut("/api/opui/params/OffroadMode", { value: active ? "0" : "1" });
+    const res = await apiPut("/api/opui/params/OffroadModeRequested", { value: active ? "0" : "1" });
     if (res.ok) {
       deviceExtrasCache = { ...(deviceExtrasCache || {}), offroad_mode: !active };
       toast(label);
@@ -2453,7 +2453,7 @@ async function runDualSideAction(side) {
   }
   if (side.action === "reset_all_params") {
     if (!(await showConfirm({
-      message: t("Are you sure you want to reset all sunnypilot settings to default? Once the settings are reset, there is no going back."),
+      message: t("Are you sure you want to reset all zoompilot settings to default? Once the settings are reset, there is no going back."),
       confirmText: t("Reset"),
     }))) return;
     if (!(await showConfirm({
@@ -2489,6 +2489,12 @@ async function runDualSideAction(side) {
         if (deviceExtrasCache) {
           deviceExtrasCache.onroad_preview = res.is_preview;
         }
+        // Open the picture on both ends: device GUI (param above) + webui popup.
+        if (res.is_preview) {
+          import("./preview_modal.js").then((m) => m.openPreview("road")).catch(() => {});
+        } else {
+          import("./preview_modal.js").then((m) => m.closePreview()).catch(() => {});
+        }
         // Refresh to update button states
         requestPanelRefresh();
         return;
@@ -2502,6 +2508,13 @@ async function runDualSideAction(side) {
       if (res.ok) {
         if (deviceExtrasCache) {
           deviceExtrasCache.driver_view_enabled = res.driver_view_enabled;
+        }
+        // Both ends: device GUI shows the driver view (param), webui pops the
+        // driver camera stream.
+        if (res.driver_view_enabled) {
+          import("./preview_modal.js").then((m) => m.openPreview("driver")).catch(() => {});
+        } else {
+          import("./preview_modal.js").then((m) => m.closePreview()).catch(() => {});
         }
         toast(t("Driver Camera Preview"));
         requestPanelRefresh();
@@ -4126,6 +4139,17 @@ async function renderTripsPanel(container, data) {
     return;
   }
   TripsState.source = trips.source || TripsState.source;
+  if (trips.fallback) {
+    const note = document.createElement("div");
+    note.className = "opui-trips-notice";
+    const msg = trips.fallback === "cloud_not_paired"
+      ? t("Cloud account not paired — showing local stats")
+      : trips.fallback === "cloud_unregistered"
+        ? t("Device not registered — showing local stats")
+        : t("Cloud temporarily unavailable — showing local stats");
+    note.textContent = msg;
+    wrap.appendChild(note);
+  }
 
   const wrap = document.createElement("div");
   wrap.className = "opui-trips-wrap";

@@ -92,6 +92,10 @@ const LOCAL_FALLBACKS = {
     Refresh: "刷新",
     Local: "本地",
     Cloud: "云端",
+    "Cloud account not paired — showing local stats": "云端账号未配对，已显示本地数据",
+    "Camera preview unavailable": "摄像头预览不可用",
+    "Device not registered — showing local stats": "设备未注册，已显示本地数据",
+    "Cloud temporarily unavailable — showing local stats": "云端暂不可用，已显示本地数据",
     "Loading...": "加载中...",
     "webui_storage_routes_autodelete_hint": (
       "可用空间低于 10% 或 5 GB 时，系统会自动删除最旧路线（与是否上传无关），收藏路线会保留。"
@@ -1050,6 +1054,10 @@ const LOCAL_FALLBACKS = {
     Refresh: "重新整理",
     Local: "本機",
     Cloud: "雲端",
+    "Cloud account not paired — showing local stats": "雲端帳號未配對，已顯示本地資料",
+    "Camera preview unavailable": "攝影機預覽不可用",
+    "Device not registered — showing local stats": "設備未註冊，已顯示本地資料",
+    "Cloud temporarily unavailable — showing local stats": "雲端暫不可用，已顯示本地資料",
     "Lead / System": "前車 / 系統",
     "Lateral": "橫向",
     "Longitudinal": "縱向",

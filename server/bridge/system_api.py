@@ -30,6 +30,10 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
       return {"ok": True, "action": action}
 
     if action == "reset_calibration":
+      from webui.server.bridge.offroad_guard import require_offroad, require_disengaged
+      blocked = require_offroad() or require_disengaged()
+      if blocked:
+        return blocked
       for key in ("CalibrationParams", "LiveTorqueParameters", "LiveParametersV2", "LiveDelay"):
         try:
           p.remove(key)
@@ -150,6 +154,13 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
 
     if action == "onroad_preview":
       is_preview = p.get_bool("IsOnroadPreview")
+      # Gate only the transition INTO preview; exiting must stay possible
+      # while the preview is active (mirrors the BIG GUI enabled condition).
+      if not is_preview:
+        from webui.server.bridge.offroad_guard import require_offroad, require_disengaged
+        blocked = require_offroad() or require_disengaged()
+        if blocked:
+          return blocked
       p.put_bool("IsOnroadPreview", not is_preview)
       return {"ok": True, "action": action, "is_preview": not is_preview}
 
@@ -177,13 +188,9 @@ def run_action(action: str, payload: dict[str, Any] | None = None) -> dict[str, 
         set_safe_mode(enable)
         return {"ok": True, "action": action, "safe_mode": enable}
       except ImportError:
-        # Fallback: direct param writes if runtime module not available
-        if enable:
-          p.put_bool("SafeMode", True, block=True)
-        else:
-          p.remove("SafeMode")
-          p.remove("SafeModeBackup")
-        return {"ok": True, "action": action, "safe_mode": enable}
+        # No silent fallback: Safe Mode is a guarded transition, not a bare
+        # param write — a direct store write would bypass the safety gate.
+        return {"ok": False, "error": "safe mode runtime not available"}
       except Exception as exc:
         return {"ok": False, "error": str(exc)}
 
