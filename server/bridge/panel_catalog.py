@@ -273,8 +273,6 @@ PANELS: list[dict[str, Any]] = [
       {"type": "action", "action": "models_clear_cache", "label": "Clear Model Cache", "button": "CLEAR",
        "confirm": "This will delete ALL downloaded models from the cache except the currently active model. Are you sure?",
        "confirm_button": "Clear Cache"},
-      {"type": "custom", "custom": "jetlink_link", "label": "Jetlink",
-       "desc": "Connect an Android phone or Jetson as an accelerator for model inference."},
       {"type": "multiple_button", "param": "BigModelSmoothing", "label": "smooth big model",
        "buttons": ["Off", "On"],
        "desc": "Gives big models the small models' steering smoothing. Can calm small side-to-side wiggles on straight roads."},

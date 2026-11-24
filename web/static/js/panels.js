@@ -1684,35 +1684,6 @@ function renderSafeModeRow(active) {
   return row;
 }
 
-function renderJetlinkLinkRow() {
-  const row = document.createElement("div");
-  row.className = "opui-row opui-row--action";
-  row.innerHTML = `
-    <div class="opui-row-label">
-      <div class="opui-row-title">${escapeHtml(t("Jetlink"))}</div>
-      <div class="opui-row-desc">${escapeHtml(t("Connect an Android phone or Jetson as an accelerator for model inference."))}</div>
-    </div>
-    <div class="opui-row-value" id="jetlink-status">${escapeHtml(t("Checking..."))}</div>
-  `;
-  // Fetch jetlink status asynchronously
-  apiGet("/api/opui/jetlink/status").then((res) => {
-    const el = row.querySelector("#jetlink-status");
-    if (el) {
-      if (res.ok && res.status) {
-        const mode = res.status.mode || "none";
-        const connected = res.status.connected ? t("Connected") : t("Disconnected");
-        el.textContent = `${mode} — ${connected}`;
-      } else {
-        el.textContent = t("Not available");
-      }
-    }
-  }).catch(() => {
-    const el = row.querySelector("#jetlink-status");
-    if (el) el.textContent = t("Not available");
-  });
-  return row;
-}
-
 function prunePanelWidgets(widgets, panelData) {
   const kept = [];
   for (const w of widgets || []) {
@@ -1884,7 +1855,7 @@ function renderWidget(w, panelData) {
       const active = !!deviceExtrasCache?.safe_mode;
       return renderSafeModeRow(active);
     }
-    if (w.custom === "jetlink_link") return renderJetlinkLinkRow();
+    if (w.custom === "jetlink_link") return null; // superseded by the accelerator row in the models renderer
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
     if (w.custom === "flm_status") return renderFlmStatusRow(w);
@@ -4382,13 +4353,13 @@ function buildModelSlots(m, data, gen, container) {
   return wrap;
 }
 
-// -- Accelerator Link (jetlink) ------------------------------------------------
-// Mirrors the native Models panel row: Off / USB / iOS buttons bound to the
-// JetlinkLink param, plus the live connection status. An Android phone rides
-// the USB mode exactly like a Jetson or a Mac (jetlink docs/android-app.md),
-// so USB is described as covering it.
+// -- Jetlink (accelerator link) -------------------------------------------------
+// Mirrors the BIG GUI models panel row (selfdrive/ui/sunnypilot/layouts/
+// settings/models.py accelerator_link_item): title Jetlink, one fixed desc
+// line + live status, and the Off/USB/iOS/Wi-Fi button group on its own row
+// below (multiple_button_item_sp with inline=False).
 
-const ACCELERATOR_DESC = "Run the big driving model on an attached accelerator: USB for a Jetson, a Linux PC, a Mac or an Android phone; iOS for an iPhone; Wi-Fi joins the device's hotspot. USB and iOS turn off ADB.";
+const JETLINK_DESC = "Run big models over a connected device running Jetlink. Turns off ADB.";
 
 // the mode names, the same as the native panels' LINK_MODE_TITLES
 const ACCELERATOR_MODE_LABELS = { off: "Off", usb: "USB", ios: "iOS", wifi: "Wi-Fi" };
@@ -4403,7 +4374,7 @@ function acceleratorStatusText(accel) {
   }
   const key = accel.status?.key;
   if (key === "accelerator_connected") {
-    return t("Accelerator connected: {transport}.").replace("{transport}", accel.status.transport || "USB");
+    return t("Jetlink connected: {transport}.").replace("{transport}", accel.status.transport || "USB");
   }
   if (key === "accelerator_wifi") return t("Join the device's hotspot and open Jetlink there.");
   if (key === "port_empty") return t("Nothing on the USB port.");
@@ -4415,22 +4386,20 @@ function buildAcceleratorRow(m) {
   const accel = m?.accelerator;
   if (!accel || !accel.meaningful) return null;
 
+  // Same DOM shape as renderMultipleButtonRow(stacked): title + desc inside
+  // .opui-sp-row-text, the button group on its own full-width row below.
   const row = document.createElement("div");
-  row.className = "opui-sp-row";
+  row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
   row.dataset.modelsAccelerator = "1";
 
-  const desc = document.createElement("div");
-  desc.className = "opui-sp-row-desc";
-  desc.dataset.accelDesc = "1";
-  row.innerHTML = `
-    <div class="opui-sp-row-text">
-      <div class="opui-sp-row-title">${escapeHtml(t("Accelerator Link"))}</div>
-      <div class="opui-sp-row-desc" data-accel-status="1"></div>
-    </div>
-    <div class="opui-multi-btn-group" data-accel-buttons="1"></div>`;
-  row.insertBefore(desc, row.querySelector(".opui-multi-btn-group"));
+  const text = document.createElement("div");
+  text.className = "opui-sp-row-text";
+  text.innerHTML = `
+    <div class="opui-sp-row-title">${escapeHtml(t("Jetlink"))}</div>
+    <div class="opui-sp-row-desc" data-accel-status="1"></div>`;
 
-  const group = row.querySelector("[data-accel-buttons]");
+  const group = document.createElement("div");
+  group.className = "opui-multi-btn-group";
   for (const mode of accel.modes || ["off", "usb", "ios", "wifi"]) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -4472,7 +4441,7 @@ function buildAcceleratorRow(m) {
 }
 
 function paintAcceleratorButtons(row, accel) {
-  row.querySelectorAll("[data-accel-buttons] button").forEach((btn) => {
+  row.querySelectorAll(".opui-multi-btn-group button").forEach((btn) => {
     const selected = btn.dataset.mode === accel.mode;
     btn.classList.toggle("selected", selected);
     btn.setAttribute("aria-pressed", selected ? "true" : "false");
@@ -4495,8 +4464,8 @@ function updateAcceleratorStatus(row, accel, m) {
   if (!el) return;
   const status = acceleratorStatusText(accel);
   const source = bigModelSourceText(m);
-  const parts = [t(ACCELERATOR_DESC), source, status].filter(Boolean);
-  el.textContent = parts.join("\n");
+  const parts = [t(JETLINK_DESC), source, status].filter(Boolean);
+  el.innerHTML = parts.map((s) => escapeHtml(s)).join("<br>");
 }
 
 function buildModelsStatusNote(m) {
