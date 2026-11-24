@@ -4303,9 +4303,17 @@ function buildModelSlots(m, data, gen, container) {
         toast(t("Changing model is only allowed while offroad."));
         return;
       }
-      if (m.model_manager_online === false) {
+      // Only hard-block when the slot has no tree at all (no cache, manager
+      // offline). A non-empty tree from the params cache is selectable: the
+      // pick just queues DownloadRef, which the manager applies once online —
+      // same as the native GUI's cached dialog.
+      const cachedTree = m.slots?.[source]?.tree || slot.tree || [];
+      if (!cachedTree.length) {
         toast(t("Model list is still loading. Tap Refresh Model List and try again."));
         return;
+      }
+      if (m.model_manager_online === false) {
+        toast(t("Model manager is starting — the pick is queued and applied when ready."));
       }
       // Open the tree immediately using the data we already have. The previous
       // synchronous apiGet could block for >2s while the live model manager is

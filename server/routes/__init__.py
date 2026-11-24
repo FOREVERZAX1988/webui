@@ -336,6 +336,11 @@ async def api_models(_request: web.Request) -> web.Response:
   return json_response(models_status())
 
 
+async def api_models_status(_request: web.Request) -> web.Response:
+  # Alias of /api/opui/models — the models-sync refresh button polls this path.
+  return json_response(models_status())
+
+
 async def api_models_select(request: web.Request) -> web.Response:
   try:
     body = await request.json()
@@ -849,6 +854,7 @@ def register_routes(app: web.Application) -> None:
   app.router.add_post("/api/opui/wifi/connect/hidden", api_wifi_connect_hidden)
   app.router.add_get("/api/opui/trips", api_trips)
   app.router.add_get("/api/opui/models", api_models)
+  app.router.add_get("/api/opui/models/status", api_models_status)
   app.router.add_post("/api/opui/models/select", api_models_select)
   app.router.add_post("/api/opui/models/accelerator", api_models_accelerator)
   app.router.add_post("/api/opui/models/favorite", api_models_favorite)
