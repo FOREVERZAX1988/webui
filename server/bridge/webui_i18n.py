@@ -6,6 +6,10 @@ from __future__ import annotations
 _WEBUI_STRINGS: dict[str, dict[str, str]] = {
   "en": {
     "Web UI": "Web UI",
+    "{} days ago": "{} days ago",
+    "{} hours ago": "{} hours ago",
+    "{} minutes ago": "{} minutes ago",
+    "{standin} drives until {name} is ready.": "{standin} drives until {name} is ready.",
     "Web UI update available": "Web UI update available",
     "Web UI is up to date": "Web UI is up to date",
     "New commits on {branch}": "New commits on {branch}",
