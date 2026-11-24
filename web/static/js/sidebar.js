@@ -2,18 +2,12 @@
 
 import { tr } from "./i18n.js?v=3";
 
-const METRIC_KEYS = ["temp", "vehicle", "connect", "sunnylink"];
+const METRIC_KEYS = ["temp", "cpu", "gpu", "vehicle"];
 
 const VALUE_KEYS = {
   GOOD: "GOOD",
   HIGH: "HIGH",
   ONLINE: "ONLINE",
-  OFFLINE: "OFFLINE",
-  ERROR: "ERROR",
-  CONNECTED: "CONNECTED",
-  DISABLED: "DISABLED",
-  "REGIST...": "REGIST...",
-  FAULT: "FAULT",
   NO: "NO",
   PANDA: "PANDA",
 };
@@ -21,9 +15,9 @@ const VALUE_KEYS = {
 function metricLabel(key) {
   const labels = {
     temp: tr("TEMP"),
+    cpu: "CPU",
+    gpu: "GPU",
     vehicle: tr("VEHICLE"),
-    connect: tr("CONNECT"),
-    sunnylink: tr("SUNNYLINK"),
   };
   return labels[key] || key;
 }
@@ -33,15 +27,6 @@ function displayValue(raw) {
   const key = String(raw).toUpperCase().replace(/\s+/g, "");
   const i18nKey = VALUE_KEYS[key];
   return i18nKey ? tr(i18nKey) : raw;
-}
-
-function toneFlags(tone) {
-  return {
-    warn: tone === "warn",
-    danger: tone === "danger",
-    disabled: tone === "disabled",
-    progress: tone === "progress",
-  };
 }
 
 function ensureMetricsDom() {
@@ -79,6 +64,15 @@ function setMetric(key, { label, value, warn, danger, disabled, progress, visibl
 let lastNetType = "";
 let lastNetStrength = -1;
 
+function usageTone(pct) {
+  if (pct == null || pct < 0) return { value: "--" };
+  return {
+    value: `${Math.round(pct)}%`,
+    danger: pct >= 90,
+    warn: pct >= 70 && pct < 90,
+  };
+}
+
 export function updateSidebarMetrics(st) {
   if (!st?.ok) return;
 
@@ -91,6 +85,12 @@ export function updateSidebarMetrics(st) {
     danger: !thermalOk,
     visible: true,
   });
+
+  const cpu = usageTone(d.cpu_usage_percent);
+  setMetric("cpu", { label: metricLabel("cpu"), value: cpu.value, warn: cpu.warn, danger: cpu.danger, visible: true });
+
+  const gpu = usageTone(d.gpu_usage_percent);
+  setMetric("gpu", { label: metricLabel("gpu"), value: gpu.value, warn: gpu.warn, danger: gpu.danger, visible: true });
 
   if (d.panda_unknown) {
     setMetric("vehicle", {
@@ -106,26 +106,6 @@ export function updateSidebarMetrics(st) {
       visible: true,
     });
   }
-
-  const athena = String(d.athena_status || "").toUpperCase();
-  setMetric("connect", {
-    label: metricLabel("connect"),
-    value: displayValue(d.athena_status) || displayValue(athena === "ONLINE" ? "ONLINE" : "OFFLINE"),
-    ...toneFlags(
-      athena === "ONLINE" ? "good"
-        : athena === "ERROR" ? "danger"
-          : "warn",
-    ),
-    visible: true,
-  });
-
-  const sl = d.sunnylink || {};
-  setMetric("sunnylink", {
-    label: metricLabel("sunnylink"),
-    value: displayValue(sl.status || "OFFLINE"),
-    ...toneFlags(sl.tone || "warn"),
-    visible: true,
-  });
 
   updateNetworkIndicator(d);
 }
