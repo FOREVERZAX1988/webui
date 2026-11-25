@@ -1170,6 +1170,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       
       {
         "type": "bool",
+        "param": "CarrotLongitudinalSourceEnabled",
+        "label": "Traffic Light Stop & Go",
+        "desc": "Master switch for the vision traffic-light chain: brake for red lights and start on green, no phone connection required. Off disables automatic traffic-light stops. Phone-app longitudinal tuning (follow time, comfort braking, stop point) also flows through this switch.",
+        "default": True
+      },
+      {
+        "type": "bool",
         "param": "SameSpiCamFilter",
         "label": "Same Direction Speed Cam Filter",
         "desc": "Adjust the Same Spi Cam Filter setting.",
@@ -1903,19 +1910,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": False
       },{
         "type": "separator"
-      },{
-        "type": "section",
-        "label": "Longitudinal Control (advanced)"
-      },{
-        "type": "bool",
-        "param": "CarrotLongitudinalSourceEnabled",
-        "label": "Carrot Longitudinal Source",
-        "desc": "Let the phone app drive the longitudinal plan: its target speed becomes a plan source, and its follow time, comfort braking and stop point reach the MPC. The vision traffic-light stop&go chain lives inside this switch, so it defaults to on and works without a connected phone.",
-        "default": True
-      },{
+     },{
+        "type": "separator"
+     },{
         "type": "section",
         "label": "Navigation Control (advanced)"
-      },{
+    },{
         "type": "bool",
         "param": "CarrotTrafficCongestionEnabled",
         "label": "Traffic Congestion Slowdown",
