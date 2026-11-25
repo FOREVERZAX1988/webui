@@ -1648,6 +1648,8 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. ": "低速时驾驶可视化将切换为朝向路面的广角相机，以更好地展示部分转弯。",
     "Allow Live Stream While Driving": "行车时允许远程直播",
     "Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load).": "远程直播默认会在车辆上电后自动暂停，把视频编码器留给行车录像和行车进程。开启后行车时也保持直播（会增加系统负载）。",
+    "Carrot Vision Road Camera": "行车路面直播（Carrot Vision）",
+    "Serves the road camera over WebRTC (port 5001) to the stream page and Carrot-style apps, including while driving. Only encodes while someone is actually watching. On by default to match the carrot app experience; note it opens a LAN listener on port 5001.": "通过 WebRTC（端口 5001）把行车画面提供给直播页和 Carrot 风格的手机应用，行车中也可观看。仅在有人观看时才编码，默认开启以对齐 carrot 应用体验。注意会在局域网开放 5001 端口。",
   },
   "zh-CHT": {
     "Web UI": "Web UI",
@@ -2030,6 +2032,8 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     " (Default)": " （默认）",
     "Allow Live Stream While Driving": "行車時允許遠端直播",
     "Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load).": "遠端直播預設會在車輛上電後自動暫停，把視訊編碼器留給行車記錄和行車進程。開啟後行車時也保持直播（會增加系統負載）。",
+    "Carrot Vision Road Camera": "行車路面直播（Carrot Vision）",
+    "Serves the road camera over WebRTC (port 5001) to the stream page and Carrot-style apps, including while driving. Only encodes while someone is actually watching. On by default to match the carrot app experience; note it opens a LAN listener on port 5001.": "透過 WebRTC（連接埠 5001）把行車畫面提供給直播頁和 Carrot 風格的手機應用，行車中也可觀看。僅在有人觀看時才編碼，預設開啟以對齊 carrot 應用體驗。注意會在區網開放 5001 連接埠。",
   },
 }
 
