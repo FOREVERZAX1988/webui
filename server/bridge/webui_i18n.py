@@ -1646,6 +1646,8 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "sunnypilot defaults to driving in chill mode. Experimental mode enables alpha-level features that aren't ready for chill mode. ": "sunnypilot 默认以 chill 模式驾驶。实验模式启用尚未达到 chill 模式成熟度的 Alpha 级功能。",
     "Let the driving model control the gas and brakes. sunnypilot will drive as it thinks a human would, including stopping for red lights and stop signs. ": "由驾驶模型控制油门和刹车。sunnypilot 会像人类一样驾驶，包括在红灯和停车标志前停车。",
     "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. ": "低速时驾驶可视化将切换为朝向路面的广角相机，以更好地展示部分转弯。",
+    "Allow Live Stream While Driving": "行车时允许远程直播",
+    "Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load).": "远程直播默认会在车辆上电后自动暂停，把视频编码器留给行车录像和行车进程。开启后行车时也保持直播（会增加系统负载）。",
   },
   "zh-CHT": {
     "Web UI": "Web UI",
@@ -2026,6 +2028,8 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     "This feature requires Lane Center Assist, in Models, to be on.": "此功能需要开启 Models 中的 Lane Center Assist。",
     "Always On": "始终开启",
     " (Default)": " （默认）",
+    "Allow Live Stream While Driving": "行車時允許遠端直播",
+    "Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load).": "遠端直播預設會在車輛上電後自動暫停，把視訊編碼器留給行車記錄和行車進程。開啟後行車時也保持直播（會增加系統負載）。",
   },
 }
 
