@@ -1910,8 +1910,8 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "type": "bool",
         "param": "CarrotLongitudinalSourceEnabled",
         "label": "Carrot Longitudinal Source",
-        "desc": "Let the phone app drive the longitudinal plan: its target speed becomes a plan source, and its follow time, comfort braking and stop point reach the MPC. Off keeps stock sunnypilot behaviour. Needs a connected phone - without a fresh packet the source stays inactive.",
-        "default": False
+        "desc": "Let the phone app drive the longitudinal plan: its target speed becomes a plan source, and its follow time, comfort braking and stop point reach the MPC. The vision traffic-light stop&go chain lives inside this switch, so it defaults to on and works without a connected phone.",
+        "default": True
       },{
         "type": "section",
         "label": "Navigation Control (advanced)"

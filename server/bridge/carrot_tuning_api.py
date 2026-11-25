@@ -268,7 +268,7 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   # time reach the MPC. Registered here for the same reason as its neighbours - the
   # Developer page exposes it natively, so the webui read/write whitelist must accept
   # the key too or the two UIs would disagree about which params exist.
-  "CarrotLongitudinalSourceEnabled": ("bool", 0),
+  "CarrotLongitudinalSourceEnabled": ("bool", 1),
   # Master switch for the xiaoge v_asm ONNX blind-spot / lane server (off unloads
   # the resident model). The Developer page exposes it natively alongside the
   # thresholds below, so the whitelist accepts it for the same reason.
