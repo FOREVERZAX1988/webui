@@ -145,12 +145,14 @@ async def api_param_put(request: web.Request) -> web.Response:
     body = await request.json()
     value = str(body.get("value", ""))
     needs_cycle = bool(body.get("needs_cycle", False))
+    acknowledge = bool(body.get("acknowledge", False))
   except Exception:
     return json_response({"ok": False, "error": "invalid json"}, status=400)
   # Read previous value for history tracking
   prev_result = get_param(key)
   previous = prev_result.get("value") if prev_result.get("ok") else None
-  result = await asyncio.to_thread(put_param, key, value, needs_cycle=needs_cycle)
+  result = await asyncio.to_thread(
+    put_param, key, value, needs_cycle=needs_cycle, acknowledged=acknowledge)
   # Log to change history if value actually changed
   if result.get("ok") and previous is not None and str(previous) != value:
     append_param_change(key, previous, value, source="web_ui")
@@ -334,6 +336,11 @@ async def api_models(_request: web.Request) -> web.Response:
   return json_response(models_status())
 
 
+async def api_models_status(_request: web.Request) -> web.Response:
+  # Alias of /api/opui/models — the models-sync refresh button polls this path.
+  return json_response(models_status())
+
+
 async def api_models_select(request: web.Request) -> web.Response:
   try:
     body = await request.json()
@@ -470,6 +477,16 @@ async def api_vehicle_brand_widgets(_request: web.Request) -> web.Response:
 
 async def api_developer_error_log(_request: web.Request) -> web.Response:
   return json_response(developer_error_log())
+
+
+async def api_developer_tailscale(_request: web.Request) -> web.Response:
+  from webui.server.bridge.developer_api import tailscale_state
+  return json_response(tailscale_state())
+
+
+async def api_carrot_flm_status(_request: web.Request) -> web.Response:
+  from webui.server.bridge.carrot_tuning_api import flm_status
+  return json_response(flm_status())
 
 
 async def api_osm_delete(_request: web.Request) -> web.Response:
@@ -837,6 +854,7 @@ def register_routes(app: web.Application) -> None:
   app.router.add_post("/api/opui/wifi/connect/hidden", api_wifi_connect_hidden)
   app.router.add_get("/api/opui/trips", api_trips)
   app.router.add_get("/api/opui/models", api_models)
+  app.router.add_get("/api/opui/models/status", api_models_status)
   app.router.add_post("/api/opui/models/select", api_models_select)
   app.router.add_post("/api/opui/models/accelerator", api_models_accelerator)
   app.router.add_post("/api/opui/models/favorite", api_models_favorite)
@@ -869,6 +887,8 @@ def register_routes(app: web.Application) -> None:
   app.router.add_get("/api/opui/steering/torque-versions", api_torque_versions)
   app.router.add_get("/api/opui/device/regulatory", api_device_regulatory)
   app.router.add_get("/api/opui/developer/error-log", api_developer_error_log)
+  app.router.add_get("/api/opui/developer/tailscale", api_developer_tailscale)
+  app.router.add_get("/api/opui/carrot/flm/status", api_carrot_flm_status)
   app.router.add_post("/api/opui/device/language", api_set_language)
   app.router.add_get("/api/opui/imu/calibration", api_imu_calibration)
   app.router.add_post("/api/opui/imu/calibration/{action}", api_imu_calibration_control)

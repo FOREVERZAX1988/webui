@@ -48,6 +48,19 @@ class TestParamConstraints(unittest.TestCase):
         return
     self.fail(f"Expected put({key}, {value}) not found in {self.params.put.call_args_list}")
 
+  def _assert_remove(self, key):
+    """Assert that remove was called with the given key."""
+    for c in self.params.remove.call_args_list:
+      if c[0][0] == key:
+        return
+    self.fail(f"Expected remove({key}) not found in {self.params.remove.call_args_list}")
+
+  def _assert_not_put_bool(self, key):
+    """Assert that put_bool was never called for the given key."""
+    for c in self.params.put_bool.call_args_list:
+      if c[0][0] == key:
+        self.fail(f"Unexpected put_bool({key}) found in {self.params.put_bool.call_args_list}")
+
   @patch('webui.server.bridge.param_constraints._refresh_ctx')
   def test_nnlc_enforce_torque_mutual_exclusion(self, mock_ctx):
     """NNLC and EnforceTorqueControl cannot both be on."""
@@ -120,7 +133,8 @@ class TestParamConstraints(unittest.TestCase):
 
     self._assert_put_bool("MadsMainCruiseAllowed", False)
     self._assert_put_bool("MadsUnifiedEngagementMode", True)
-    self._assert_put("MadsSteeringMode", 0)
+    # big UI mads_settings.py:143 — Disengage (2) is the only allowed mode
+    self._assert_put("MadsSteeringMode", 2)
 
   @patch('webui.server.bridge.param_constraints._refresh_ctx')
   def test_toyota_enforce_stock_clears_others(self, mock_ctx):
@@ -141,7 +155,8 @@ class TestParamConstraints(unittest.TestCase):
 
   @patch('webui.server.bridge.param_constraints._refresh_ctx')
   def test_live_torque_toggle_off_clears_relaxed(self, mock_ctx):
-    """LiveTorqueParamsToggle off clears LiveTorqueParamsRelaxedToggle."""
+    """LiveTorqueParamsToggle off removes LiveTorqueParamsRelaxedToggle (big UI
+    torque_settings.py:119 semantics: remove, not a False write)."""
     mock_ctx.return_value = self._ctx()
     self.params.get_bool.side_effect = lambda k: {
       "LiveTorqueParamsToggle": False,
@@ -150,7 +165,8 @@ class TestParamConstraints(unittest.TestCase):
 
     enforce_param_constraints(self.params)
 
-    self._assert_put_bool("LiveTorqueParamsRelaxedToggle", False)
+    self._assert_remove("LiveTorqueParamsRelaxedToggle")
+    self._assert_not_put_bool("LiveTorqueParamsRelaxedToggle")
 
   @patch('webui.server.bridge.param_constraints._refresh_ctx')
   def test_joystick_clears_maneuvers(self, mock_ctx):

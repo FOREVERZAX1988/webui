@@ -166,6 +166,9 @@
         <button type="button" id="btn-experimental" class="opui-exp-btn" hidden title="Experimental">
           <img id="exp-icon" class="opui-exp-icon" src="" alt="" />
         </button>
+        <button type="button" id="btn-speed-assist" class="opui-speed-assist-btn" hidden title="Set Speed Assist">
+          <span class="opui-speed-assist-gauge" aria-hidden="true"></span>
+        </button>
         <div class="opui-hud-bottom-fade" aria-hidden="true"></div>
         </div>
         <div id="dev-ui-bottom" class="opui-dev-ui-bottom" hidden></div>
@@ -204,18 +207,6 @@
         <div class="opui-modal-footer opui-modal-actions opui-modal-actions--split">
           <button type="button" id="modal-qr-open" class="opui-btn opui-btn--dialog">Open link</button>
           <button type="button" id="modal-qr-close" class="opui-btn opui-btn--dialog opui-btn--primary">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="modal-keyboard" class="opui-modal opui-modal--keyboard" hidden>
-      <div class="opui-modal-card opui-modal-card--keyboard">
-        <div id="keyboard-title" class="opui-modal-title"></div>
-        <div id="keyboard-display" class="opui-keyboard-display"></div>
-        <div id="keyboard-grid" class="opui-keyboard-grid"></div>
-        <div class="opui-modal-footer opui-modal-actions opui-modal-actions--split">
-          <button type="button" id="keyboard-cancel" class="opui-btn opui-btn--dialog">Cancel</button>
-          <button type="button" id="keyboard-confirm" class="opui-btn opui-btn--dialog opui-btn--primary">Confirm</button>
         </div>
       </div>
     </div>
@@ -353,6 +344,6 @@
     <label class="opui-dev-row"><span id="dev-label-speed">Speed</span> <input type="range" id="dev-speed" min="0" max="150" value="72" /> <span id="dev-speed-val">72</span></label>
     </div>
   </aside>
-  <script type="module" src="/static/js/app.js?v=135"></script>
+  <script type="module" src="/static/js/app.js?v=136"></script>
 </body>
 </html>

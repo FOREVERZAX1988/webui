@@ -9,7 +9,7 @@ import { runSoftwareInstallFlow, runRebootFlow } from "./system_wait_overlay.js"
 import { opuiWs } from "./ws.js";
 import {
   showConfirm, showKeyboard, showTextInput, showTree, showHtml, showMultiOption, showQrPair,
-  createSpToggle, createProgressRow, createDualButton, bindRowExpand, experimentalE2eHtml,
+  createSpToggle, createProgressRow, createDualButton, bindRowExpand,
 } from "./components.js?v=2";
 import { reopenOnboarding } from "./onboarding.js";
 
@@ -270,6 +270,10 @@ function widgetVisible(w, panelData) {
   if (w.visible_if.state) return !!globalState[w.visible_if.state];
   const dep = panelData.values?.[w.visible_if.param];
   if (w.visible_if.ne != null) return String(dep) !== String(w.visible_if.ne);
+  if (w.visible_if.gte != null) {
+    const n = parseInt(dep, 10);
+    return !Number.isNaN(n) && n >= parseInt(w.visible_if.gte, 10);
+  }
   return String(dep) === String(w.visible_if.eq);
 }
 
@@ -329,6 +333,7 @@ function formatOptionLabel(w, rawVal, panelData = panelDataRef) {
   if (fmt === "camera_offset") return `${(val / 100).toFixed(2)} m`;
   if (fmt === "seconds_1") return `${(val / 100).toFixed(1)}s`;
   if (fmt === "meters_1") return `${(val / 100).toFixed(1)}m`;
+  if (fmt === "custom_sr") return val === 0 ? t("Stock") : (val / 10.0).toFixed(1);
   if (fmt === "percent") return `${val} %`;
   if (fmt === "ms") return `${val} ms`;
   if (fmt === "lane_turn_speed") {
@@ -360,7 +365,7 @@ let panelDataRef = null;
 let lastPanelVisibilityHash = "";
 
 const UNREGISTERED_SUNNYLINK_DONGLE_ID = "UnregisteredDevice";
-const SOFTWARE_UPDATER_TIMEOUT_MS = 10000;
+const SOFTWARE_UPDATER_TIMEOUT_MS = 30000;
 let softwareDownloadWaitUntil = 0;
 let modelsPanelPoll = null;
 
@@ -404,7 +409,7 @@ let homeState = { paired: false };
 let onNavigateSubpanel = null;
 let deviceExtrasCache = null;
 
-async function putParam(key, value, needsCycle = false, skipEffects = false) {
+async function putParam(key, value, needsCycle = false, skipEffects = false, extra = null) {
   // Snapshot scroll position before any async work so it survives re-renders.
   // Only capture on the first putParam of an interaction; side-effect puts
   // must not overwrite the original user scroll position.
@@ -413,11 +418,11 @@ async function putParam(key, value, needsCycle = false, skipEffects = false) {
   let res;
   try {
     if (opuiWs.connected) {
-      res = await opuiWs.putParam(key, value, needsCycle);
+      res = await opuiWs.putParam(key, value, needsCycle, extra);
       res = res || { ok: false, error: "ws failed" };
     } else {
       res = await apiPut(`/api/opui/params/${encodeURIComponent(key)}`, {
-        value, needs_cycle: !!needsCycle,
+        value, needs_cycle: !!needsCycle, ...(extra || {}),
       });
     }
   } catch (err) {
@@ -462,6 +467,10 @@ async function applyParamSideEffects(key, value) {
     updateDeveloperCapabilities(globalState);
   } else if (key === "AlphaLongitudinalEnabled") {
     await off("OnroadCycleRequested", "1", true);
+  } else if (key === "AgentEnabled" && value === "1") {
+    // Big GUI developer.py: enabling the agent clears the idle-suspend marker
+    // so the manager spawns it now.
+    await removeParam("AgentSuspended");
   } else if (key === "EnforceTorqueControl" && value === "1") {
     await off("NeuralNetworkLateralControl", "0");
   } else if (key === "NeuralNetworkLateralControl" && value === "1") {
@@ -529,10 +538,6 @@ export function setHomeState(home) {
 function updateToggleCapabilities(st) {
   if (!st) return;
   const hasLong = st.has_longitudinal_control !== false;
-  const spRelease = !!st.is_release_branch;
-  const expRow = document.querySelector('[data-param="ExperimentalMode"]');
-  const expInput = expRow?.querySelector("input[type=checkbox]");
-  const expDesc = expRow?.querySelector(".opui-sp-row-desc--expandable, .opui-sp-row-desc:not(.opui-sp-row-desc--hint):not(.opui-sp-row-desc--experimental)");
 
   // Generic longitudinal capability gating
   document.querySelectorAll('[data-capability="longitudinal"]').forEach((row) => {
@@ -550,29 +555,6 @@ function updateToggleCapabilities(st) {
       if (param) removeParam(param);
     }
   });
-
-  if (expInput) {
-    const e2e = experimentalE2eHtml();
-    if (expDesc) {
-      if (!hasLong) {
-        let unavailable = t(
-          "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.",
-        );
-        if (st.alpha_longitudinal_available) {
-          if (spRelease) {
-            unavailable += ` ${t("An alpha version of sunnypilot longitudinal control can be tested, along with Experimental mode, on non-release branches.")}`;
-          } else {
-            unavailable += ` ${t("Enable the sunnypilot longitudinal control (alpha) toggle to allow Experimental mode.")}`;
-          }
-        } else {
-          unavailable += ` ${t("sunnypilot longitudinal control may come in a future update.")}`;
-        }
-        expDesc.innerHTML = `<b>${unavailable}</b><br><br>${e2e}`;
-      } else {
-        expDesc.innerHTML = e2e;
-      }
-    }
-  }
 }
 
 function syncToggleLocksFromPanel() {
@@ -868,10 +850,23 @@ function updateTorqueSubpanel(st) {
   const jerkRow = document.querySelector('[data-param="LateralJerkTorqueController"]');
   if (jerkRow) {
     const nnlc = paramIsOn(panelDataRef?.values?.NeuralNetworkLateralControl);
+    // Big GUI torque_settings.py: v2 replaces the jerk-aware mechanisms, so the
+    // toggle only does something while some model size runs a non-v2 tune. With
+    // EnforceTorqueControl off the controller resolves to v0 either way.
+    let jerkHasEffect = true;
+    try {
+      const enforce = paramIsOn(panelDataRef?.values?.EnforceTorqueControl);
+      if (enforce) {
+        const small = parseFloat(panelDataRef?.values?.TorqueControlTune ?? "0");
+        const big = parseFloat(panelDataRef?.values?.TorqueControlTuneBig ?? "1");
+        jerkHasEffect = small !== 2 || big !== 2;
+      }
+    } catch (_) { /* keep enabled on parse failure */ }
+    const disabled = nnlc || !globalState.is_offroad || !jerkHasEffect;
     const input = jerkRow.querySelector("input");
     const label = jerkRow.querySelector(".opui-sp-toggle");
-    if (input) input.disabled = nnlc || !globalState.is_offroad;
-    label?.classList.toggle("disabled", nnlc || !globalState.is_offroad);
+    if (input) input.disabled = disabled;
+    label?.classList.toggle("disabled", disabled);
   }
 }
 
@@ -981,14 +976,22 @@ function updateCruiseCapabilities(st) {
     clearIfOn("IntelligentCruiseButtonManagement");
   }
 
-  setToggleRowState("DynamicExperimentalControl", { disabled: !hasLong });
-  if (!hasLong) clearIfOn("DynamicExperimentalControl");
-
   setToggleRowState("SmartCruiseControlVision", { disabled: !sccOk });
   setToggleRowState("SmartCruiseControlMap", { disabled: !sccOk });
   if (!sccOk) {
     clearIfOn("SmartCruiseControlVision");
     clearIfOn("SmartCruiseControlMap");
+  }
+
+  // Curve Speed mirrors Big GUI cruise_zp.py: nothing reads it with both curve
+  // features off, so it is disabled when cruise is unavailable or both are off.
+  const curveRow = document.querySelector('[data-param="CurveSpeedProfile"]');
+  if (curveRow) {
+    const sccOn = paramIsOn(panelDataRef?.values?.SmartCruiseControlVision)
+      || paramIsOn(panelDataRef?.values?.SmartCruiseControlMap);
+    const curveDisabled = !sccOk || !sccOn;
+    curveRow.querySelectorAll("button").forEach((b) => { b.disabled = curveDisabled; });
+    curveRow.classList.toggle("opui-sp-row--disabled", curveDisabled);
   }
 
   let customDesc = "Enable custom Short & Long press increments for cruise speed increase/decrease.";
@@ -1033,6 +1036,15 @@ function updateVisualsCapabilities(st) {
       putParam(param, "0", false, true);
     }
   });
+  // Lane Center Gauge follows the Lane Center Assist (Blendful) switch with a
+  // dynamic description, mirroring big UI visuals_zp.py:36-43.
+  const laneCenterOn = paramIsOn(panelDataRef?.values?.Blendful);
+  setToggleRowState("LaneCenterUI", {
+    disabled: !laneCenterOn,
+    desc: laneCenterOn
+      ? "Shows lane center assist's nudge as a gauge under the steering arc."
+      : "This feature requires Lane Center Assist, in Models, to be on.",
+  });
 }
 
 function updateSteeringCapabilities(st) {
@@ -1053,7 +1065,7 @@ function updateSteeringCapabilities(st) {
   setToggleDisabled("Mads", !offroad);
   const madsRow = document.querySelector('[data-param="Mads"]');
   if (madsRow) {
-    const baseDesc = t("Enable the beloved MADS feature. Disable toggle to revert back to stock sunnypilot engagement/disengagement.");
+    const baseDesc = t("Lets sunnypilot steer while cruise control is off. When off, steering and cruise engage and disengage together.");
     if (!st.cp_loaded) {
       setPanelRowDescHtml(madsRow, `<b>${escapeHtml(t("Start the vehicle to check vehicle compatibility."))}</b><br><br>${escapeHtml(baseDesc)}`);
     } else {
@@ -1068,6 +1080,16 @@ function updateSteeringCapabilities(st) {
 
   const torqueOn = paramIsOn(panelDataRef?.values?.EnforceTorqueControl);
   const nnlcOn = paramIsOn(panelDataRef?.values?.NeuralNetworkLateralControl);
+  // Big GUI steering.py: the two lateral systems are mutually exclusive; if both
+  // ended up on (e.g. restored from a backup), both get switched off.
+  if (torqueOn && nnlcOn) {
+    putParam("EnforceTorqueControl", "0", false, true);
+    putParam("NeuralNetworkLateralControl", "0", false, true);
+    if (panelDataRef?.values) {
+      panelDataRef.values.EnforceTorqueControl = "0";
+      panelDataRef.values.NeuralNetworkLateralControl = "0";
+    }
+  }
   setToggleDisabled("EnforceTorqueControl", !offroad || !torqueAllowed || nnlcOn);
   setToggleDisabled("NeuralNetworkLateralControl", !offroad || !torqueAllowed || jerk || torqueOn);
 
@@ -1096,6 +1118,10 @@ function applySoftwareCustom(sw) {
   const dlRow = document.getElementById("software-download-row");
   if (dlRow) dlRow.hidden = !sw.is_offroad;
   if (dlVal) dlVal.textContent = formatSoftwareDownloadStatus(sw);
+  const curDesc = document.getElementById("software-current-desc");
+  if (curDesc && sw.current) curDesc.textContent = sw.current;
+  const branchVal = document.getElementById("software-branch-value");
+  if (branchVal && sw.target_branch) branchVal.textContent = sw.target_branch;
   if (dlBtn) {
     dlBtn.textContent = t(sw.download_label || "CHECK");
     const waiting = softwareDownloadWaitUntil > Date.now();
@@ -1204,6 +1230,16 @@ export function applyPanelSync(data) {
   if (!data?.ok) return;
   panelDataRef = data;
   syncToggleLocksFromPanel();
+  if (data.custom === "software") {
+    // The software panel's version/download/branch rows live outside the
+    // widget DOM, so the value-patching path below never touches them —
+    // refresh their live values explicitly.
+    queueMicrotask(() => {
+      apiGet("/api/opui/software").then((sw) => {
+        if (sw?.ok) applySoftwareCustom(sw);
+      }).catch(() => {});
+    });
+  }
   const hash = panelVisibilityHash(data);
   if (hash !== lastPanelVisibilityHash) {
     if (currentPanelRef) panelDomCache.delete(currentPanelRef);
@@ -1340,14 +1376,28 @@ function updateWidgetValue(root, w, panelData = panelDataRef) {
     let val = kind === "option" ? resolveOptionIndex(w, w.value) : parseInt(w.value, 10);
     if (Number.isNaN(val)) val = min;
     const span = el.querySelector(".opui-option-value, .opui-int-control span");
-    if (span) {
-      span.textContent = kind === "option" ? formatOptionLabel(w, w.value, panelData) : String(val);
+    // Option+switch rows (e.g. Pause Lateral Control with Blinker): the switch
+    // param is folded into the stepper as the Off step (BIG GUI lib/switch.py).
+    const sw = w.switch || null;
+    let switchOff = false;
+    if (sw?.param) {
+      switchOff = String(panelData?.values?.[sw.param] ?? "") === (sw.at ? "1" : "0");
     }
-    const minus = el.querySelector(".opui-option-bar button:first-child, .opui-int-control button:first-child");
-    const plus = el.querySelector(".opui-option-bar button:last-child, .opui-int-control button:last-child");
-    if (minus) minus.disabled = val <= min;
-    if (plus) plus.disabled = val >= max;
+    if (span) {
+      if (switchOff) span.textContent = t(sw.off_label || "Off");
+      else span.textContent = kind === "option" ? formatOptionLabel(w, w.value, panelData) : String(val);
+    }
+    const minus = el.querySelector(".opui-option-bar button:first-of-type, .opui-int-control button:first-child");
+    const plus = el.querySelector(".opui-option-bar button:last-of-type, .opui-int-control button:last-child");
+    if (minus) minus.disabled = switchOff || (val <= min && !sw);
+    if (plus) plus.disabled = switchOff ? false : val >= max;
   }
+}
+
+// Onroad Uploads is a no-op when RecordingMode is "Disable All" (0): nothing
+// is recorded, so there is nothing to upload (big UI device.py:119-126).
+function recordingUploadsDisabled() {
+  return parseInt(panelDataRef?.values?.RecordingMode ?? "2", 10) === 0;
 }
 
 function updateDualButtonRow(root, w) {
@@ -1367,6 +1417,7 @@ function updateDualButtonRow(root, w) {
     }
     if (cfg?.toggle && cfg.param) {
       btn.classList.toggle("primary", paramIsOn(cfg.value));
+      if (cfg.param === "OnroadUploads") btn.disabled = btn.disabled || recordingUploadsDisabled();
     }
     if (cfg?.action === "onroad_preview" || cfg?.action === "driver_view") {
       const active = cfg.action === "onroad_preview"
@@ -1613,7 +1664,7 @@ function renderAlwaysOffroadRow(active) {
       ? t("Are you sure you want to exit Always Offroad mode?")
       : t("Are you sure you want to enter Always Offroad mode?");
     if (!(await showConfirm({ message: msg, confirmText: t("Confirm") }))) return;
-    const res = await apiPut("/api/opui/params/OffroadMode", { value: active ? "0" : "1" });
+    const res = await apiPut("/api/opui/params/OffroadModeRequested", { value: active ? "0" : "1" });
     if (res.ok) {
       deviceExtrasCache = { ...(deviceExtrasCache || {}), offroad_mode: !active };
       toast(label);
@@ -1643,35 +1694,6 @@ function renderSafeModeRow(active) {
       toast(label);
       requestPanelRefresh();
     } else toast(res.error || "Failed");
-  });
-  return row;
-}
-
-function renderJetlinkLinkRow() {
-  const row = document.createElement("div");
-  row.className = "opui-row opui-row--action";
-  row.innerHTML = `
-    <div class="opui-row-label">
-      <div class="opui-row-title">${escapeHtml(t("Jetlink"))}</div>
-      <div class="opui-row-desc">${escapeHtml(t("Connect an Android phone or Jetson as an accelerator for model inference."))}</div>
-    </div>
-    <div class="opui-row-value" id="jetlink-status">${escapeHtml(t("Checking..."))}</div>
-  `;
-  // Fetch jetlink status asynchronously
-  apiGet("/api/opui/jetlink/status").then((res) => {
-    const el = row.querySelector("#jetlink-status");
-    if (el) {
-      if (res.ok && res.status) {
-        const mode = res.status.mode || "none";
-        const connected = res.status.connected ? t("Connected") : t("Disconnected");
-        el.textContent = `${mode} — ${connected}`;
-      } else {
-        el.textContent = t("Not available");
-      }
-    }
-  }).catch(() => {
-    const el = row.querySelector("#jetlink-status");
-    if (el) el.textContent = t("Not available");
   });
   return row;
 }
@@ -1847,9 +1869,10 @@ function renderWidget(w, panelData) {
       const active = !!deviceExtrasCache?.safe_mode;
       return renderSafeModeRow(active);
     }
-    if (w.custom === "jetlink_link") return renderJetlinkLinkRow();
+    if (w.custom === "jetlink_link") return null; // superseded by the accelerator row in the models renderer
     if (w.custom === "webui_update") return renderWebUiUpdateRow();
     if (w.custom === "carrot_navi_debug") return renderCarrotNaviDebugRow(w);
+    if (w.custom === "flm_status") return renderFlmStatusRow(w);
     if (w.custom === "device_calibration") return null;
     return null;
   }
@@ -1951,10 +1974,8 @@ function renderBoolRow(w) {
       return "handled";
     };
   }
-  if (w.param === "AlphaLongitudinalEnabled") {
-    toggleDef.confirm_rich = true;
-    toggleDef.confirm_message = w.desc || "";
-  }
+  // AlphaLongitudinalEnabled rich confirm now comes from the catalog
+  // (confirm_enable_rich, mirroring big UI developer.py rich ConfirmDialog).
   if (w.confirm_enable) {
     toggleDef.confirm_enable = true;
     toggleDef.confirm_message = w.desc || w.label;
@@ -2288,11 +2309,41 @@ function renderOptionRow(w, panelData) {
   plus.type = "button";
   plus.textContent = "+";
 
+  // Big GUI option+switch form (option_control.py + lib/switch.py): the bool
+  // switch is folded into the stepper as the step below min — "Off" is just a
+  // value, not a separate toggle widget. Minus at min lands on Off; plus from
+  // Off restores the stored numeric value; the switch param tracks the step.
+  const sw = w.switch || null;
+  const swOffVal = sw ? (sw.at ? "1" : "0") : null;
+  const swOnVal = sw ? (sw.at ? "0" : "1") : null;
+  let swOff = false;
+  if (sw?.param) {
+    swOff = String(panelData?.values?.[sw.param] ?? "") === swOffVal;
+    if (swOff) span.textContent = t(sw.off_label || "Off");
+  }
+  const switchOff = () => swOff;
+
+  const putSwitchParam = async (val) => {
+    const res = await putParam(sw.param, val);
+    if (!res.ok) {
+      toast(res.error || t("Save failed"));
+      return false;
+    }
+    if (panelData?.values) panelData.values[sw.param] = val;
+    return true;
+  };
+
   const save = async (v) => {
+    if (sw && swOff) {
+      // leaving the Off step: flip the switch param on, then restore the value
+      if (!(await putSwitchParam(swOnVal))) return;
+      swOff = false;
+      requestPanelRefresh();
+    }
     idx = Math.max(min, Math.min(max, v));
     const paramVal = optionParamValue(w, idx);
     span.textContent = formatOptionLabel(w, paramVal, panelData);
-    minus.disabled = idx <= min;
+    minus.disabled = idx <= min && !sw;
     plus.disabled = idx >= max;
     const res = await putParam(w.param, String(paramVal));
     if (!res.ok) toast(res.error || t("Save failed"));
@@ -2315,10 +2366,29 @@ function renderOptionRow(w, panelData) {
       }
     }
   };
-  minus.disabled = idx <= min;
-  plus.disabled = idx >= max;
-  minus.addEventListener("click", () => save(idx - step));
-  plus.addEventListener("click", () => save(idx + step));
+  minus.disabled = switchOff() || (idx <= min && !sw);
+  plus.disabled = switchOff() ? false : idx >= max;
+  if (switchOff()) span.textContent = t(sw.off_label || "Off");
+  minus.addEventListener("click", () => {
+    if (switchOff()) return;
+    if (sw && idx <= min) {
+      // below min folds onto the Off step (BIG GUI OptionControlSP)
+      putSwitchParam(swOffVal).then((ok) => {
+        if (!ok) return;
+        swOff = true;
+        span.textContent = t(sw.off_label || "Off");
+        minus.disabled = true;
+        plus.disabled = false;
+        requestPanelRefresh();  // visible_if rows (e.g. reengage delay) follow the step
+      });
+      return;
+    }
+    save(idx - step);
+  });
+  plus.addEventListener("click", () => {
+    if (switchOff()) { save(idx); return; }  // leave Off at the stored value
+    save(idx + step);
+  });
   bar.append(minus, span, plus);
   row.appendChild(bar);
   bindRowExpand(row, { ...w, desc: w.desc ? t(w.desc) : "" });
@@ -2368,7 +2438,7 @@ async function runDualSideAction(side) {
   }
   if (side.action === "reset_all_params") {
     if (!(await showConfirm({
-      message: t("Are you sure you want to reset all sunnypilot settings to default? Once the settings are reset, there is no going back."),
+      message: t("Are you sure you want to reset all zoompilot settings to default? Once the settings are reset, there is no going back."),
       confirmText: t("Reset"),
     }))) return;
     if (!(await showConfirm({
@@ -2404,6 +2474,12 @@ async function runDualSideAction(side) {
         if (deviceExtrasCache) {
           deviceExtrasCache.onroad_preview = res.is_preview;
         }
+        // Open the picture on both ends: device GUI (param above) + webui popup.
+        if (res.is_preview) {
+          import("./preview_modal.js").then((m) => m.openPreview("road")).catch(() => {});
+        } else {
+          import("./preview_modal.js").then((m) => m.closePreview()).catch(() => {});
+        }
         // Refresh to update button states
         requestPanelRefresh();
         return;
@@ -2417,6 +2493,13 @@ async function runDualSideAction(side) {
       if (res.ok) {
         if (deviceExtrasCache) {
           deviceExtrasCache.driver_view_enabled = res.driver_view_enabled;
+        }
+        // Both ends: device GUI shows the driver view (param), webui pops the
+        // driver camera stream.
+        if (res.driver_view_enabled) {
+          import("./preview_modal.js").then((m) => m.openPreview("driver")).catch(() => {});
+        } else {
+          import("./preview_modal.js").then((m) => m.closePreview()).catch(() => {});
         }
         toast(t("Driver Camera Preview"));
         requestPanelRefresh();
@@ -2474,6 +2557,7 @@ function renderDualButtonRow(w) {
 
     if (side.toggle) {
       btn.classList.toggle("primary", paramIsOn(side.value));
+      if (side.param === "OnroadUploads" && recordingUploadsDisabled()) btn.disabled = true;
     }
     // offroad_only: onroad_preview is also enabled when already in preview mode
     if (side.offroad_only) {
@@ -2725,6 +2809,28 @@ function renderCarrotNaviDebugRow(w) {
   return row;
 }
 
+/* FLM analysis status row: reads the one-line daemon status written by
+   flmanalysisd to the FLMAnalysisStatus param (mirrors Big GUI carrot
+   tuning's 分析状态 row). */
+function renderFlmStatusRow(w) {
+  const row = document.createElement("div");
+  row.className = "opui-sp-row";
+  row.dataset.custom = "flm_status";
+  row.innerHTML = `
+    <div class="opui-sp-row-text">
+      <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
+      <div class="opui-sp-row-desc">${escapeHtml(t("Loading..."))}</div>
+    </div>`;
+  apiGet("/api/opui/carrot/flm/status").then((st) => {
+    const desc = row.querySelector(".opui-sp-row-desc");
+    if (desc) desc.textContent = st?.text || t("N/A");
+  }).catch(() => {
+    const desc = row.querySelector(".opui-sp-row-desc");
+    if (desc) desc.textContent = t("N/A");
+  });
+  return row;
+}
+
 function renderActionRow(w) {
   const row = document.createElement("div");
   row.className = "opui-sp-row";
@@ -2747,11 +2853,26 @@ function renderActionRow(w) {
       buttonText = paramIsOn(panelDataRef?.values?.[dynLabel.param]) ? dynOn : dynOff;
     }
   }
+  const tuneVersionKey = w.action === "torque_tune_version_big" ? "big"
+    : w.action === "torque_tune_version_small" ? "small" : "";
+  const tuneValueHtml = tuneVersionKey
+    ? `<span class="opui-sp-row-value" data-tune-version="${tuneVersionKey}">${escapeHtml(t("Loading..."))}</span>` : "";
   row.innerHTML = `
     <div class="opui-sp-row-text">
       <div class="opui-sp-row-title">${escapeHtml(t(w.label))}</div>
     </div>
+    ${tuneValueHtml}
     <button type="button" class="opui-btn opui-btn--action" ${disabled ? "disabled" : ""}>${escapeHtml(t(buttonText))}</button>`;
+  if (tuneVersionKey) {
+    // show the currently selected tune version next to the SELECT button
+    apiGet("/api/opui/steering/torque-versions").then((tv) => {
+      if (!tv.ok) return;
+      const el = row.querySelector(`[data-tune-version="${tuneVersionKey}"]`);
+      if (!el) return;
+      const label = tuneVersionKey === "big" ? tv.current_label_big : tv.current_label;
+      if (label) el.textContent = label;
+    }).catch(() => {});
+  }
   if (calHtml) {
     bindRowExpand(row, { desc_html: calHtml });
   } else if (w.desc) {
@@ -2820,7 +2941,8 @@ function renderActionRow(w) {
       }
       return;
     }
-    if (w.action === "torque_tune_version") {
+    if (w.action === "torque_tune_version_small" || w.action === "torque_tune_version_big") {
+      const big = w.action === "torque_tune_version_big";
       const tv = await apiGet("/api/opui/steering/torque-versions");
       if (!tv.ok) {
         toast(tv.error || "Failed");
@@ -2831,20 +2953,46 @@ function renderActionRow(w) {
         bundles: (tv.options || []).map((o) => ({ name: o.label, ref: o.label })),
       }];
       const ref = await showTree({
-        title: t("Torque Control Tune Version"),
+        title: t(w.label),
         folders,
-        selectedRef: tv.current_label || "Default",
+        selectedRef: big ? (tv.current_label_big || "Default") : (tv.current_label || "Default"),
         searchable: true,
       });
       if (!ref) return;
       const pick = (tv.options || []).find((o) => o.label === ref);
+      const param = big ? "TorqueControlTuneBig" : "TorqueControlTune";
       if (!pick || pick.version == null) {
-        await apiPut("/api/opui/params/TorqueControlTune", { value: "" });
+        await apiPut(`/api/opui/params/${param}`, { value: "" });
       } else {
-        await apiPut("/api/opui/params/TorqueControlTune", { value: String(pick.version) });
+        await apiPut(`/api/opui/params/${param}`, { value: String(pick.version) });
       }
       toast(t("Torque tune updated"));
       requestPanelRefresh();
+      return;
+    }
+    if (w.action === "tailscale_qr") {
+      const ts = await apiGet("/api/opui/developer/tailscale");
+      if (!ts.ok) {
+        toast(ts.error || t("Failed"));
+        return;
+      }
+      if (ts.status === "pairing" && ts.url) {
+        await showQrPair({
+          title: t("Pairing QR Code"),
+          url: ts.url,
+          qrDataUrl: ts.qr_data_url,
+        });
+      } else if (ts.status === "joined") {
+        await showHtml({
+          title: t("Pairing QR Code"),
+          html: `<p>${escapeHtml(t("Tailscale joined"))}</p><p>${escapeHtml((ts.name || "") + "  " + (ts.ip || ""))}</p>`,
+        });
+      } else {
+        await showHtml({
+          title: t("Pairing QR Code"),
+          html: `<p class="opui-muted">${escapeHtml(t("Remote SSH (Tailscale) is not active. Enable it first."))}</p>`,
+        });
+      }
       return;
     }
     if (w.action === "network_set_apn") {
@@ -3987,10 +4135,22 @@ async function renderTripsPanel(container, data) {
   if (panelRenderStale(gen)) return;
   container.innerHTML = "";
   if (!trips.ok) {
-    container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(trips.error || "")}</p>`;
+    const detail = trips.error ? ` (${String(trips.error).slice(0, 120)})` : "";
+    container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(t("Failed to load trips") + detail)}</p>`;
     return;
   }
   TripsState.source = trips.source || TripsState.source;
+  if (trips.fallback) {
+    const note = document.createElement("div");
+    note.className = "opui-trips-notice";
+    const msg = trips.fallback === "cloud_not_paired"
+      ? t("Cloud account not paired — showing local stats")
+      : trips.fallback === "cloud_unregistered"
+        ? t("Device not registered — showing local stats")
+        : t("Cloud temporarily unavailable — showing local stats");
+    note.textContent = msg;
+    wrap.appendChild(note);
+  }
 
   const wrap = document.createElement("div");
   wrap.className = "opui-trips-wrap";
@@ -4069,7 +4229,7 @@ async function renderModelsPanel(container, data) {
     const m = await apiGet("/api/opui/models");
     if (panelRenderStale(gen)) return;
     if (!m.ok) {
-      container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(m.error || t("Failed"))}</p>`;
+      renderModelsError(container, data, m.error || t("Failed"));
       return;
     }
     lastModelsStatus = m;
@@ -4092,10 +4252,25 @@ async function renderModelsPanel(container, data) {
         }
       } catch { /* ignore transient poll errors */ }
     }, 500);
-  } catch {
+  } catch (err) {
     if (panelRenderStale(gen)) return;
-    container.innerHTML = `<p class="opui-muted" style="padding:48px">${escapeHtml(t("Failed"))}</p>`;
+    renderModelsError(container, data, err?.message || t("Failed"));
   }
+}
+
+function renderModelsError(container, data, message) {
+  stopModelsPanelPoll();
+  container.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "opui-models-error";
+  wrap.style.cssText = "padding:48px 24px;text-align:center";
+  wrap.innerHTML = `
+    <p class="opui-muted">${escapeHtml(t("Load failed"))}: ${escapeHtml(message || t("Failed"))}</p>
+    <button type="button" class="opui-btn opui-btn--action">${escapeHtml(t("Retry"))}</button>`;
+  wrap.querySelector("button")?.addEventListener("click", async () => {
+    await renderModelsPanel(container, data);
+  });
+  container.appendChild(wrap);
 }
 
 function buildModelSlots(m, data, gen, container) {
@@ -4128,9 +4303,17 @@ function buildModelSlots(m, data, gen, container) {
         toast(t("Changing model is only allowed while offroad."));
         return;
       }
-      if (m.model_manager_online === false) {
+      // Only hard-block when the slot has no tree at all (no cache, manager
+      // offline). A non-empty tree from the params cache is selectable: the
+      // pick just queues DownloadRef, which the manager applies once online —
+      // same as the native GUI's cached dialog.
+      const cachedTree = m.slots?.[source]?.tree || slot.tree || [];
+      if (!cachedTree.length) {
         toast(t("Model list is still loading. Tap Refresh Model List and try again."));
         return;
+      }
+      if (m.model_manager_online === false) {
+        toast(t("Model manager is starting — the pick is queued and applied when ready."));
       }
       // Open the tree immediately using the data we already have. The previous
       // synchronous apiGet could block for >2s while the live model manager is
@@ -4208,13 +4391,13 @@ function buildModelSlots(m, data, gen, container) {
   return wrap;
 }
 
-// -- Accelerator Link (jetlink) ------------------------------------------------
-// Mirrors the native Models panel row: Off / USB / iOS buttons bound to the
-// JetlinkLink param, plus the live connection status. An Android phone rides
-// the USB mode exactly like a Jetson or a Mac (jetlink docs/android-app.md),
-// so USB is described as covering it.
+// -- Jetlink (accelerator link) -------------------------------------------------
+// Mirrors the BIG GUI models panel row (selfdrive/ui/sunnypilot/layouts/
+// settings/models.py accelerator_link_item): title Jetlink, one fixed desc
+// line + live status, and the Off/USB/iOS/Wi-Fi button group on its own row
+// below (multiple_button_item_sp with inline=False).
 
-const ACCELERATOR_DESC = "Run the big driving model on an attached accelerator: USB for a Jetson, a Linux PC, a Mac or an Android phone; iOS for an iPhone; Wi-Fi joins the device's hotspot. USB and iOS turn off ADB.";
+const JETLINK_DESC = "Run big models over a connected device running Jetlink. Turns off ADB.";
 
 // the mode names, the same as the native panels' LINK_MODE_TITLES
 const ACCELERATOR_MODE_LABELS = { off: "Off", usb: "USB", ios: "iOS", wifi: "Wi-Fi" };
@@ -4229,7 +4412,7 @@ function acceleratorStatusText(accel) {
   }
   const key = accel.status?.key;
   if (key === "accelerator_connected") {
-    return t("Accelerator connected: {transport}.").replace("{transport}", accel.status.transport || "USB");
+    return t("Jetlink connected: {transport}.").replace("{transport}", accel.status.transport || "USB");
   }
   if (key === "accelerator_wifi") return t("Join the device's hotspot and open Jetlink there.");
   if (key === "port_empty") return t("Nothing on the USB port.");
@@ -4241,22 +4424,20 @@ function buildAcceleratorRow(m) {
   const accel = m?.accelerator;
   if (!accel || !accel.meaningful) return null;
 
+  // Same DOM shape as renderMultipleButtonRow(stacked): title + desc inside
+  // .opui-sp-row-text, the button group on its own full-width row below.
   const row = document.createElement("div");
-  row.className = "opui-sp-row";
+  row.className = "opui-sp-row opui-sp-row--stacked opui-sp-row--segmented";
   row.dataset.modelsAccelerator = "1";
 
-  const desc = document.createElement("div");
-  desc.className = "opui-sp-row-desc";
-  desc.dataset.accelDesc = "1";
-  row.innerHTML = `
-    <div class="opui-sp-row-text">
-      <div class="opui-sp-row-title">${escapeHtml(t("Accelerator Link"))}</div>
-      <div class="opui-sp-row-desc" data-accel-status="1"></div>
-    </div>
-    <div class="opui-multi-btn-group" data-accel-buttons="1"></div>`;
-  row.insertBefore(desc, row.querySelector(".opui-multi-btn-group"));
+  const text = document.createElement("div");
+  text.className = "opui-sp-row-text";
+  text.innerHTML = `
+    <div class="opui-sp-row-title">${escapeHtml(t("Jetlink"))}</div>
+    <div class="opui-sp-row-desc" data-accel-status="1"></div>`;
 
-  const group = row.querySelector("[data-accel-buttons]");
+  const group = document.createElement("div");
+  group.className = "opui-multi-btn-group";
   for (const mode of accel.modes || ["off", "usb", "ios", "wifi"]) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -4298,7 +4479,7 @@ function buildAcceleratorRow(m) {
 }
 
 function paintAcceleratorButtons(row, accel) {
-  row.querySelectorAll("[data-accel-buttons] button").forEach((btn) => {
+  row.querySelectorAll(".opui-multi-btn-group button").forEach((btn) => {
     const selected = btn.dataset.mode === accel.mode;
     btn.classList.toggle("selected", selected);
     btn.setAttribute("aria-pressed", selected ? "true" : "false");
@@ -4321,8 +4502,8 @@ function updateAcceleratorStatus(row, accel, m) {
   if (!el) return;
   const status = acceleratorStatusText(accel);
   const source = bigModelSourceText(m);
-  const parts = [t(ACCELERATOR_DESC), source, status].filter(Boolean);
-  el.textContent = parts.join("\n");
+  const parts = [t(JETLINK_DESC), source, status].filter(Boolean);
+  el.innerHTML = parts.map((s) => escapeHtml(s)).join("<br>");
 }
 
 function buildModelsStatusNote(m) {
@@ -4492,81 +4673,6 @@ function buildModelsClearCacheRow(w, m) {
   return row;
 }
 
-function buildModelsMirrorRows(m) {
-  const mirror = m?.mirror;
-  if (!mirror || !mirror.hf_param) return [];
-  const rows = [];
-
-  const mkRow = (which, title, desc, modes, current, effective) => {
-    const row = document.createElement("div");
-    row.className = "opui-sp-row";
-    row.dataset.modelsMirror = which;
-    row.innerHTML = `
-      <div class="opui-sp-row-text">
-        <div class="opui-sp-row-title">${escapeHtml(t(title))}</div>
-        <div class="opui-sp-row-desc"></div>
-      </div>
-      <div class="opui-multi-btn-group" data-mirror-buttons="1"></div>`;
-    const descEl = row.querySelector(".opui-sp-row-desc");
-    descEl.innerHTML = `${escapeHtml(t(desc))}<br>${escapeHtml(t("Current"))}: ${escapeHtml(String(effective))}`;
-    const group = row.querySelector("[data-mirror-buttons]");
-    for (const [key, label] of modes) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = t(label);
-      btn.dataset.mode = key;
-      btn.classList.toggle("selected", key === current);
-      btn.setAttribute("aria-pressed", key === current ? "true" : "false");
-      btn.addEventListener("click", async () => {
-        let url = "";
-        if (which === "hf" && key === "custom") {
-          url = await showTextInput({
-            title: t("Base URL replacing https://huggingface.co, e.g. https://hf-mirror.com"),
-            value: mirror.hf_custom || "",
-            placeholder: "https://hf-mirror.com",
-          });
-          if (url === null) return;
-        } else if (which === "gh" && key === "proxy") {
-          url = await showTextInput({
-            title: t("Prefix prepended to the catalog URL, e.g. https://gh-proxy.com"),
-            value: mirror.gh_custom || "",
-            placeholder: "https://gh-proxy.com",
-          });
-          if (url === null) return;
-        }
-        const res = await apiPost("/api/opui/models/mirror", { which, mode: key, url });
-        if (!res.ok) {
-          toast(res.error || t("Failed"));
-          return;
-        }
-        toast(t(title));
-        const c2 = document.getElementById("panel-content");
-        if (c2 && panelDataRef) await renderModelsPanel(c2, panelDataRef);
-      });
-      group.appendChild(btn);
-    }
-    return row;
-  };
-
-  rows.push(mkRow(
-    "hf",
-    "Model Download Mirror",
-    "huggingface.co is unreachable on many networks. Mirror sends model downloads to a mirror site instead; " +
-      "Direct uses huggingface.co as-is; Custom lets you enter your own mirror. Applies to the next download.",
-    [["mirror", "Mirror"], ["direct", "Direct"], ["custom", "Custom"]],
-    mirror.hf_mode, mirror.hf_effective));
-
-  rows.push(mkRow(
-    "gh",
-    "Model List Source",
-    "The model list lives on GitHub raw. Auto tries direct first and falls back to a CDN mirror when it fails; " +
-      "Direct never falls back; Proxy always fetches through your own prefix. Press Refresh Model List to apply.",
-    [["auto", "Auto"], ["direct", "Direct"], ["proxy", "Proxy"]],
-    mirror.gh_mode, mirror.gh_effective));
-
-  return rows;
-}
-
 function buildModelsPanelWidgets(container, data, m) {
   for (const w of data.widgets || []) {
     if (w.type === "action" && w.action === "models_sync") {
@@ -4583,9 +4689,6 @@ function buildModelsPanelWidgets(container, data, m) {
       container.appendChild(el);
     }
   }
-  // The two download-source rows the native Models page carries; appended after
-  // the catalog widgets so Refresh/Clear keep their place.
-  for (const row of buildModelsMirrorRows(m)) container.appendChild(row);
 }
 
 function updateModelsSlotRows(m, container) {
@@ -4975,6 +5078,18 @@ const LONGITUDINAL_MPC_TUNING_PARAMS = [
   { param: "LongitudinalMpcTuningAChangeCost", label: "Acceleration Change Cost", min: 5000, max: 60000, step: 500, digits: 0, defaultInternal: 20000 },
   { param: "LongitudinalMpcTuningDangerZoneCost", label: "Danger Zone Cost", min: 0, max: 50000, step: 500, digits: 0, defaultInternal: 10000 },
   { param: "LongitudinalMpcTuningLeadDangerFactor", label: "Lead Danger Factor", min: 25, max: 150, step: 5, digits: 2, defaultInternal: 75 },
+  { param: "LongitudinalMpcTuningAggressiveJerkAccel", label: "Accel Smoothness - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningAggressiveJerkSpeed", label: "Speed Smoothness - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningAggressiveDangerBias", label: "Safety Gap Bias - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningAggressiveJerkDanger", label: "Danger Smoothness - Aggressive", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardJerkAccel", label: "Accel Smoothness - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardJerkSpeed", label: "Speed Smoothness - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardDangerBias", label: "Safety Gap Bias - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningStandardJerkDanger", label: "Danger Smoothness - Standard", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedJerkAccel", label: "Accel Smoothness - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedJerkSpeed", label: "Speed Smoothness - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedDangerBias", label: "Safety Gap Bias - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
+  { param: "LongitudinalMpcTuningRelaxedJerkDanger", label: "Danger Smoothness - Relaxed", min: 25, max: 200, step: 5, digits: 2, defaultInternal: 100 },
 ];
 
 function formatMpcLabel(internal, digits) {
@@ -6629,7 +6744,7 @@ async function renderSoftwarePanel(container, data) {
       <div class="opui-sp-row-text">
         <div class="opui-sp-row-title">${escapeHtml(t("Target Branch"))}</div>
       </div>
-      <div class="opui-sp-row-value">${escapeHtml(sw.target_branch || t("N/A"))}</div>
+      <div class="opui-sp-row-value" id="software-branch-value">${escapeHtml(sw.target_branch || t("N/A"))}</div>
       <button type="button" class="opui-btn opui-btn--action">${escapeHtml(t("SELECT"))}</button>`;
     branchRow.querySelector("button")?.addEventListener("click", async () => {
       const idx = Math.max(0, sw.branches.indexOf(sw.target_branch));
@@ -6644,6 +6759,8 @@ async function renderSoftwarePanel(container, data) {
       const res = await apiPost("/api/opui/action/set_branch", { branch: b });
       if (res.ok) {
         toast(`${t("Target Branch")}: ${b}`);
+        const branchVal = document.getElementById("software-branch-value");
+        if (branchVal) branchVal.textContent = b;
         requestPanelRefresh();
       }
     });

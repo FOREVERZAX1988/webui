@@ -2404,6 +2404,37 @@ html.opui-portrait-host .opui-modal-scroll {
 .opui-exp-btn.is-not-engageable .opui-exp-icon { opacity: 0.706; }
 .opui-exp-btn:active:not(.is-disabled) .opui-exp-icon { opacity: 0.706; }
 
+/* Set Speed Assist quick toggle — mirrors the Big GUI SpeedAssistButton
+   (tizi onroad corner button in the ExpButton shape): dim when off, green ring
+   when on. */
+.opui-speed-assist-btn {
+  position: absolute;
+  top: 30px;
+  right: 240px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 8px solid transparent;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.opui-speed-assist-btn.is-on { border-color: #167f40; }
+.opui-speed-assist-btn .opui-speed-assist-gauge::before {
+  content: "▶";
+  font-size: 34px;
+  line-height: 1;
+  opacity: 0.9;
+}
+.opui-speed-assist-btn:not(.is-on) .opui-speed-assist-gauge::before { opacity: 0.35; }
+.opui-speed-assist-btn.is-disabled { cursor: default; }
+.opui-speed-assist-btn.is-disabled .opui-speed-assist-gauge::before { opacity: 0.2; }
+
 .opui-alert {
   position: absolute;
   left: calc(var(--border-w) + var(--alert-margin));
@@ -3113,6 +3144,16 @@ html.opui-portrait-host .opui-modal-scroll {
   box-sizing: border-box;
 }
 
+.opui-trips-notice {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 170, 40, 0.12);
+  border: 1px solid rgba(255, 170, 40, 0.35);
+  color: #ffbf60;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
 .opui-trips-toggle {
   display: flex;
   justify-content: center;
@@ -3324,6 +3365,12 @@ body.opui-modal-open {
   justify-content: center;
   padding: 40px 60px;
   box-sizing: border-box;
+}
+/* Text-input prompts (wifi/apn/bt pin/device name/search) open on top of other
+   modals (tree search etc.); DOM order alone would hide them behind later
+   siblings at the same z-index. */
+.opui-modal--keyboard {
+  z-index: 600;
 }
 .opui-modal-card {
   background: #1e1e1e;
@@ -3557,71 +3604,6 @@ body.opui-modal-open {
   background: transparent !important;
   color: inherit;
 }
-
-.opui-modal--keyboard {
-  padding: 22px 48px 18px;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.opui-modal-card--keyboard {
-  width: min(1600px, calc(100% - 80px));
-  height: auto;
-  max-height: none;
-  min-height: 0;
-  padding: 50px;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  margin: 0 auto;
-}
-.opui-modal-card--keyboard .opui-modal-footer {
-  margin-top: 24px;
-}
-.opui-modal-card--keyboard #keyboard-confirm:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.opui-keyboard-card { width: 100%; }
-.opui-keyboard-display {
-  flex-shrink: 0;
-  background: #111;
-  border-radius: 12px;
-  padding: 20px;
-  font-size: 48px;
-  min-height: 88px;
-  margin-bottom: 20px;
-  letter-spacing: 0.1em;
-}
-.opui-keyboard-grid {
-  display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  gap: 14px;
-  flex: 0 0 auto;
-  overflow: visible;
-  margin-bottom: 0;
-  align-content: start;
-}
-.opui-kb-key {
-  height: 148px;
-  min-height: 148px;
-  border: none;
-  border-radius: 16px;
-  background: #444;
-  color: #fff;
-  font-size: 46px;
-  font-weight: 500;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.opui-kb-key:active {
-  background: #555;
-}
-.opui-kb-key:disabled {
-  visibility: hidden;
-}
-.opui-kb-key--wide { grid-column: span 2; }
 
 .opui-vehicle-legend {
   padding: 20px 0 8px;
@@ -4381,6 +4363,67 @@ body.opui-system-wait-open {
 .opui-imu-calibration-block {
   display: contents;
 }
+
+/* ===== Camera preview modal (行车预览 / 驾驶员摄像头预览) ===== */
+.opui-modal-card--preview {
+  width: min(1240px, calc(100% - 120px));
+  padding: 40px 48px 44px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+}
+.opui-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.opui-preview-title {
+  font-size: 44px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.opui-preview-close {
+  width: 88px;
+  height: 88px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 40px;
+  line-height: 1;
+  cursor: pointer;
+}
+.opui-preview-close:hover { background: rgba(255, 255, 255, 0.12); }
+.opui-preview-video-wrap {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000;
+  min-height: 320px;
+}
+.opui-preview-video {
+  display: block;
+  width: 100%;
+  max-height: 66vh;
+  object-fit: contain;
+  background: #000;
+}
+.opui-preview-status {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: #cfd4d2;
+  background: rgba(0, 0, 0, 0.55);
+  text-align: center;
+  padding: 24px;
+}
+.opui-preview-video-wrap.has-status .opui-preview-status { display: flex; }
 
 /* ===== Text-input dialog (showTextInput, e.g. custom string params) ===== */
 .opui-modal-card--textinput {

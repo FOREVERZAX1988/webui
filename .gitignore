@@ -13,5 +13,6 @@ __pycache__/
 node_modules/
 dist/
 tls/
-# runtime cache written by webui/server/bridge (osm region lookups); never tracked
+
+# runtime cache (OSM region lists etc.)
 server/bridge/data/cache/

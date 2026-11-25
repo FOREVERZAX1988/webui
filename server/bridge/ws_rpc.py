@@ -171,6 +171,7 @@ def dispatch_http(method: str, path: str, body: dict[str, Any] | None = None) ->
         m.group(1),
         str(body.get("value", "")),
         needs_cycle=bool(body.get("needs_cycle", False)),
+        acknowledged=bool(body.get("acknowledge", False)),
       )
 
     if method == "POST" and clean_path == "/api/opui/params/batch":

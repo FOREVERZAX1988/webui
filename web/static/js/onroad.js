@@ -1,5 +1,6 @@
 import { apiGet, apiPut } from "./api.js";
 import { tr } from "./i18n.js?v=3";
+import { showConfirm, experimentalE2eHtml } from "./components.js";
 import { updateSpHud } from "./hud_sp.js";
 import { updateSpWidgets } from "./hud_sp_widgets.js";
 import { updateNavCard } from "./hud_navcard.js";
@@ -32,6 +33,8 @@ let bottomFadeFiltered = 0;
 
 let expHeldMode = null;
 let expHoldUntil = 0;
+let saHeldMode = null;
+let saHoldUntil = 0;
 let lastOnroadState = null;
 let lastHudDigest = "";
 let hudAnimRafId = null;
@@ -181,7 +184,10 @@ function applyExperimentalButton(st) {
   const show = !!st.started;
   expBtn.hidden = !show;
 
-  const canToggle = !!st.experimental_mode_confirmed && !!st.has_longitudinal_control;
+  // Gate only on longitudinal capability: when Experimental Mode was never
+  // confirmed, tapping runs the confirmation dialog first (same flow as the
+  // big UI wheel buttons, alpha_longitudinal_toggles.py _on_experimental_mode).
+  const canToggle = !!st.has_longitudinal_control;
   const engageable = !!st.engageable || !!st.engaged;
   expBtn.classList.toggle("is-engageable", engageable);
   expBtn.classList.toggle("is-disabled", !canToggle);
@@ -199,6 +205,28 @@ function applyExperimentalButton(st) {
   const pressed = !engageable || expBtn.matches(":active");
   expBtn.classList.toggle("is-pressed", pressed);
   expBtn.classList.toggle("is-not-engageable", !engageable);
+  applySpeedAssistButton(st);
+}
+
+// Set Speed Assist quick toggle — mirrors the Big GUI SpeedAssistButton, which
+// flips ExperimentalModeSetSpeed from the onroad screen with no confirmation
+// gate (speed_assist_button.py).
+function applySpeedAssistButton(st) {
+  const btn = document.getElementById("btn-speed-assist");
+  if (!btn) return;
+  const show = !!st.started && !!st.has_longitudinal_control;
+  btn.hidden = !show;
+  const now = performance.now();
+  let on = !!st.experimental_mode_set_speed;
+  if (saHoldUntil > now && saHeldMode !== null) {
+    on = saHeldMode;
+  } else if (saHoldUntil) {
+    saHeldMode = null;
+    saHoldUntil = 0;
+  }
+  btn.classList.toggle("is-on", on);
+  btn.classList.toggle("is-disabled", !show);
+  btn.disabled = !show;
 }
 
 function updateCameraBottomFade(st) {
@@ -391,14 +419,39 @@ export function bindExperimentalButton() {
   document.getElementById("btn-experimental")?.addEventListener("click", async () => {
     const boot = await apiGet("/api/opui/bootstrap").catch(() => ({}));
     const st = boot?.state || lastOnroadState || {};
-    if (!st.experimental_mode_confirmed || !st.has_longitudinal_control) return;
+    if (!st.has_longitudinal_control) return;
     const cur = !!st.experimental_mode;
-    const next = !cur;
-    await apiPut("/api/opui/params/ExperimentalMode", { value: next ? "1" : "0" });
+    let next = !cur;
+    let extra = null;
+    if (next && !st.experimental_mode_confirmed) {
+      const ok = await showConfirm({
+        rich: true,
+        message: experimentalE2eHtml(),
+        confirmText: tr("Enable"),
+        cancelText: tr("Cancel"),
+      });
+      if (!ok) return;
+      // The acknowledgement rides with the mode write; the server-side mode
+      // machine persists ExperimentalModeConfirmed (never written directly).
+      extra = { acknowledge: true };
+    }
+    const res = await apiPut("/api/opui/params/ExperimentalMode", {
+      value: next ? "1" : "0", ...(extra || {}),
+    });
+    if (!res?.ok) return;
     expHeldMode = next;
     expHoldUntil = performance.now() + 2000;
     applyExperimentalButton({ ...st, experimental_mode: next });
     updateRoadCameraForState({ ...st, experimental_mode: next });
+  });
+  document.getElementById("btn-speed-assist")?.addEventListener("click", async () => {
+    const st = lastOnroadState || {};
+    if (!st.started || !st.has_longitudinal_control) return;
+    const next = !st.experimental_mode_set_speed;
+    await apiPut("/api/opui/params/ExperimentalModeSetSpeed", { value: next ? "1" : "0" });
+    saHeldMode = next;
+    saHoldUntil = performance.now() + 2000;
+    applySpeedAssistButton({ ...st, experimental_mode_set_speed: next });
   });
 }
 

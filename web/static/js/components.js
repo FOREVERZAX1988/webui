@@ -16,21 +16,16 @@ function paramIsOn(val) {
 }
 
 export function experimentalE2eHtml() {
+  // Legacy-chill confirmation text, mirroring big UI
+  // alpha_longitudinal_toggles.py LEGACY_CHILL_DESCRIPTION (the stand-in
+  // dialog's description since the chill rework removed the toggle row).
   return (
     `<h1>${tr("Experimental Mode")}</h1><br>`
     + `<p>${tr(
-      "sunnypilot defaults to driving in chill mode. Experimental mode enables alpha-level features that aren't ready for chill mode. "
-      + "Experimental features are listed below:",
-    )}</p>`
-    + `<h4>${tr("End-to-End Longitudinal Control")}</h4><br>`
-    + `<p>${tr(
-      "Let the driving model control the gas and brakes. sunnypilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-      + "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.",
-    )}</p>`
-    + `<h4>${tr("New Driving Visualization")}</h4><br>`
-    + `<p>${tr(
-      "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. "
-      + "The Experimental mode logo will also be shown in the top right corner.",
+      "The older way to drive the gas and brakes: hold your set speed and follow the car ahead. "
+      + "It won't stop for red lights or stop signs.<br><br>"
+      + "Off, the default, lets the driving model drive the gas and brakes as it thinks a human would, "
+      + "including stopping for red lights and stop signs. The set speed is then a maximum.",
     )}</p>`
   );
 }
@@ -162,84 +157,13 @@ export function showQrPair(opts = {}) {
   });
 }
 
+// Self-drawn on-screen keyboard removed: browsers already provide a keyboard on
+// every platform (hardware on desktop, native virtual keyboard on tablets/phones)
+// once a focused <input> exists. All prompts now go through showTextInput.
+// Kept as an alias so all existing call sites (wifi/apn/bt pin/device name/
+// search) keep working unchanged.
 export function showKeyboard(opts = {}) {
-  const {
-    title = "Enter text",
-    value = "",
-    password = false,
-    minLen = 0,
-    maxLen = 64,
-  } = opts;
-
-  return new Promise((resolve) => {
-    const root = document.getElementById("modal-keyboard");
-    const titleEl = document.getElementById("keyboard-title");
-    const display = document.getElementById("keyboard-display");
-    const grid = document.getElementById("keyboard-grid");
-    if (!root || !grid || !display) {
-      resolve(window.prompt(title, value));
-      return;
-    }
-    titleEl.textContent = title;
-    const cancelBtn = document.getElementById("keyboard-cancel");
-    const confirmBtn = document.getElementById("keyboard-confirm");
-    if (cancelBtn) cancelBtn.textContent = tr("Cancel");
-    if (confirmBtn) confirmBtn.textContent = tr("Confirm");
-    let buf = value;
-    const render = () => {
-      display.textContent = password ? "•".repeat(buf.length) : buf;
-      if (confirmBtn) confirmBtn.disabled = buf.length < minLen;
-    };
-    render();
-
-    const layouts = {
-      alpha: [
-        "123", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p",
-        "ABC", "a", "s", "d", "f", "g", "h", "j", "k", "l", "⌫",
-        "#+=", "z", "x", "c", "v", "b", "n", "m", "Enter",
-      ],
-      num: [
-        "ABC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-        "", "-", "_", ".", "@", "", "", "", "", "⌫", "Enter",
-      ],
-    };
-    let mode = "alpha";
-
-    const paint = () => {
-      grid.innerHTML = "";
-      for (const key of layouts[mode]) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "opui-kb-key" + (key === "Enter" ? " opui-kb-key--wide" : "");
-        btn.textContent = key || "";
-        if (!key) btn.disabled = true;
-        btn.addEventListener("click", () => {
-          if (key === "⌫") buf = buf.slice(0, -1);
-          else if (key === "Enter") {
-            if (buf.length >= minLen) finish(buf);
-          } else if (key === "123") mode = "num";
-          else if (key === "ABC") mode = "alpha";
-          else if (key === "#+=") mode = "num";
-          else if (buf.length < maxLen) buf += key;
-          render();
-          if (key === "123" || key === "ABC" || key === "#+=") paint();
-        });
-        grid.appendChild(btn);
-      }
-    };
-    paint();
-
-    const finish = (v) => {
-      popModal(root);
-      resolve(v);
-    };
-    const onConfirm = () => {
-      if (buf.length >= minLen) finish(buf);
-    };
-    document.getElementById("keyboard-cancel")?.addEventListener("click", () => finish(null), { once: true });
-    confirmBtn?.addEventListener("click", onConfirm, { once: true });
-    pushModal(root, () => finish(null));
-  });
+  return showTextInput(opts);
 }
 
 export function showTextInput(opts = {}) {
@@ -255,7 +179,7 @@ export function showTextInput(opts = {}) {
 
   return new Promise((resolve) => {
     const root = document.createElement("div");
-    root.className = "opui-modal";
+    root.className = "opui-modal opui-modal--keyboard";
     root.hidden = true;
     root.innerHTML = `
       <div class="opui-modal-card opui-modal-card--textinput">
@@ -678,7 +602,9 @@ export function createSpToggle(w, panelData, globalState, handlers) {
         label?.classList.remove("on");
         return;
       }
-      await handlers.putParam("ExperimentalModeConfirmed", "1");
+      // The server-side mode machine records the acknowledgement itself
+      // (ExperimentalModeConfirmed is written by set_experimental_mode, never
+      // directly from the client).
     }
     if (w.confirm_enable && next) {
       const ok = await showConfirm({
@@ -706,7 +632,10 @@ export function createSpToggle(w, panelData, globalState, handlers) {
       }
     }
     label?.classList.toggle("on", next);
-    const res = await handlers.putParam(w.param, next ? "1" : "0", !!w.needs_cycle);
+    // Enabling Experimental Mode carries the user's acknowledgement so the
+    // server-side mode machine accepts the write (SP params.py:143 semantics).
+    const extra = w.confirm_experimental && next ? { acknowledge: true } : null;
+    const res = await handlers.putParam(w.param, next ? "1" : "0", !!w.needs_cycle, false, extra);
     if (!res.ok) {
       handlers.toast(res.error || "Save failed");
       input.checked = !input.checked;

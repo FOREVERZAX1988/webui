@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 import threading
 import time
+import traceback
 from typing import Any
 
 # Lazily-initialized SubMaster instances. Creating a SubMaster on every request
@@ -58,13 +60,43 @@ def _get_mdv2sp_sm() -> Any:
   return _MDV2SP_SM
 
 
+_MM_CACHE_TS: float = 0.0  # set by the warmer too, not just by request peeks
+_WARMER_LAST_BEAT: float = 0.0  # monotonic ts of the last warmer loop iteration
+_WARMER_LAST_ERR: str = ""
+
+
+def warmer_debug() -> dict[str, Any]:
+  """Live warmer health for the status endpoint (small, safe to expose)."""
+  import threading as _th
+  return {
+    "mm_cache_set": _MM_CACHE is not None,
+    "mm_cache_age_s": round(time.monotonic() - _MM_CACHE_TS, 2) if _MM_CACHE_TS else None,
+    "warmer_beat_age_s": round(time.monotonic() - _WARMER_LAST_BEAT, 2) if _WARMER_LAST_BEAT else None,
+    "warmer_last_err": _WARMER_LAST_ERR[-200:],
+    "warmer_alive": (time.monotonic() - _WARMER_LAST_BEAT) < 5.0 if _WARMER_LAST_BEAT else False,
+    "threads": _th.active_count(),
+  }
+
+
 def _warm_submasters() -> None:
-  """Background thread: keep SubMaster sockets warm and cache latest values."""
-  global _STATE_CACHE, _MM_CACHE
-  try:
-    state_sm = _get_state_sm()
-    mm_sm = _get_mm_sm()
-    while True:
+  """Background thread: keep SubMaster sockets warm and cache latest values.
+
+  The try/except is *inside* the loop: a single early-boot failure (msgq or
+  zmq not ready while webuid races the rest of manager.py) used to kill the
+  whole thread while _WARMER_STARTED stayed True — the cache then stayed
+  empty forever and every models request fell back to a short peek that
+  usually missed, showing the panel as permanently offline.
+  """
+  global _STATE_CACHE, _MM_CACHE, _MM_CACHE_TS, _WARMER_LAST_BEAT, _WARMER_LAST_ERR
+  state_sm = None
+  mm_sm = None
+  while True:
+    _WARMER_LAST_BEAT = time.monotonic()
+    try:
+      if state_sm is None:
+        state_sm = _get_state_sm()
+      if mm_sm is None:
+        mm_sm = _get_mm_sm()
       with _SM_LOCK:
         # deviceState publishes at 2 Hz — waiting less than ~500 ms per update
         # usually times out with no message, so valid stays False and the
@@ -90,9 +122,13 @@ def _warm_submasters() -> None:
         mm_sm.update(100)
         if mm_sm.valid.get("modelManagerSP"):
           _MM_CACHE = mm_sm["modelManagerSP"]
-      time.sleep(0.05)
-  except Exception:
-    pass
+          _MM_CACHE_TS = time.monotonic()
+    except Exception as exc:
+      # drop the sockets so a broken zmq context is rebuilt from scratch
+      state_sm = None
+      mm_sm = None
+      _WARMER_LAST_ERR = f"{type(exc).__name__}: {exc}"
+    time.sleep(0.05)
 
 
 def _start_submaster_warmers() -> None:
@@ -380,24 +416,34 @@ def _active_source(state: dict[str, Any] | None) -> str:
   return "usbgpu" if big_active else "qcom"
 
 
-_MM_CACHE_TS: float = 0.0
-_MM_CACHE_TTL = 0.3  # s — modelManagerSP is high-frequency; a 300 ms cache is fresh
+_MM_CACHE_TTL = 1.5  # s — the warmer refreshes once per ~0.65 s loop (deviceState
+# update(500) paces it), so the cache age at query time is uniform in [0, 0.65].
+# A 0.3 s TTL made ~half of all requests take the "stale" path, and the peek
+# fallback shares the SubMaster with the warmer — the warmer drains the polled
+# queue first, so peeks almost never win and the panel showed offline at random.
+# modelManagerSP payload changes slowly (selection/download status), 1.5 s is fine.
 
 
 def _read_live_model_manager(timeout_ms: int = 1000) -> Any | None:
   """Return the latest modelManagerSP message.
 
   Uses the background warmer cache when available; otherwise takes a short
-  non-blocking peek (modelManagerSP is published at high frequency, so a
-  peek is enough) and caches the result. Never blocks the event loop.
+  non-blocking peek (modelManagerSP is published at ~1.3 Hz, so a 250 ms
+  window almost always catches a frame) and caches the result. Never blocks
+  the event loop for long.
   """
-  global _MM_CACHE_TS
+  # NOTE: _MM_CACHE MUST be in this global statement — the peek below assigns
+  # it, which otherwise makes Python treat it as a local for the whole body.
+  # The first cache check would then raise UnboundLocalError, silently caught
+  # below, and model_manager_online was permanently False (panel showed the
+  # model list as "not ready" forever).
+  global _MM_CACHE, _MM_CACHE_TS
   _start_submaster_warmers()
   try:
     if _MM_CACHE is not None and time.monotonic() - _MM_CACHE_TS < _MM_CACHE_TTL:
       return _MM_CACHE
     sm = _get_mm_sm()
-    deadline = time.monotonic() + 0.1  # cap the wait: modelManagerSP is ~1 Hz, the next poll retries
+    deadline = time.monotonic() + 0.25
     while time.monotonic() < deadline:
       with _SM_LOCK:
         sm.update(30)
@@ -407,7 +453,7 @@ def _read_live_model_manager(timeout_ms: int = 1000) -> Any | None:
         break
     return _MM_CACHE
   except Exception:
-    pass
+    traceback.print_exc(file=sys.stderr)
   return None
 
 
@@ -635,6 +681,7 @@ def _models_status_impl() -> dict[str, Any]:
     "cache_clear_pending": p.get_bool("ModelManager_ClearCache"),
     "cache_size_mb": _cache_size_mb(),
     "model_manager_online": mm is not None,
+    "warmer": warmer_debug(),
     "started": bool(state and state.get("started")),
     "accelerator": accel_state,
     "mirror": _mirror_state(p),

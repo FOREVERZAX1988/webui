@@ -222,7 +222,9 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "ShowPathMode": ("int", 9),
   "ShowPathModeLane": ("int", 11),
   "ShowPlotMode": ("bool", 0),
-  "ShowRadarInfo": ("bool", 0),
+  # 4-state multiple_button (0=Off 1=Speed Only 2=Speed+Distance 3=Full) in the
+  # visuals panel; a "bool" entry here made carrot_put() zero out values >= 2.
+  "ShowRadarInfo": ("int", 0),
   "ShowRouteInfo": ("bool", 0),
   "ShowTpms": ("bool", 1),
   "SoftwareMenu": ("bool", 0),
@@ -258,7 +260,6 @@ CARROT_TUNING_DEFAULTS: dict[str, tuple[str, Any]] = {
   "LeadAccelResponseTF2": ("int", -1),
   "LeadAccelResponseTF3": ("int", -1),
   "LeadAccelResponseTF4": ("int", -1),
-  "AutoNaviRearCameraHoldDistance": ("int", 100),
   # --- unified-control killswitches (default OFF; surfaced in the Developer
   # page). Listed here so the webui read/write whitelist accepts them. ---
   "CarrotTrafficCongestionEnabled": ("bool", 0),
@@ -384,3 +385,40 @@ def carrot_reset_all() -> dict[str, Any]:
     except Exception as exc:
       errors.append(f"{key}: {exc}")
   return {"ok": not errors, "action": "carrot_tuning_reset", "count": count, "errors": errors}
+
+
+# State labels for the FLM analysis status row, mirroring the Big GUI
+# (carrot_tuning_items.py _FLM_STATE_LABELS, simplified Chinese).
+_FLM_STATE_LABELS = {
+  "idle": "空闲",
+  "collecting": "采集中",
+  "fitting": "拟合中",
+  "accepted": "已应用",
+  "rolled_back": "已回滚",
+  "error": "出错",
+}
+
+
+def flm_status() -> dict[str, Any]:
+  """One-line flmanalysisd daemon status, read from the FLMAnalysisStatus param."""
+  try:
+    import json as _json
+    raw = _params().get("FLMAnalysisStatus") or ""
+    if not raw:
+      return {"ok": True, "state": "", "detail": "", "text": "从未运行"}
+    d = _json.loads(raw)
+    state = str(d.get("state", "idle"))
+    detail = str(d.get("detail", "")).strip()
+    label = _FLM_STATE_LABELS.get(state, state)
+    return {"ok": True, "state": state, "detail": detail, "text": f"{label}: {detail}" if detail else label}
+  except Exception as exc:
+    return {"ok": False, "error": str(exc), "text": "从未运行"}
+
+
+def flm_request_analysis() -> dict[str, Any]:
+  """Raise the request flag the flmanalysisd daemon watches (never runs it inline)."""
+  try:
+    _params().put_bool("FLMAnalysisRequested", True)
+    return {"ok": True, "action": "flm_analysis_request"}
+  except Exception as exc:
+    return {"ok": False, "action": "flm_analysis_request", "error": str(exc)}

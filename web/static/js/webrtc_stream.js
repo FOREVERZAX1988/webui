@@ -24,6 +24,7 @@ import { syncModelOverlayViewport } from "./model_viewport.js";
 export const CAM = {
   ROAD: "road",
   WIDE: "wideRoad",
+  DRIVER: "driver",
 };
 
 
@@ -58,6 +59,14 @@ function scheduleRoadDisable() {
 let roadPc = null;
 let roadStreaming = false;
 let roadCamera = CAM.ROAD;
+
+/** Decoded MediaStream from the active peer connection — lets extra video
+ * elements (preview modal) share the same stream without a second pc. */
+let roadMediaStream = null;
+
+export function getRoadMediaStream() {
+  return roadMediaStream;
+}
 
 let prewarmPromise = null;
 
@@ -379,6 +388,8 @@ async function createStream(videoEl, initCamera) {
 
       if (stream) {
 
+        roadMediaStream = stream;
+
         videoEl.srcObject = stream;
 
         tuneVideoReceiver(receiver);
@@ -392,6 +403,7 @@ async function createStream(videoEl, initCamera) {
     const usedWebCodecs = await tryAttachWebCodecsDecode(receiver, videoEl, { fallback: attachStandardVideo });
 
     if (!usedWebCodecs) attachStandardVideo();
+    else roadMediaStream = videoEl.srcObject || stream || null;
 
   };
 
@@ -533,6 +545,10 @@ export async function startRoadStream(videoEl, wrapEl) {
 
     wrap?.classList.add("streaming");
 
+    // Re-mounted video (e.g. home view after the preview modal): attach the
+    // already-decoded stream instead of just resuming playback.
+    if (!video.srcObject && roadMediaStream) video.srcObject = roadMediaStream;
+
     try { await video.play(); } catch { /* ignore */ }
 
     return;
@@ -592,6 +608,8 @@ export async function stopRoadStream(videoEl, wrapEl) {
   stopWebCodecsDecode();
 
   roadStreaming = false;
+
+  roadMediaStream = null;
 
   roadCamera = CAM.ROAD;
 

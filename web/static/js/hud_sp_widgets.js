@@ -21,8 +21,9 @@ async function putParam(key, value) {
 
 const CE_LABELS = { 1: "CEM·C", 2: "CEM·L", 3: "CEM·S", 4: "CEM·M" };
 
-// cereal LongitudinalPersonality: aggressive @1, standard @2, relaxed @3
-const PERSONALITY_VALUE = { aggressive: 1, standard: 2, relaxed: 3 };
+// cereal LongitudinalPersonality: aggressive @0, standard @1, relaxed @2
+// (matches personality_button.py:59-61 and the Toggles panel button indices)
+const PERSONALITY_VALUE = { aggressive: 0, standard: 1, relaxed: 2 };
 const PERSONALITY_LABEL = { aggressive: "AGGR", standard: "STD", relaxed: "RELAX" };
 
 const SOURCE_ROWS = [

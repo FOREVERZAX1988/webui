@@ -23,6 +23,14 @@ def _op_params():
 
 # Custom panels with no widget params still need these keys in panel snapshots.
 _CUSTOM_PANEL_PARAMS: dict[str, list[str]] = {
+  "device": [
+    # RecordingMode gates the Onroad Uploads toggle (big UI device.py:119-126).
+    "RecordingMode",
+  ],
+  "visuals": [
+    # LaneCenterUI gating/desc follow Blendful (big UI visuals_zp.py:36-43).
+    "Blendful",
+  ],
   "sunnylink": [
     "SunnylinkEnabled",
     "EnableSunnylinkUploader",
@@ -220,7 +228,8 @@ def remove_param(key: str) -> dict[str, Any]:
     return {"ok": False, "error": str(exc)}
 
 
-def put_param(key: str, value: str, *, needs_cycle: bool = False) -> dict[str, Any]:
+def put_param(key: str, value: str, *, needs_cycle: bool = False,
+              acknowledged: bool = False) -> dict[str, Any]:
   try:
     # Carrot tuning keys live in nav_params.json (UnifiedParams), not Params.
     from webui.server.bridge.carrot_tuning_api import carrot_put, is_carrot_key
@@ -247,12 +256,21 @@ def put_param(key: str, value: str, *, needs_cycle: bool = False) -> dict[str, A
         raise
 
     # ExperimentalMode goes through mode_state_runtime for SafeMode lock +
-    # road-state gate + read-back verification (mirrors big UI).
+    # road-state gate + read-back verification (mirrors big UI). Enabling without
+    # acknowledgement only lands once ExperimentalModeConfirmed is already set;
+    # otherwise the mode machine refuses and the client must run its confirm
+    # dialog first and re-send with acknowledged=True (SP params.py:143).
     if key == "ExperimentalMode":
       coerced = _coerce_write_value(ptype_enum, value)
+      capable = None
+      try:
+        from webui.server.bridge.car_context import get_car_context
+        capable = get_car_context().has_longitudinal_control
+      except Exception:
+        capable = None
       try:
         from openpilot.sunnypilot.common.mode_state_runtime import set_experimental_mode
-        result = set_experimental_mode(p, bool(coerced), acknowledged=True)
+        result = set_experimental_mode(p, bool(coerced), acknowledged=bool(acknowledged), capable=capable)
         return {"ok": True, "key": key, "value": "1" if result["mode"] == "experimental" else "0"}
       except ImportError:
         # Fallback: direct param write if runtime not available
@@ -377,6 +395,10 @@ def panel_values(panel_id: str) -> dict[str, Any]:
         continue
 
     val = _read_param_value_with_fallback(p, key, ptype)
+    if not str(val) and w.get("default") is not None:
+      # Unset param — show the compiled-in default (mirrors big UI `or DEFAULT`
+      # reads, e.g. RecordingMode's `int(... or 2)` in toggles.py:180).
+      val = _serialize_value(w["default"])
     values[key] = val
     locked = False
     try:
