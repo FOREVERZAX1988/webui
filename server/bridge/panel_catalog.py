@@ -233,6 +233,12 @@ PANELS: list[dict[str, Any]] = [
       {"type": "bool", "param": "RecordAudio", "label": "Record and Upload Microphone Audio", "needs_cycle": True,
        "icon": "selfdrive/assets/icons/microphone.png",
        "desc": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."},
+      {"type": "bool", "param": "LivestreamOnroadEnabled", "label": "Allow Live Stream While Driving",
+       "icon": "selfdrive/assets/icons/wifi_uploading.png",
+       "desc": "Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load)."},
+      {"type": "bool", "param": "CarrotVisionEnabled", "label": "Carrot Vision Road Camera",
+       "icon": "selfdrive/assets/icons/wifi_uploading.png",
+       "desc": "Serves the road camera over WebRTC (port 5001) to the stream page and Carrot-style apps, including while driving. Only encodes while someone is actually watching. On by default to match the carrot app experience; note it opens a LAN listener on port 5001."},
       {"type": "bool", "param": "SpDevBeep", "label": "Beeper Feedback", "lite_only": True, "needs_cycle": True,
        "icon": "selfdrive/assets/icons/warning.png",
        "desc": "Use the GPIO beeper for engage/disengage sounds on Lite hardware without a speaker."},
@@ -1130,6 +1136,13 @@ SUBPANELS: dict[str, dict[str, Any]] = {
       
       {
         "type": "bool",
+        "param": "CarrotLongitudinalSourceEnabled",
+        "label": "Traffic Light Stop & Go",
+        "desc": "Master switch for the vision traffic-light chain: brake for red lights and start on green, no phone connection required. Off disables automatic traffic-light stops. Phone-app longitudinal tuning (follow time, comfort braking, stop point) also flows through this switch.",
+        "default": True
+      },
+      {
+        "type": "bool",
         "param": "SameSpiCamFilter",
         "label": "Same Direction Speed Cam Filter",
         "desc": "Adjust the Same Spi Cam Filter setting.",
@@ -1841,19 +1854,12 @@ SUBPANELS: dict[str, dict[str, Any]] = {
         "default": False
       },{
         "type": "separator"
-      },{
-        "type": "section",
-        "label": "Longitudinal Control (advanced)"
-      },{
-        "type": "bool",
-        "param": "CarrotLongitudinalSourceEnabled",
-        "label": "Carrot Longitudinal Source",
-        "desc": "Let the phone app drive the longitudinal plan: its target speed becomes a plan source, and its follow time, comfort braking and stop point reach the MPC. The vision traffic-light stop&go chain lives inside this switch, so it defaults to on and works without a connected phone.",
-        "default": True
-      },{
+     },{
+        "type": "separator"
+     },{
         "type": "section",
         "label": "Navigation Control (advanced)"
-      },{
+    },{
         "type": "bool",
         "param": "CarrotTrafficCongestionEnabled",
         "label": "Traffic Congestion Slowdown",
