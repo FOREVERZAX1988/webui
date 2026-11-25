@@ -4473,6 +4473,11 @@ function buildAcceleratorRow(m) {
     });
     group.appendChild(btn);
   }
+  // Mount both children: title/desc text block above, full-width button group
+  // below. Without these the row renders as an empty shell (the missing link
+  // was the reason Jetlink never appeared in the Models panel).
+  row.appendChild(text);
+  row.appendChild(group);
   paintAcceleratorButtons(row, accel);
   updateAcceleratorStatus(row, accel, m);
   return row;
