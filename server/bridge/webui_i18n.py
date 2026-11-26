@@ -817,6 +817,13 @@ _WEBUI_STRINGS: dict[str, dict[str, str]] = {
     'This feature requires Lane Center Assist, in Models, to be on.': 'This feature requires Lane Center Assist, in Models, to be on.',
     'Always On': 'Always On',
     ' (Default)': ' (Default)',
+    # -- 2026-11-25 livestream / carrot vision toggles (panel_catalog.py).
+    # webui_extra_strings() only iterates THIS dict's keys; without these
+    # self-mapped entries the zh-CHS/zh-CHT translations below stay dead. --
+    'Allow Live Stream While Driving': 'Allow Live Stream While Driving',
+    'Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load).': 'Remote live streaming normally pauses while the car is on so the video encoder stays free for dashcam recording and driving processes. Enable to keep streaming during driving (adds system load).',
+    'Carrot Vision Road Camera': 'Carrot Vision Road Camera',
+    'Serves the road camera over WebRTC (port 5001) to the stream page and Carrot-style apps, including while driving. Only encodes while someone is actually watching. On by default to match the carrot app experience; note it opens a LAN listener on port 5001.': 'Serves the road camera over WebRTC (port 5001) to the stream page and Carrot-style apps, including while driving. Only encodes while someone is actually watching. On by default to match the carrot app experience; note it opens a LAN listener on port 5001.',
 
   },
   "zh-CHS": {
