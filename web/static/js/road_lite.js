@@ -1806,12 +1806,14 @@ function drawNavBand(w, h) {
   const nav = navInfo();
   if (!nav) return;
   // Dedupe: the DOM glass card (hud_carrot_nav) renders the same carrot nav
-  // payload horizontally centered over this canvas. When it is visible the
-  // canvas band would be a hidden duplicate underneath — draw the band only
-  // as the fallback when the glass card is not showing.
+  // payload centered over this canvas. Skip the canvas band ONLY when the
+  // glass card is actually painted. In road-lite mode hud_carrot_nav.js CSS
+  // sets `#hud.road-lite-on #hud-carrot-nav { display:none !important }` while
+  // leaving the `hidden` attribute false — checking `!glass.hidden` alone
+  // wrongly suppressed the canvas band and left no nav surface at all.
   try {
     const glass = document.getElementById("hud-carrot-nav");
-    if (glass && !glass.hidden) return;
+    if (glass && !glass.hidden && getComputedStyle(glass).display !== "none") return;
   } catch {}
 
   const k = Math.max(0.62, Math.min(1.4, w / 1600));
