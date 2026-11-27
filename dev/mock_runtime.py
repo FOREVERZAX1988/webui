@@ -398,6 +398,8 @@ def snapshot_dev_ui_state() -> dict[str, Any]:
     "set_speed": set_speed if s["started"] else None,
     "experimental_mode": s["experimental_mode"],
     "experimental_mode_confirmed": s.get("experimental_mode_confirmed", True),
+    "experimental_mode_set_speed": s.get("experimental_mode_set_speed", False),
+    "onroad_preview": bool(s.get("onroad_preview", False)),
     "engageable": s.get("engageable", True),
     "alert": alert,
     "device": {
