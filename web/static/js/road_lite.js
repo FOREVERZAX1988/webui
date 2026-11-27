@@ -1805,6 +1805,14 @@ function layoutPills(pills, availW, fontSize, pillH, pillGap) {
 function drawNavBand(w, h) {
   const nav = navInfo();
   if (!nav) return;
+  // Dedupe: the DOM glass card (hud_carrot_nav) renders the same carrot nav
+  // payload horizontally centered over this canvas. When it is visible the
+  // canvas band would be a hidden duplicate underneath — draw the band only
+  // as the fallback when the glass card is not showing.
+  try {
+    const glass = document.getElementById("hud-carrot-nav");
+    if (glass && !glass.hidden) return;
+  } catch {}
 
   const k = Math.max(0.62, Math.min(1.4, w / 1600));
   const iconSize = Math.round(Math.max(48, Math.min(86, 68 * k)));

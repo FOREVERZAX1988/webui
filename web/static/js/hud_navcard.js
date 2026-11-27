@@ -90,7 +90,13 @@ export function updateNavCard(st) {
     return;
   }
   const nc = st.nav_card || {};
-  const show = Boolean(nc.enabled) && Boolean(nc.valid) && nc.instruction != null;
+  // The BIG-UI nav card and the carrot glass HUD (hud_carrot_nav) render the
+  // same carrot instruction from two params (NavInstructionState vs
+  // carrotNaviSP). While carrot navigation is active the glass card wins and
+  // this card would be a duplicate — hide it; it only serves routes from the
+  // stock navd path (no carrot TBT active).
+  const carrotActive = Number(st.sp_hud?.carrot_nav?.active) > 0;
+  const show = Boolean(nc.enabled) && Boolean(nc.valid) && nc.instruction != null && !carrotActive;
   card.hidden = !show;
   if (!show) return;
 
