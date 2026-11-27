@@ -462,6 +462,16 @@ def build_state_from_sm(sm) -> dict[str, Any]:
       reset_dm_state()
     except Exception:
       pass
+    # Onroad preview (mirrors selfdrive/ui/ui_state.py): IsOnroadPreview renders
+    # the onroad UI while parked. The manager's onroad_preview process gate keeps
+    # camerad and friends alive, so the WebRTC road stream works in preview too.
+    # The Device-panel action and the onroad exit button both toggle this param.
+    try:
+      from openpilot.common.params import Params
+      started = Params().get_bool("IsOnroadPreview")
+    except Exception:
+      pass
+  onroad_preview = started and not bool(ds.started)
   engaged = derive_engaged(sm, started)
   ui_params = _ui_params()
   is_metric = False
@@ -1016,6 +1026,7 @@ def build_state_from_sm(sm) -> dict[str, Any]:
   return {
     "ok": True,
     "started": started,
+    "onroad_preview": bool(onroad_preview),
     "engaged": engaged,
     "ui_status": ui_status,
     "is_metric": is_metric,

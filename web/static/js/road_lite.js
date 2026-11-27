@@ -1805,6 +1805,16 @@ function layoutPills(pills, availW, fontSize, pillH, pillGap) {
 function drawNavBand(w, h) {
   const nav = navInfo();
   if (!nav) return;
+  // Dedupe: the DOM glass card (hud_carrot_nav) renders the same carrot nav
+  // payload centered over this canvas. Skip the canvas band ONLY when the
+  // glass card is actually painted. In road-lite mode hud_carrot_nav.js CSS
+  // sets `#hud.road-lite-on #hud-carrot-nav { display:none !important }` while
+  // leaving the `hidden` attribute false — checking `!glass.hidden` alone
+  // wrongly suppressed the canvas band and left no nav surface at all.
+  try {
+    const glass = document.getElementById("hud-carrot-nav");
+    if (glass && !glass.hidden && getComputedStyle(glass).display !== "none") return;
+  } catch {}
 
   const k = Math.max(0.62, Math.min(1.4, w / 1600));
   const iconSize = Math.round(Math.max(48, Math.min(86, 68 * k)));
